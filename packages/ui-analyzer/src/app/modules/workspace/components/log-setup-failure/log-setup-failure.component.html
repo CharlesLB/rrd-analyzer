@@ -1,0 +1,15 @@
+<div class="log-setup-failure">
+  <div class="log-setup-failure-card" role="alert">
+    <span class="log-setup-failure-title">{{ failure()?.title }}</span>
+    <span class="log-setup-failure-file">{{ fileName() }}</span>
+    @if (failure()?.detail; as detail) {
+      <span class="log-setup-failure-detail">{{ detail }}</span>
+    }
+  </div>
+  <div class="log-setup-failure-help">{{ texts().logs.setup.formatHelp }}</div>
+  <div class="log-setup-failure-actions">
+    <button class="log-setup-failure-another" type="button" [appFilePick]="accept" (filePicked)="filePicked.emit($event)">
+      {{ texts().logs.setup.chooseAnother }}
+    </button>
+  </div>
+</div>

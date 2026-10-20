@@ -1,0 +1,71 @@
+@use 'mixins';
+
+:host {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  overflow-y: auto;
+}
+
+.analysis-unavailable {
+  max-width: 640px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  text-align: center;
+
+  &-title {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--danger);
+  }
+
+  &-summary {
+    font-size: 14px;
+    color: var(--tx2);
+  }
+
+  &-sources {
+    list-style: none;
+    margin: 0;
+    padding: 10px 14px;
+    max-height: 220px;
+    overflow-y: auto;
+    border: 1px solid var(--line2);
+    border-radius: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    text-align: left;
+  }
+
+  &-source {
+    font-family: var(--font-monospace);
+    font-size: 12.5px;
+    color: var(--tx2);
+    overflow-wrap: anywhere;
+  }
+
+  &-hint {
+    font-size: 12.5px;
+    color: var(--mut);
+  }
+
+  &-actions {
+    margin-top: 8px;
+    display: flex;
+    gap: 10px;
+  }
+
+  &-back {
+    @include mixins.outline-button(9px, 6px 16px, 13px, var(--tx2));
+  }
+
+  &-retry {
+    @include mixins.primary-button;
+  }
+}

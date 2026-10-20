@@ -1,0 +1,33 @@
+@use 'mixins';
+
+:host {
+  display: contents;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--tx);
+
+  &-icon {
+    @include mixins.icon-size(30px);
+  }
+
+  &-name {
+    font-size: 17px;
+    font-weight: 800;
+  }
+
+  &-compact {
+    gap: 9px;
+  }
+
+  &-compact &-icon {
+    @include mixins.icon-size(22px);
+  }
+
+  &-compact &-name {
+    font-size: inherit;
+  }
+}

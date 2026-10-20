@@ -1,0 +1,18 @@
+<article class="feature-row" [class.feature-row-mirrored]="isMirrored()">
+  <div class="feature-row-text">
+    <div class="feature-row-ordinal">{{ ordinal() }}</div>
+    <h3 class="feature-row-title">{{ title() }}</h3>
+    <ng-content />
+  </div>
+  <div class="feature-row-screenshot" [class.feature-row-screenshot-dark-surround]="screenshot().isOnDarkSurround">
+    <img
+      class="feature-row-image"
+      [src]="screenshot().source"
+      [width]="screenshot().width"
+      [height]="screenshot().height"
+      [alt]="screenshotDescription()"
+      loading="lazy"
+      decoding="async"
+    />
+  </div>
+</article>

@@ -1,0 +1,30 @@
+<div class="month-calendar">
+  <div class="month-calendar-header">
+    <button class="month-calendar-step" type="button" [attr.aria-label]="texts().calendar.previousMonth" (click)="previousRequested.emit()">{{ glyphs.PREVIOUS }}</button>
+    <span class="month-calendar-title">{{ title() }}</span>
+    <button class="month-calendar-step" type="button" [attr.aria-label]="texts().calendar.nextMonth" (click)="nextRequested.emit()">{{ glyphs.NEXT }}</button>
+  </div>
+  <div class="month-calendar-weekdays">
+    @for (weekday of weekdays(); track $index) {
+      <span class="month-calendar-weekday">{{ weekday }}</span>
+    }
+  </div>
+  <div class="month-calendar-days">
+    @for (day of days(); track day.cell.dayStartMilliseconds) {
+      <button
+        class="month-calendar-day"
+        [class.month-calendar-day-outside]="!day.cell.isInMonth"
+        [class.month-calendar-day-unavailable]="day.cell.isOutOfBounds"
+        [class.month-calendar-day-between]="day.cell.isInRange"
+        [class.month-calendar-day-edge]="day.cell.isRangeEnd"
+        type="button"
+        [attr.aria-label]="day.label"
+        [attr.aria-disabled]="day.cell.isOutOfBounds"
+        (click)="pick(day.cell)"
+      >
+        {{ day.cell.label }}
+      </button>
+    }
+  </div>
+  <div class="month-calendar-hint">{{ hint() }}</div>
+</div>

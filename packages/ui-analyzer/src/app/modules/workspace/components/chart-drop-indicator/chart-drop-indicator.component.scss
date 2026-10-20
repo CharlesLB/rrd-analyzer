@@ -1,0 +1,49 @@
+:host {
+  display: contents;
+}
+
+.chart-drop-indicator {
+  &-bar {
+    position: absolute;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: var(--acc);
+    z-index: 6;
+    pointer-events: none;
+  }
+
+  &-before {
+    top: 0;
+  }
+
+  &-after {
+    bottom: 0;
+  }
+
+  &-box {
+    position: absolute;
+    inset: 0;
+    background: color-mix(in srgb, var(--acc) 8%, transparent);
+    border: 2px solid var(--acc);
+    border-radius: 13px;
+    z-index: 6;
+    pointer-events: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  &-merge {
+    border-style: dashed;
+  }
+
+  &-label {
+    background: var(--acc);
+    color: var(--accInk);
+    font-size: 12px;
+    font-weight: 600;
+    padding: 4px 12px;
+    border-radius: 8px;
+  }
+}

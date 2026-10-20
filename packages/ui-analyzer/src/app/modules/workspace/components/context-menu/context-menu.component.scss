@@ -1,0 +1,67 @@
+@use 'mixins';
+
+:host {
+  display: contents;
+}
+
+.context-menu {
+  animation: om-pop 0.18s ease both;
+  position: fixed;
+  width: 212px;
+  @include mixins.menu-surface(12px);
+  padding: 5px;
+  z-index: 95;
+
+  &-backdrop {
+    @include mixins.menu-backdrop(90);
+  }
+
+  &-title {
+    padding: 5px 9px 7px;
+    font-size: 11px;
+    color: var(--mut);
+    @include mixins.text-ellipsis;
+  }
+
+  &-section {
+    border-top: 1px solid var(--line);
+    padding-top: 4px;
+    margin-top: 4px;
+
+    &:first-of-type {
+      border-top: none;
+      padding-top: 0;
+      margin-top: 0;
+    }
+  }
+
+  &-heading {
+    padding: 2px 9px 4px;
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+    color: var(--mut);
+  }
+
+  &-item {
+    display: block;
+    @include mixins.menu-item(8px, 6px 9px);
+    color: var(--tx);
+    font-size: 13px;
+
+    &-merge {
+      @include mixins.text-ellipsis;
+    }
+
+    &-danger {
+      color: var(--danger);
+    }
+
+    &:disabled {
+      background: none;
+      color: var(--mut);
+      cursor: default;
+    }
+  }
+}

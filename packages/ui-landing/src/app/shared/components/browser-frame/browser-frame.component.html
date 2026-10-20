@@ -1,0 +1,10 @@
+<div class="browser-frame">
+  <div class="browser-frame-bar">
+    <span class="browser-frame-dot"></span>
+    <span class="browser-frame-dot"></span>
+    <span class="browser-frame-dot"></span>
+    <span class="browser-frame-title" [class.browser-frame-title-centered]="isTitleCentered()">{{ title() }}</span>
+    <span class="browser-frame-balance"></span>
+  </div>
+  <ng-content />
+</div>

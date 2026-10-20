@@ -1,0 +1,17 @@
+<div
+  class="library-strip-card"
+  appPressable
+  [class.library-strip-card-on-canvas]="entry().isOnCanvas"
+  [class.library-strip-card-active]="entry().isActive"
+  (click)="opened.emit(entry().series.id)"
+  (contextmenu)="openContextMenu($event)"
+>
+  <div class="library-strip-card-head">
+    <span class="library-strip-card-dot"></span>
+    <span class="library-strip-card-name">{{ entry().series.label }}</span>
+    <button class="library-strip-card-toggle" type="button" [title]="texts().chartLibrary.toggleCanvas" [attr.aria-label]="texts().chartLibrary.toggleCanvas" (click)="toggleCanvas($event)">{{ mark() }}</button>
+  </div>
+  <div class="library-strip-card-spark">
+    <app-sparkline [samples]="entry().samples" [color]="entry().series.color" [showsAreaFill]="showsAreaFill()" />
+  </div>
+</div>

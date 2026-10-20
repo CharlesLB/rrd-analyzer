@@ -1,0 +1,17 @@
+<div class="analysis-row" appPressable [routerLink]="route()">
+  <div class="analysis-row-text">
+    <div class="analysis-row-name">{{ analysis().name }}</div>
+    <div class="analysis-row-meta">{{ meta() }}</div>
+  </div>
+  @if (hasMissingSources()) {
+    <span class="analysis-row-missing" [title]="missingSourcesTip()">
+      <span class="analysis-row-missing-glyph">{{ glyphs.ATTENTION }}</span>
+      {{ missingSourcesLabel() }}
+    </span>
+  }
+  <span class="analysis-row-access">{{ access() }}</span>
+  <span class="analysis-row-open">{{ texts().library.openAnalysis }}</span>
+</div>
+<button class="analysis-row-delete" type="button" [title]="texts().library.deleteAnalysis" [attr.aria-label]="texts().library.deleteAnalysis" (click)="remove()">
+  {{ glyphs.CLOSE }}
+</button>

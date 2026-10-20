@@ -1,0 +1,32 @@
+:host {
+  display: block;
+  flex: none;
+}
+
+.browser-edition-notice {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 12px;
+  padding: 7px 16px;
+  background: var(--accBg);
+  border-bottom: 1px solid var(--accLine);
+  color: var(--tx2);
+  font-size: 12.5px;
+  line-height: 1.45;
+
+  &-label {
+    color: var(--accT);
+    font-weight: 700;
+  }
+
+  &-privacy {
+    flex: 1 1 320px;
+  }
+
+  &-download {
+    color: var(--accT);
+    font-weight: 700;
+    white-space: nowrap;
+  }
+}

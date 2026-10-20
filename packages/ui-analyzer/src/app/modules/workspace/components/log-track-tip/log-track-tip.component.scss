@@ -1,0 +1,65 @@
+@use 'mixins';
+
+:host {
+  display: contents;
+}
+
+.log-track-tip {
+  position: absolute;
+  bottom: calc(100% + 6px);
+  width: max-content;
+  max-width: min(340px, 100%);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 7px 10px 8px;
+  @include mixins.menu-surface(10px);
+  pointer-events: none;
+  z-index: 20;
+  animation: om-tip 0.12s ease both;
+
+  &-heading {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+  }
+
+  &-dot {
+    flex: none;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+  }
+
+  &-type,
+  &-time {
+    font-family: var(--font-monospace);
+    font-size: 11px;
+  }
+
+  &-type {
+    font-weight: 700;
+    color: var(--tx);
+  }
+
+  &-time {
+    color: var(--mut);
+    font-variant-numeric: tabular-nums;
+  }
+
+  &-message {
+    font-size: 12.5px;
+    line-height: 1.4;
+    color: var(--tx);
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    overflow-wrap: anywhere;
+  }
+
+  &-more {
+    font-size: 11px;
+    color: var(--mut);
+  }
+}

@@ -1,0 +1,41 @@
+<div class="absolute-range">
+  <div class="absolute-range-fields">
+    @for (fieldInput of fieldInputs(); track fieldInput.field) {
+      <div class="absolute-range-field">
+        <span class="absolute-range-label">{{ fieldInput.label }}</span>
+        <input
+          class="absolute-range-input"
+          [class.absolute-range-input-focused]="draft().focusedField === fieldInput.field"
+          [class.absolute-range-input-invalid]="fieldInput.isInvalid"
+          [attr.aria-label]="fieldInput.label"
+          [attr.aria-invalid]="fieldInput.isInvalid"
+          [value]="fieldInput.text"
+          [placeholder]="fieldInput.placeholder"
+          (input)="type(fieldInput.field, $event)"
+          (focus)="focus(fieldInput.field)"
+          (keydown.enter)="apply()"
+          (keydown.escape)="closeRequested.emit()"
+        />
+      </div>
+    }
+  </div>
+  @if (problemMessage() !== '') {
+    <div class="absolute-range-problem" role="alert">{{ problemMessage() }}</div>
+  } @else if (shownNotice() !== '') {
+    <div class="absolute-range-notice" role="status">{{ shownNotice() }}</div>
+  }
+  <app-month-calendar
+    [title]="monthTitle()"
+    [weekdays]="texts().calendar.weekdayInitials"
+    [cells]="cells()"
+    [hint]="hint()"
+    (previousRequested)="showPreviousMonth()"
+    (nextRequested)="showNextMonth()"
+    (dayPicked)="pickDay($event)"
+  />
+  <div class="absolute-range-footer">
+    <span class="absolute-range-bounds">{{ dataBoundsLabel() }}</span>
+    <span class="spacer"></span>
+    <button class="absolute-range-apply" type="button" (click)="apply()">{{ texts().timeframePopover.apply }}</button>
+  </div>
+</div>

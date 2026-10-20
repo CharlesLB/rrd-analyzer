@@ -1,0 +1,176 @@
+@use 'mixins';
+
+:host {
+  display: block;
+}
+
+.donate-section {
+  @include mixins.page-section;
+
+  @include mixins.narrow {
+    padding-inline: 12px;
+  }
+
+  &-panel {
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 40px 56px;
+    padding: clamp(32px, 5vw, 60px);
+    border-radius: 22px;
+    background: var(--acc);
+    color: var(--accInk);
+
+    @include mixins.narrow {
+      padding: 30px 14px 14px;
+      border-radius: 20px;
+    }
+  }
+
+  &-pitch {
+    flex: 1 1 340px;
+    min-width: 0;
+
+    @include mixins.narrow {
+      padding-inline: 6px;
+    }
+  }
+
+  &-bars {
+    display: flex;
+    align-items: flex-end;
+    gap: 6px;
+    height: 46px;
+  }
+
+  &-bar {
+    width: 11px;
+    border-radius: 5px;
+    background: var(--accInk);
+    opacity: 0.9;
+
+    &-short {
+      height: 22px;
+    }
+
+    &-medium {
+      height: 32px;
+    }
+
+    &-peak {
+      height: 46px;
+      background: var(--peak);
+      opacity: 1;
+    }
+
+    &-low {
+      height: 27px;
+    }
+  }
+
+  &-title {
+    font-size: clamp(30px, 3.8vw, 46px);
+    line-height: 1.08;
+    font-weight: 800;
+    letter-spacing: -0.03em;
+    margin: 22px 0 0;
+    text-wrap: balance;
+  }
+
+  &-body {
+    font-size: 17px;
+    line-height: 1.6;
+    margin: 14px 0 0;
+    max-width: 460px;
+    opacity: 0.88;
+    text-wrap: pretty;
+  }
+
+  &-card {
+    flex: 1 1 340px;
+    min-width: 0;
+    max-width: 440px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    padding: 22px;
+    border-radius: 16px;
+    background: var(--bg2);
+    color: var(--tx);
+    box-shadow: var(--raisedShadow);
+
+    &-title {
+      font-size: 13px;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--mut);
+      margin: 0;
+    }
+  }
+
+  &-provider {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 13px 14px;
+    border: 1.5px solid var(--line);
+    border-radius: 12px;
+    background: var(--surf);
+    color: var(--tx);
+
+    &:hover {
+      color: var(--tx);
+      border-color: var(--acc);
+    }
+
+    &-mark {
+      width: 40px;
+      height: 40px;
+      border-radius: 10px;
+      display: grid;
+      place-items: center;
+      flex: none;
+      background: var(--donationMark);
+      color: var(--donationMarkInk);
+      font-size: 15px;
+      font-weight: 800;
+    }
+
+    &-text {
+      flex: 1;
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    &-name {
+      font-size: 16px;
+      font-weight: 800;
+    }
+
+    &-description {
+      font-size: 13.5px;
+      line-height: 1.4;
+      color: var(--tx2);
+      text-wrap: pretty;
+    }
+
+    &-icon {
+      @include mixins.icon-size(18px);
+      color: var(--accT);
+    }
+  }
+
+  &-note {
+    font-size: 13px;
+    line-height: 1.5;
+    color: var(--mut);
+    text-align: center;
+    text-wrap: pretty;
+    margin: 0;
+  }
+}

@@ -1,0 +1,58 @@
+@use 'mixins';
+
+:host {
+  @include mixins.routed-page;
+}
+
+.workspace {
+  &-color-palette {
+    padding: 6px;
+  }
+
+  &-layer-failure {
+    position: fixed;
+    bottom: 16px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 13.5px;
+    color: var(--danger);
+  }
+
+  &-drop {
+    position: fixed;
+    inset: 8px;
+    z-index: 90;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 2px dashed var(--acc);
+    border-radius: 14px;
+    background: color-mix(in srgb, var(--acc) 8%, transparent);
+    pointer-events: none;
+
+    &-hint {
+      background: var(--acc);
+      color: var(--accInk);
+      font-size: 13px;
+      font-weight: 600;
+      padding: 6px 14px;
+      border-radius: 9px;
+    }
+  }
+
+  &-body {
+    position: relative;
+    flex: 1;
+    display: flex;
+    overflow: hidden;
+    min-height: 0;
+  }
+
+  &-main {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+}

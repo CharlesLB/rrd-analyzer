@@ -1,0 +1,62 @@
+<div class="chart-panel-header" draggable="true" (pointerdown)="notePressOrigin($event)" (dragstart)="startDrag($event)" (dragend)="dragEnded.emit()">
+  <span class="chart-panel-header-swatches">
+    @for (swatch of swatches(); track swatch.seriesId) {
+      <app-color-picker-swatch
+        [color]="swatch.color"
+        [label]="swatch.label"
+        [size]="swatchSize"
+        [isOpen]="swatch.isPicking"
+        (pickRequested)="colorMenuRequested.emit({ seriesId: swatch.seriesId, ...$event })"
+      />
+    }
+  </span>
+  <span class="chart-panel-header-title" [title]="title()">{{ title() }}</span>
+  <span class="chart-panel-header-unit">{{ unitLabel() }}</span>
+  <span class="spacer"></span>
+  @if (isMerged()) {
+    <button
+      #seriesButton
+      class="chart-panel-header-series"
+      [class.chart-panel-header-series-open]="isSeriesMenuOpen()"
+      type="button"
+      [title]="texts().seriesMenu.buttonTip"
+      (click)="seriesMenuRequested.emit(anchorOf(seriesButton))"
+    >
+      {{ seriesButtonLabel() }}
+    </button>
+  } @else {
+    <div class="chart-panel-header-stats">
+      @for (stat of statistics().cells; track stat.key) {
+        <span class="chart-panel-header-stat">
+          <button
+            class="chart-panel-header-stat-chip"
+            [class.chart-panel-header-stat-chip-active]="stat.isActive"
+            type="button"
+                  [title]="stat.lineTip"
+            (click)="referenceLineToggled.emit(stat.key)"
+          >
+            <span class="chart-panel-header-stat-label">{{ stat.label }}</span>
+            <b class="chart-panel-header-stat-value" [class.chart-panel-header-stat-value-current]="stat.isCurrent">{{ stat.value }}</b>
+          </button>
+          @if (!stat.isCurrent) {
+            <span class="chart-panel-header-stat-separator">{{ glyphs.SEPARATOR }}</span>
+          }
+        </span>
+      } @empty {
+        <span class="chart-panel-header-stats-empty">{{ texts().statistics.noData }}</span>
+      }
+    </div>
+    <span class="chart-panel-header-stats-unit">{{ statistics().unitLabel }}</span>
+  }
+  <button
+    #exportButton
+    class="chart-panel-header-export"
+    [class.chart-panel-header-export-open]="isExportMenuOpen()"
+    type="button"
+    [title]="texts().export.buttonTip"
+    (click)="exportMenuRequested.emit(anchorOf(exportButton))"
+  >
+    {{ texts().export.buttonLabel }}
+  </button>
+  <button class="chart-panel-header-remove" type="button" [title]="texts().canvas.removeChart" [attr.aria-label]="texts().canvas.removeChart" (click)="removeRequested.emit()">{{ glyphs.CLOSE }}</button>
+</div>

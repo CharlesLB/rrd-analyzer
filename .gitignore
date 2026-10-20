@@ -1,0 +1,42 @@
+# Go
+packages/daemon/bin/
+packages/daemon/cmd/rrd-analyzer/build/
+packages/daemon/rrd-analyzer
+packages/daemon/rrd-analyzer-dev
+*.test
+coverage.out
+*.syso
+
+# Node / Angular
+node_modules/
+.angular/
+packages/ui-analyzer/coverage/
+packages/ui-analyzer/out-tsc/
+packages/ui-analyzer/tools/design-check/shots/
+packages/ui-analyzer/e2e/report/
+packages/ui-analyzer/e2e/.artifacts/
+packages/ui-analyzer/wailsjs/
+
+# The browser edition's WebAssembly runtime, built by tools/build-browser-runtime.sh
+packages/ui-analyzer/browser-runtime/
+packages/ui-analyzer/package.json.md5
+
+# Build output embedded into the desktop binary, minus the marker that keeps
+# the directory present for //go:embed on a fresh clone
+packages/daemon/cmd/rrd-analyzer/dist/*
+!packages/daemon/cmd/rrd-analyzer/dist/.gitkeep
+
+# Release artefacts
+/dist/
+
+# Local data
+*.db
+*.db-shm
+*.db-wal
+
+# Sample round robin databases kept for hand testing, never part of the repository
+/metrics/
+
+# Docs
+/spec
+.claude/

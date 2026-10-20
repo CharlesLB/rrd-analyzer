@@ -1,0 +1,20 @@
+# The toolchain every job needs, in one place so five jobs cannot drift apart on which Go or
+# which pnpm they run. Versions come from the repository rather than being written here again:
+# go.mod names the Go version, and package.json's packageManager field names pnpm.
+name: Toolchain
+description: Install Go, Node and pnpm at the versions this repository pins
+
+runs:
+  using: composite
+  steps:
+    - uses: actions/setup-go@v5
+      with:
+        go-version-file: packages/daemon/go.mod
+        cache-dependency-path: packages/daemon/go.sum
+
+    - uses: pnpm/action-setup@v4
+
+    - uses: actions/setup-node@v4
+      with:
+        node-version: 22
+        cache: pnpm

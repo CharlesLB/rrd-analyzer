@@ -1,0 +1,19 @@
+@use 'mixins';
+
+:host {
+  display: block;
+}
+
+.section-heading {
+  &-eyebrow {
+    @include mixins.eyebrow;
+  }
+
+  &-title {
+    @include mixins.section-title;
+  }
+
+  &-introduction {
+    @include mixins.lead-text;
+  }
+}

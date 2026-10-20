@@ -1,0 +1,15 @@
+<div class="time-nav">
+  <app-time-nav-arrow [shift]="backShift()" (shiftRequested)="shiftRequested.emit($event)" />
+  <button
+    #datesButton
+    class="time-nav-dates"
+    [class.time-nav-dates-open]="isTimeframeOpen()"
+    type="button"
+    [title]="durationAndStep() || texts().timeNav.pickDates"
+    (click)="datesToggled.emit(offsetRight(datesButton))"
+  >
+    <app-calendar-icon class="time-nav-dates-icon" />
+    <span class="time-nav-dates-label" [class.time-nav-dates-label-compact]="isCompact()">{{ timeframeLabel() }}</span>
+  </button>
+  <app-time-nav-arrow [shift]="forwardShift()" (shiftRequested)="shiftRequested.emit($event)" />
+</div>

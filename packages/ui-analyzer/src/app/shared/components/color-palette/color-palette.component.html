@@ -1,0 +1,32 @@
+<div class="color-palette" role="group" [attr.aria-label]="texts().colorPicker.palette">
+  <div class="color-palette-swatches">
+    @for (swatch of swatches(); track swatch.color) {
+      <button
+        class="color-palette-choice"
+        [class.color-palette-choice-current]="swatch.isCurrent"
+        type="button"
+        [title]="swatch.color"
+        [attr.aria-label]="swatch.color"
+        [attr.aria-pressed]="swatch.isCurrent"
+        [style.--choice-color]="swatch.color"
+        (click)="colorChosen.emit(swatch.color)"
+      ></button>
+    }
+    <button
+      class="color-palette-custom"
+      [class.color-palette-custom-current]="isCustom()"
+      [class.color-palette-custom-open]="isMixing()"
+      type="button"
+      [attr.aria-expanded]="isMixing()"
+      (click)="toggleMixer()"
+    >
+      @if (isCustom()) {
+        <span class="color-palette-custom-dot" [style.background]="color()"></span>
+      }
+      {{ texts().colorPicker.custom }}
+    </button>
+  </div>
+  @if (isMixing()) {
+    <app-color-mixer class="color-palette-mixer" [color]="color()" (colorChosen)="chooseMixed($event)" (cancelled)="closeMixer()" />
+  }
+</div>

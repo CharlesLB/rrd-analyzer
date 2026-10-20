@@ -1,0 +1,15 @@
+<app-title-bar>
+  <div class="timeframe-bar">
+    <button class="timeframe-bar-back" type="button" [title]="texts().timeframeBar.backToMenu" [attr.aria-label]="texts().timeframeBar.backToMenu" (click)="backRequested.emit()">{{ glyphs.BACK }}</button>
+    <app-brand-mark />
+    <ng-content select="[timeframeBarTitle]" />
+    <span class="timeframe-bar-divider"></span>
+    <ng-content select="[timeframeBarNav]" />
+    <span class="spacer"></span>
+    <ng-content select="[timeframeBarLogs]" />
+    <ng-content select="[timeframeBarInsights]" />
+    <ng-content select="[timeframeBarSettings]" />
+    <app-theme-toggle />
+    <ng-content select="[timeframeBarPopover]" />
+  </div>
+</app-title-bar>

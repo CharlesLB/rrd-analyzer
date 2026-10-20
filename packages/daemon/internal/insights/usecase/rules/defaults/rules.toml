@@ -1,0 +1,353 @@
+# Default insight rules.
+#
+# A rule anchors on its trigger (or on the condition named by `anchor`, or on its first condition),
+# then joins every other condition to that anchor. Conditions reference each other by alias
+# (`as`, defaulting to the type): `after` + `within` require an onset shortly after another
+# condition's onset, `overlaps` requires the two episodes to intersect, and `lookback` searches only
+# the stretch just before the anchor. `optional` conditions may find nothing; when one does, the
+# `[rule.partial]` wording is used if the rule has one.
+#
+# `when` is a detector (rising, falling, change_point, spike, excursion, drift, gap, reset, flat)
+# or a level (`> 90`, `< 20%`). A percentage says what it is a percentage of with `percent_of`:
+# "self" for a series already in percent, "ds.max", "median" for the series' own usual level, or
+# { sum = [types] }. `flat` finds a reading that stays within `tolerance` of itself for at least
+# `min_duration`. `repeats` with `repeats_within` keeps only bursts of a condition's episodes, as
+# three resets within thirty minutes, and merges each burst into one episode. `since` starts a
+# lookback at the previous episode of another condition, as the restart before this one.
+# `forecast_level` keeps only episodes whose pace carries the series on to that level, and
+# `forecast_within` only those getting there that soon. `excursion` finds the single largest peak
+# unless `max_episodes` allows more; `gap` sizes an outage by `min_run` samples or `min_duration`.
+# A condition joined by `overlaps` alone takes the strongest overlapping episode, any other the
+# earliest. `supersedes` lists more general rules a finding of this one makes redundant: their
+# findings overlapping it are left out.
+#
+# Cause tokens: {alias.base} {alias.peak} {alias.mean} {alias.onset} {alias.end} {alias.duration}
+# {alias.count} {alias.eta} {from→to.lag} {window.duration}; `finding` stands for the finding's own
+# interval.
+#
+# A rule in the user's rules.toml with the same id replaces the rule here.
+
+[[rule]]
+id = "oom-after-memory-climb"
+severity = "critical"
+title = "Process likely went down out of memory"
+match = "evidence order matches rule"
+inferred = true
+supersedes = ["process-restart"]
+evidence = ["heap", "memory", "outage", "latency"]
+onset = ["heap.onset", "memory.onset", "outage.onset - 3h"]
+end = ["outage.end"]
+cause = "Heap objects and resident memory climbed for {finding→outage.lag} — memory reached {memory.peak} — then all reporting stopped for {outage.duration}. The process was likely killed out of memory; its end is inferred from the gap, not observed."
+
+[rule.trigger]
+as = "outage"
+type = "memory.used"
+when = "gap"
+min_duration = "30m"
+
+[[rule.condition]]
+as = "heap"
+type = "heap.objects"
+when = "excursion"
+lookback = "7h55m"
+optional = true
+
+[[rule.condition]]
+as = "memory"
+type = "memory.used"
+when = "excursion"
+lookback = "7h30m"
+optional = true
+
+[[rule.condition]]
+as = "latency"
+type = "http.latency"
+when = "gap"
+overlaps = "outage"
+optional = true
+
+[[rule]]
+id = "cpu-saturation"
+severity = "warning"
+title = "Sustained CPU saturation under a request burst"
+match = "evidence order matches rule"
+anchor = "cpu"
+cause = "User CPU likely saturated — {cpu.base} → {cpu.peak} over {cpu.duration}, probably driven by requests climbing to {requests.peak}."
+
+[[rule.condition]]
+as = "requests"
+type = "http.requests"
+when = "excursion"
+overlaps = "cpu"
+optional = true
+
+[[rule.condition]]
+as = "cpu"
+type = "cpu.user"
+when = "excursion"
+peak_at_least = 65
+peak_over_median = 1.5
+
+[rule.partial]
+title = "Sustained CPU saturation"
+match = "partial match — single signal"
+cause = "User CPU likely saturated — {cpu.base} → {cpu.peak} over {cpu.duration}. No matching upstream driver was found."
+
+[[rule]]
+id = "latency-drift"
+severity = "info"
+title = "p95 latency trending upward"
+match = "slow trend — informational"
+interval = "window"
+cause = "p95 latency has likely been drifting up — {latency.base} to {latency.peak} on average over {window.duration}. Worth watching; no failure implied."
+
+[[rule.condition]]
+as = "latency"
+type = "http.latency"
+when = "drift"
+
+[[rule]]
+id = "process-restart"
+severity = "warning"
+title = "Process restarted"
+match = "uptime reset"
+cause = "The process uptime reset near {restart.end}, so the process restarted there."
+
+[rule.trigger]
+as = "restart"
+type = "process.up"
+when = "reset"
+
+[[rule]]
+id = "restart-loop"
+severity = "critical"
+title = "Process restarting in a loop"
+match = "repeated uptime resets"
+supersedes = ["process-restart", "goroutine-collapse"]
+cause = "The process restarted {loop.count} times in {loop.duration}. It is likely crashing on start or being killed soon after it comes up."
+
+[rule.trigger]
+as = "loop"
+type = "process.up"
+when = "reset"
+repeats = 3
+repeats_within = "30m"
+
+[[rule]]
+id = "restarts-recurring"
+severity = "warning"
+title = "Process keeps restarting"
+match = "repeated uptime resets"
+supersedes = ["process-restart"]
+cause = "The process restarted at least {restarts.count} times in {restarts.duration}, each time within ten days of the restart before."
+
+[rule.trigger]
+as = "restarts"
+type = "process.up"
+when = "reset"
+repeats = 3
+repeats_within = "10d"
+
+[[rule]]
+id = "heap-growth-before-restart"
+severity = "critical"
+title = "Heap kept growing until the process restarted"
+match = "evidence order matches rule"
+inferred = true
+supersedes = ["process-restart"]
+cause = "Heap in use grew from {heap.base} to {heap.peak} over the {heap.duration} before the process restarted. A slow leak ending in an out-of-memory kill is the likely cause."
+
+[rule.trigger]
+as = "restart"
+type = "process.up"
+when = "reset"
+
+[[rule.condition]]
+as = "heap"
+type = "runtime.heap.used"
+when = "drift"
+lookback = "10d"
+since = "restart"
+ratio = 1.2
+min_duration = "1d"
+
+[[rule]]
+id = "load-surge"
+severity = "warning"
+title = "Load surged far above its usual level"
+match = "evidence order matches rule"
+anchor = "load"
+cause = "The 1-minute load went from {load.base} to {load.peak} over {load.duration}. In the same stretch inbound traffic peaked at {traffic.peak}, heap in use at {heap.peak} and the last GC pause at {pause.peak}."
+
+[[rule.condition]]
+as = "load"
+type = "load.1m"
+when = "excursion"
+peak_over_median = 3
+max_episodes = 8
+
+[[rule.condition]]
+as = "traffic"
+type = "net.rx"
+when = "excursion"
+max_episodes = 8
+overlaps = "load"
+optional = true
+
+[[rule.condition]]
+as = "heap"
+type = "runtime.heap.used"
+when = "excursion"
+max_episodes = 8
+overlaps = "load"
+optional = true
+
+[[rule.condition]]
+as = "pause"
+type = "runtime.gc.pause"
+when = "excursion"
+max_episodes = 8
+overlaps = "load"
+optional = true
+
+[[rule]]
+id = "memory-pressure"
+severity = "warning"
+title = "Memory nearly exhausted"
+match = "sustained level"
+cause = "Memory use stayed above 90% for {memory.duration}, peaking at {memory.peak}."
+
+[[rule.condition]]
+as = "memory"
+type = "memory.util"
+when = "> 90%"
+percent_of = "self"
+min_duration = "10m"
+
+[[rule]]
+id = "swap-exhausted"
+severity = "warning"
+title = "Swap exhausted"
+match = "sustained level"
+cause = "Swap use stayed above 95% for {swap.duration}, peaking at {swap.peak}. The host was short of memory for that whole stretch."
+
+[[rule.condition]]
+as = "swap"
+type = "swap.util"
+when = "> 95%"
+percent_of = "self"
+min_duration = "1h"
+
+[[rule]]
+id = "disk-filling"
+severity = "warning"
+title = "Disk filled close to capacity"
+match = "sustained trend"
+anchor = "disk"
+cause = "Disk usage climbed from {disk.base} to {disk.peak} over {disk.duration}, and stayed above 85% from {full.onset}."
+
+[[rule.condition]]
+as = "disk"
+type = "disk.space"
+when = "rising"
+window = "1d"
+
+[[rule.condition]]
+as = "full"
+type = "disk.space"
+when = "> 85%"
+percent_of = "self"
+overlaps = "disk"
+
+[[rule]]
+id = "disk-full-forecast"
+severity = "warning"
+title = "Disk on course to fill"
+match = "sustained trend"
+cause = "Disk usage climbed from {disk.base} to {disk.peak} over {disk.duration}. At that pace it reaches 90% about {disk.eta} after {disk.end}."
+
+[[rule.condition]]
+as = "disk"
+type = "disk.space"
+when = "rising"
+window = "1d"
+forecast_level = 90
+forecast_within = "60d"
+
+[[rule]]
+id = "goroutine-collapse"
+severity = "warning"
+title = "Goroutines collapsed"
+match = "sustained level"
+cause = "Goroutines fell to {goroutines.peak} of their usual count for {goroutines.duration}. Work inside the process had likely stalled or lost its connections."
+
+[[rule.condition]]
+as = "goroutines"
+type = "runtime.goroutines"
+when = "< 20%"
+percent_of = "median"
+min_duration = "5m"
+
+[[rule]]
+id = "goroutine-collapse-recurring"
+severity = "warning"
+title = "Goroutines keep collapsing"
+match = "repeated level"
+supersedes = ["goroutine-collapse"]
+cause = "Goroutines fell below a fifth of their usual count at least {goroutines.count} times in {goroutines.duration}, each time within four days of the collapse before. Something recurring, such as a scheduled job or a dependency going away, likely stalls the process's work."
+
+[[rule.condition]]
+as = "goroutines"
+type = "runtime.goroutines"
+when = "< 20%"
+percent_of = "median"
+min_duration = "5m"
+repeats = 3
+repeats_within = "4d"
+
+[[rule]]
+id = "cpu-reading-frozen"
+severity = "warning"
+title = "CPU reading is frozen"
+match = "evidence order matches rule"
+anchor = "cpu"
+cause = "User CPU read {cpu.base} without moving for {cpu.duration}, even while the 1-minute load went from {load.base} to {load.peak}. The CPU collector is likely stuck or averaging since boot, so its CPU series cannot be trusted."
+
+[[rule.condition]]
+as = "cpu"
+type = "cpu.user"
+when = "flat"
+min_duration = "1d"
+
+[[rule.condition]]
+as = "load"
+type = "load.1m"
+when = "excursion"
+peak_over_median = 2
+max_episodes = 8
+overlaps = "cpu"
+
+[[rule]]
+id = "search-cluster-unreachable"
+severity = "warning"
+title = "No search cluster nodes seen"
+match = "evidence order matches rule"
+anchor = "nodes"
+cause = "The application counted no search cluster nodes for {nodes.duration}, and its search rate stayed at {queries.base} throughout. It is likely not connected to its Elasticsearch or OpenSearch cluster, or the integration is switched off."
+
+[[rule.condition]]
+as = "nodes"
+type = "search.nodes"
+when = "< 1"
+min_duration = "1h"
+
+[[rule.condition]]
+as = "queries"
+type = "search.queries"
+when = "flat"
+overlaps = "nodes"
+optional = true
+
+[rule.partial]
+match = "partial match — single signal"
+cause = "The application counted no search cluster nodes for {nodes.duration}. It is likely not connected to its Elasticsearch or OpenSearch cluster, or the integration is switched off."

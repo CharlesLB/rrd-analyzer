@@ -1,0 +1,63 @@
+<div class="search-field" [class.search-field-compact]="size() === sizes.COMPACT" [class.search-field-roomy]="size() === sizes.ROOMY">
+  <input
+    #field
+    class="search-field-input"
+    [class.search-field-input-monospace]="isMonospace()"
+    [class.search-field-input-matches-nothing]="matchesNothing()"
+    type="text"
+    spellcheck="false"
+    autocomplete="off"
+    role="combobox"
+    aria-autocomplete="list"
+    [attr.aria-expanded]="isListShown()"
+    [attr.aria-controls]="isListShown() ? listId : null"
+    [attr.aria-activedescendant]="activeOptionId()"
+    [placeholder]="placeholder()"
+    [attr.aria-label]="placeholder()"
+    [value]="value()"
+    (input)="type($event)"
+    (focus)="openList()"
+    (blur)="leave()"
+    (keydown)="respondToKey($event)"
+  />
+  @if (hasValue()) {
+    <button
+      class="search-field-clear"
+      type="button"
+      tabindex="-1"
+      [title]="texts().searchField.clear"
+      [attr.aria-label]="texts().searchField.clear"
+      (mousedown)="keepFocus($event)"
+      (click)="clear()"
+    >
+      {{ glyphs.CLOSE }}
+    </button>
+  }
+  @if (isListShown()) {
+    <ul class="search-field-history" role="listbox" [id]="listId" [attr.aria-label]="texts().searchField.history">
+      @for (option of options(); track option.term) {
+        <li
+          class="search-field-history-item"
+          role="option"
+          [id]="option.id"
+          [class.search-field-history-item-highlighted]="option.isHighlighted"
+          [attr.aria-selected]="option.isHighlighted"
+          (mousedown)="keepFocus($event)"
+          (click)="pick(option.term)"
+        >
+          <span class="search-field-history-term">{{ option.term }}</span>
+          <button
+            class="search-field-history-forget"
+            type="button"
+            tabindex="-1"
+            [title]="texts().searchField.forget"
+            [attr.aria-label]="texts().searchField.forget"
+            (click)="forget(option.term, $event)"
+          >
+            {{ glyphs.CLOSE }}
+          </button>
+        </li>
+      }
+    </ul>
+  }
+</div>

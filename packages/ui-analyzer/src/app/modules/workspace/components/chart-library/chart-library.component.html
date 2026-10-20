@@ -1,0 +1,42 @@
+@if (isCollapsed()) {
+  <div class="chart-library-rail">
+    <button class="chart-library-toggle" type="button" [title]="texts().chartLibrary.expand" [attr.aria-label]="texts().chartLibrary.expand" (click)="collapseToggled.emit()">{{ glyphs.EXPAND_SIDEBAR }}</button>
+  </div>
+} @else {
+  <div class="chart-library">
+    <div class="chart-library-search">
+      <app-search-field
+        class="chart-library-filter"
+        [size]="searchFieldSize"
+        [placeholder]="texts().chartLibrary.filterPlaceholder"
+        [history]="filterHistory()"
+        [value]="filter()"
+        (valueChange)="filterChanged.emit($event)"
+        (committed)="filterCommitted.emit($event)"
+        (forgotten)="filterForgotten.emit($event)"
+        (keydown.escape)="clearOrLeaveFilter($event)"
+      />
+      <button class="chart-library-toggle" type="button" [title]="texts().chartLibrary.collapse" [attr.aria-label]="texts().chartLibrary.collapse" (click)="collapseToggled.emit()">{{ glyphs.COLLAPSE_SIDEBAR }}</button>
+    </div>
+    <div class="chart-library-header">
+      <span class="chart-library-caption">{{ texts().chartLibrary.caption }}</span>
+      <span class="spacer"></span>
+      <span class="chart-library-count">{{ countLabel() }}</span>
+    </div>
+    <div class="chart-library-list">
+      @for (entry of entries(); track entry.series.id) {
+        <app-library-thumbnail
+          [entry]="entry"
+          [showsAreaFill]="showsAreaFill()"
+          (opened)="opened.emit($event)"
+          (contextMenuRequested)="contextMenuRequested.emit($event)"
+          (dragStarted)="dragStarted.emit($event)"
+          (dragEnded)="dragEnded.emit()"
+        />
+      }
+      @if (entries().length === 0) {
+        <div class="chart-library-empty">{{ texts().chartLibrary.noMatches }}</div>
+      }
+    </div>
+  </div>
+}

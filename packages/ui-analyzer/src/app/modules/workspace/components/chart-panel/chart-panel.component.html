@@ -1,0 +1,79 @@
+<div #panel class="chart-panel" (dragover)="trackDropTarget($event)" (dragleave)="leaveDropTarget($event)" (drop)="drop($event)">
+  @if (dropPosition(); as position) {
+    <app-chart-drop-indicator [position]="position" />
+  }
+  <app-chart-panel-header
+    [swatches]="swatches()"
+    [title]="title()"
+    [unitLabel]="unitLabel()"
+    [isMerged]="isMerged()"
+    [seriesButtonLabel]="seriesButtonLabel()"
+    [statistics]="statistics()"
+    [isSeriesMenuOpen]="isSeriesMenuOpen()"
+    [isExportMenuOpen]="isExportMenuOpen()"
+    (referenceLineToggled)="referenceLineToggled.emit($event)"
+    (seriesMenuRequested)="requestSeriesMenu($event)"
+    (exportMenuRequested)="requestExportMenu($event)"
+    (removeRequested)="removeRequested.emit(chart().id)"
+    (colorMenuRequested)="colorMenuRequested.emit($event)"
+    (dragStarted)="startDrag($event)"
+    (dragEnded)="dragEnded.emit()"
+  />
+  @if (isMerged()) {
+    <app-chart-legend [entries]="legend()" [pickingSeriesId]="pickingSeriesId()" (colorMenuRequested)="colorMenuRequested.emit($event)" />
+  }
+  <div class="chart-panel-plot">
+    <app-chart-plot
+      [lines]="plotLines()"
+      [axisRows]="axisRows()"
+      [referenceLines]="referenceLines()"
+      [referenceColor]="referenceColor()"
+      [overlays]="overlays()"
+      [logMarks]="logMarks()"
+    />
+    @if (selectionBand(); as band) {
+      <div class="chart-panel-selection" [style.left]="band.left" [style.width]="band.width"></div>
+    }
+    @if (showsCursor()) {
+      <app-chart-crosshair [fraction]="cursorFraction()" [time]="cursorTime()" [readings]="crosshairReadings()" />
+    }
+    <div
+      class="chart-panel-overlay"
+      (pointerdown)="startSelection($event)"
+      (pointermove)="movePointer($event)"
+      (pointerup)="selectionFinished.emit()"
+      (pointercancel)="selectionCancelled.emit()"
+      (pointerleave)="pointerLeft.emit()"
+      (pointerenter)="pointerEntered.emit(chart().id)"
+      (dblclick)="zoomBackRequested.emit()"
+    ></div>
+  </div>
+  <div class="chart-panel-ticks">
+    @for (tick of ticks(); track tick.left) {
+      <span
+        class="chart-panel-tick"
+        [class.chart-panel-tick-start]="tick.alignment === tickAlignments.START"
+        [class.chart-panel-tick-end]="tick.alignment === tickAlignments.END"
+        [style.left]="tick.left"
+      >
+        {{ tick.label }}
+      </span>
+    }
+  </div>
+  <div
+    class="chart-panel-resize"
+    role="separator"
+    aria-orientation="horizontal"
+    tabindex="0"
+    [title]="resizeTip()"
+    [attr.aria-label]="resizeTip()"
+    (pointerdown)="startResize($event)"
+    (pointermove)="continueResize($event)"
+    (pointerup)="endResize()"
+    (pointercancel)="endResize()"
+    (dblclick)="resizeCleared.emit(chart().id)"
+    (keydown.arrowup)="nudgeHeight($event, -1)"
+    (keydown.arrowdown)="nudgeHeight($event, 1)"
+    (keydown.enter)="resizeCleared.emit(chart().id)"
+  ></div>
+</div>

@@ -1,0 +1,337 @@
+<app-timeframe-bar (backRequested)="backToMenu()">
+  <app-analysis-title
+    timeframeBarTitle
+    [name]="workspace.analysisName()"
+    [sourceFileCount]="workspace.sourceFileCount()"
+    [isCompact]="isCompact()"
+    (renamed)="workspace.rename($event)"
+    (sourcesExportRequested)="canvasExport.exportSources()"
+    (sourcesAddRequested)="workspace.addSources()"
+  />
+  <app-time-nav
+    timeframeBarNav
+    [backShift]="timeWindow.backShift()"
+    [forwardShift]="timeWindow.forwardShift()"
+    [timeframeLabel]="timeWindow.timeframeLabel()"
+    [durationAndStep]="timeWindow.durationAndStep()"
+    [isTimeframeOpen]="isTimeframeOpen()"
+    [isCompact]="isCompact()"
+    (shiftRequested)="timeWindow.shiftDay($event)"
+    (datesToggled)="toggleTimeframe($event)"
+  />
+  <app-logs-trigger
+    timeframeBarLogs
+    [hasFile]="logs.file() !== null"
+    [isShown]="logs.isShown()"
+    [entryCount]="logEntryCount()"
+    [isCompact]="isCompact()"
+    (filePicked)="logs.load($event)"
+    (toggled)="logs.toggleShown()"
+    (removeRequested)="logs.remove()"
+  />
+  <app-insights-trigger
+    timeframeBarInsights
+    [status]="insights.status()"
+    [stageIndex]="insights.stageIndex()"
+    [progress]="insights.progress()"
+    [findings]="insights.latestReportFindings()"
+    [isStale]="insights.isStale()"
+    [isShown]="!insights.areOverlaysHidden()"
+    (runRequested)="insights.run()"
+    (cancelRequested)="insights.cancel()"
+    (panelToggled)="insights.togglePanel()"
+    (shownToggled)="insights.toggleShown()"
+  />
+  <app-view-settings
+    timeframeBarSettings
+    [thumbnailFill]="settings.thumbnailFill()"
+    [synchronizedCrosshair]="settings.synchronizedCrosshair()"
+    [logLanes]="settings.logLanes()"
+    (thumbnailFillToggled)="settings.toggleThumbnailFill()"
+    (synchronizedCrosshairToggled)="settings.toggleSynchronizedCrosshair()"
+    (logLanesToggled)="settings.toggleLogLanes()"
+  />
+  <ng-container ngProjectAs="[timeframeBarPopover]">
+    @defer (when isTimeframeOpen(); prefetch on idle) {
+      @if (isTimeframeOpen()) {
+        <app-timeframe-editor
+          [(tab)]="timeframeTab"
+          [(quickCount)]="quickCount"
+          [(quickUnit)]="quickUnit"
+          [window]="timeWindow.window()"
+          [bounds]="timeWindow.bounds()"
+          [activePresetKey]="timeWindow.activePreset()?.key"
+          [leftOffset]="timeframeLeftOffset()"
+          [isCompact]="isCompact()"
+          [absoluteNotice]="timeframeNotice()"
+          (trailingCountApplied)="applyQuickCount()"
+          (presetChosen)="choosePreset($event)"
+          (absoluteApplied)="applyAbsolute($event)"
+          (closeRequested)="closeTimeframe()"
+        />
+      }
+    } @error {
+      <div class="workspace-layer-failure">{{ texts().workspace.timeframeEditorUnavailable }}</div>
+    }
+  </ng-container>
+</app-timeframe-bar>
+
+<div class="workspace-body">
+  @if (workspace.openingFailure(); as failure) {
+    <app-analysis-unavailable [missingSources]="failure.missingSources" (retryRequested)="workspace.open(analysisId())" (backRequested)="backToMenu()" />
+  } @else {
+    @if (!isCompact()) {
+      <app-chart-library
+        [entries]="seriesData.libraryEntries()"
+        [totalCount]="workspace.series().length"
+        [filter]="workspace.libraryFilter()"
+        [filterHistory]="libraryFilterHistory()"
+        [isCollapsed]="workspace.isLibraryCollapsed()"
+        [showsAreaFill]="settings.thumbnailFill()"
+        (filterChanged)="workspace.setLibraryFilter($event)"
+        (filterCommitted)="rememberLibraryFilter($event)"
+        (filterForgotten)="forgetLibraryFilter($event)"
+        (collapseToggled)="workspace.toggleLibrary()"
+        (opened)="workspace.openFromLibrary($event)"
+        (contextMenuRequested)="openContextMenu($event)"
+        (dragStarted)="canvasDrag.beginDrag($event)"
+        (dragEnded)="canvasDrag.endDrag()"
+      />
+    }
+    <div class="workspace-main">
+      @if (!isCompact() && timeWindow.hasWindow()) {
+        <app-timeline-strip
+          [bounds]="timeWindow.bounds()"
+          [window]="timeWindow.window()"
+          [stepMilliseconds]="timeWindow.step()"
+          [overview]="seriesData.canvasOverview()"
+          (gestureStarted)="timeWindow.setWindow($event)"
+          (windowSlid)="timeWindow.slideWindow($event)"
+        />
+      }
+      @if (isCompact()) {
+        <app-library-strip>
+          @for (entry of seriesData.libraryEntries(); track entry.series.id) {
+            <app-library-strip-card
+              [entry]="entry"
+              [showsAreaFill]="settings.thumbnailFill()"
+              (opened)="workspace.openFromLibrary($event)"
+              (contextMenuRequested)="openContextMenu($event)"
+              (canvasToggled)="workspace.toggleOnCanvas($event)"
+            />
+          }
+        </app-library-strip>
+      }
+      <app-chart-canvas
+        [chartHeights]="chartHeights()"
+        [isCompact]="isCompact()"
+        [isDragging]="canvasDrag.isDragging()"
+        (backgroundDropped)="canvasDrag.dropOnCanvasBackground()"
+      >
+        @for (panel of chartPanels(); track panel.chart.id) {
+          <app-chart-panel
+            [chart]="panel.chart"
+            [window]="timeWindow.window()"
+            [cursor]="timeWindow.cursor()"
+            [cursorTime]="cursorTime()"
+            [selection]="timeWindow.selection()"
+            [isCursorSynchronized]="settings.synchronizedCrosshair()"
+            [isDragging]="canvasDrag.isDragging()"
+            [dropPosition]="panel.dropPosition"
+            [overlays]="overlays()"
+            [logMarks]="logMarks()"
+            [isExportMenuOpen]="panel.isExportMenuOpen"
+            [isSeriesMenuOpen]="panel.isSeriesMenuOpen"
+            [pickingSeriesId]="pickingSeriesId()"
+            [height]="panel.height"
+            (removeRequested)="workspace.removeChart($event)"
+            (referenceLineToggled)="workspace.toggleReferenceLine(panel.chart.id, $event)"
+            (exportMenuRequested)="openExportMenu($event)"
+            (seriesMenuRequested)="openSeriesMenu($event)"
+            (pointerMoved)="pointAtChart(panel.chart.id, $event)"
+            (pointerEntered)="enterChart($event)"
+            (pointerLeft)="timeWindow.leavePlot()"
+            (selectionStarted)="timeWindow.beginSelection($event)"
+            (selectionFinished)="timeWindow.finishSelection()"
+            (selectionCancelled)="timeWindow.cancelSelection()"
+            (zoomBackRequested)="timeWindow.zoomBack()"
+            (dragStarted)="canvasDrag.beginChartDrag($event)"
+            (dragEnded)="canvasDrag.endDrag()"
+            (dropTargetChanged)="trackDropTarget($event)"
+            (dropTargetLeft)="canvasDrag.leaveDropTarget($event)"
+            (dropped)="canvasDrag.dropOn($event)"
+            (resized)="workspace.resizeChart($event.chartId, $event.height)"
+            (resizeCleared)="workspace.resizeChartAutomatically($event)"
+            (colorMenuRequested)="openColorMenu($event)"
+          />
+        }
+      </app-chart-canvas>
+      @if (logs.isTrackShown()) {
+        <app-log-track
+          [status]="logs.status()"
+          [fileName]="logs.file()?.name ?? ''"
+          [failureTitle]="logs.failure()?.title ?? ''"
+          [recordCount]="logs.recordCount()"
+          [isSetupOpen]="logs.isSetupOpen()"
+          [entries]="logs.entries()"
+          [types]="logs.types()"
+          [typeColors]="logs.typeColors()"
+          [hiddenTypes]="logs.hiddenTypes()"
+          [span]="logs.span()"
+          [window]="timeWindow.queriedWindow()"
+          [bounds]="timeWindow.bounds()"
+          [cursorFraction]="logCursorFraction()"
+          [marks]="logMarks()"
+          [selectedIndex]="logs.selectedEntry()?.index ?? null"
+          [isSingleLane]="!settings.logLanes()"
+          (typeToggled)="logs.toggleType($event)"
+          (allTypesShown)="logs.showAllTypes()"
+          (setupRequested)="logs.openSetup()"
+          (jumpRequested)="logs.jumpToLogs()"
+          (entryHovered)="logs.hover($event)"
+          (entrySelected)="logs.select($event)"
+        />
+      }
+    </div>
+    @defer (when insights.isPanelOpen(); prefetch on idle) {
+      @if (insights.isPanelOpen()) {
+        <app-insights-panel
+          [findings]="insights.findings()"
+          [focusIndex]="insights.focusIndex()"
+          [expanded]="insights.expanded()"
+          [scope]="insights.scope()"
+          [staleReason]="insights.staleReason()"
+          [analyzedRun]="insights.analyzedRun()"
+          [plottedColors]="workspace.canvasColors()"
+          [areOverlaysHidden]="insights.areOverlaysHidden()"
+          (overlaysToggled)="insights.toggleOverlays()"
+          (closeRequested)="insights.closePanel()"
+          (scopeChosen)="insights.chooseScope($event)"
+          (rerunRequested)="insights.rerun()"
+          (findingToggled)="insights.toggleFinding($event)"
+          (findingHovered)="insights.hoverFinding($event)"
+          (showOnChartRequested)="insights.showOnChart($event)"
+          (evidenceJumpRequested)="insights.jumpToEvidence($event)"
+          (plotRequested)="workspace.addToCanvas($event)"
+        />
+      }
+    } @error {
+      <div class="workspace-layer-failure">{{ texts().workspace.insightsPanelUnavailable }}</div>
+    }
+    @defer (when logs.isSetupOpen(); prefetch on idle) {
+      @if (logs.isSetupOpen()) {
+        <app-log-setup-panel
+          [status]="logs.status()"
+          [file]="logs.file()"
+          [failure]="logs.failure()"
+          [notes]="logs.notes()"
+          [fields]="logs.fields()"
+          [recordCount]="logs.recordCount()"
+          [draftMapping]="logs.draftMapping()"
+          [detectedMapping]="logs.detectedMapping()"
+          [validation]="logs.validation()"
+          [typeColors]="logs.typeColors()"
+          [chosenColors]="logs.chosenColors()"
+          [isMappingChanged]="logs.isMappingChanged()"
+          (closeRequested)="logs.cancelSetup()"
+          (fieldChosen)="logs.chooseField($event.role, $event.path)"
+          (colorChosen)="logs.chooseColor($event.type, $event.color)"
+          (colorReset)="logs.resetColor($event)"
+          (colorsReset)="logs.resetColors()"
+          (confirmed)="logs.confirmSetup()"
+          (filePicked)="logs.load($event)"
+          (removeRequested)="logs.remove()"
+        />
+      }
+    } @error {
+      <div class="workspace-layer-failure">{{ texts().logs.setupUnavailable }}</div>
+    }
+    @defer (when logs.isDetailOpen(); prefetch on idle) {
+      @if (logs.isDetailOpen()) {
+        @if (logs.selectedEntry(); as entry) {
+          <app-log-detail-panel
+            [entry]="entry"
+            [color]="selectedLogColor()"
+            [position]="logs.selectedPosition()"
+            [canStepBackward]="logs.canStepBackward()"
+            [canStepForward]="logs.canStepForward()"
+            [mapping]="logs.appliedMapping()"
+            [shortcutLabels]="logShortcutLabels"
+            (closeRequested)="logs.closeDetail()"
+            (stepRequested)="logs.step($event)"
+            (centerRequested)="logs.centerOnSelected()"
+          />
+        }
+      }
+    } @error {
+      <div class="workspace-layer-failure">{{ texts().logs.detailUnavailable }}</div>
+    }
+  }
+</div>
+
+@defer (when workspace.contextMenuDetails() !== null; prefetch on idle) {
+  @if (workspace.contextMenuDetails(); as menu) {
+    <app-context-menu
+      [title]="menu.title"
+      [placement]="menu"
+      [isOnCanvas]="menu.isOnCanvas"
+      [isAtTopOfLibrary]="menu.isAtTopOfLibrary"
+      [mergeTargets]="menu.mergeTargets"
+      (openRequested)="workspace.openAlone(menu.seriesId)"
+      (addRequested)="workspace.addToCanvas(menu.seriesId)"
+      (mergeRequested)="canvasDrag.mergeIntoChart(menu.seriesId, $event)"
+      (moveToTopRequested)="workspace.moveToTopOfLibrary(menu.seriesId)"
+      (removeRequested)="workspace.removeFromCanvas(menu.seriesId)"
+      (closeRequested)="workspace.closeContextMenu()"
+    />
+  }
+} @error {
+  <div class="workspace-layer-failure">{{ texts().workspace.contextMenuUnavailable }}</div>
+}
+
+@defer (when canvasExport.menuDetails() !== null; prefetch on idle) {
+  @if (canvasExport.menuDetails(); as menu) {
+    <app-export-menu
+      [color]="menu.color"
+      [scopeLabel]="menu.scopeLabel"
+      [placement]="menu"
+      [chartCount]="menu.chartCount"
+      [seriesCount]="menu.seriesCount"
+      (formatChosen)="canvasExport.exportChart($event)"
+      (allChartsRequested)="canvasExport.exportAllCharts()"
+      (closeRequested)="canvasExport.closeMenu()"
+    />
+  }
+} @error {
+  <div class="workspace-layer-failure">{{ texts().workspace.exportMenuUnavailable }}</div>
+}
+
+@defer (when workspace.colorMenuDetails() !== null; prefetch on idle) {
+  @if (workspace.colorMenuDetails(); as menu) {
+    <app-anchored-menu [placement]="menu" [width]="colorMenuWidth" (closeRequested)="workspace.closeColorMenu()">
+      <app-color-palette class="workspace-color-palette" [color]="menu.color" (colorChosen)="workspace.recolorSeries(menu.seriesId, $event)" />
+    </app-anchored-menu>
+  }
+} @error {
+  <div class="workspace-layer-failure">{{ texts().workspace.colorMenuUnavailable }}</div>
+}
+
+@defer (when workspace.seriesMenuDetails() !== null; prefetch on idle) {
+  @if (workspace.seriesMenuDetails(); as menu) {
+    <app-chart-series-menu
+      [rows]="menu.rows"
+      [placement]="menu"
+      (axisChosen)="workspace.moveSeriesToAxis($event.seriesId, $event.axis)"
+      (separateRequested)="workspace.separateChart(menu.chartId)"
+      (closeRequested)="workspace.closeSeriesMenu()"
+    />
+  }
+} @error {
+  <div class="workspace-layer-failure">{{ texts().workspace.seriesMenuUnavailable }}</div>
+}
+
+@if (isLogFileAimed()) {
+  <div class="workspace-drop" role="status">
+    <span class="workspace-drop-hint">{{ texts().logs.dropHint }}</span>
+  </div>
+}

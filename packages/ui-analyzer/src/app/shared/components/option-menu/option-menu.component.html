@@ -1,0 +1,15 @@
+<div class="option-menu" role="listbox" [class.option-menu-compact]="size() === compactSize" (keydown)="rove($event)">
+  @for (item of items(); track item.value) {
+    <button
+      class="option-menu-item"
+      role="option"
+      type="button"
+      [class.option-menu-item-selected]="item.value === selected()"
+      [attr.aria-selected]="item.value === selected()"
+      (click)="chosen.emit(item.value)"
+    >
+      <span class="option-menu-label">{{ item.label }}</span>
+      <span class="option-menu-check">{{ item.value === selected() ? checkMark : '' }}</span>
+    </button>
+  }
+</div>

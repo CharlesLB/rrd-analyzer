@@ -1,0 +1,15 @@
+<div class="chart-legend">
+  @for (entry of labeledEntries(); track entry.seriesId) {
+    <span class="chart-legend-entry">
+      <app-color-picker-swatch
+        [color]="entry.color"
+        [label]="entry.colorLabel"
+        [size]="swatchSize"
+        [isOpen]="entry.seriesId === pickingSeriesId()"
+        (pickRequested)="colorMenuRequested.emit({ seriesId: entry.seriesId, ...$event })"
+      />
+      <span class="chart-legend-name">{{ entry.name }}</span>
+      <span class="chart-legend-value" [class.chart-legend-value-live]="entry.isLive">{{ entry.value }}</span>
+    </span>
+  }
+</div>

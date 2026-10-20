@@ -1,0 +1,214 @@
+@use 'mixins';
+
+:host {
+  display: contents;
+}
+
+.log-track {
+  flex: none;
+  position: relative;
+  z-index: 8;
+  border-top: 1px solid var(--line);
+  background: var(--bg2);
+  padding: 0 12px 9px;
+  animation: om-fade 0.2s ease both;
+
+  &-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    height: 34px;
+  }
+
+  &-caption {
+    flex: none;
+    @include mixins.caption-text;
+  }
+
+  &-file {
+    flex: none;
+    max-width: 190px;
+    font-family: var(--font-monospace);
+    font-size: 11px;
+    color: var(--tx2);
+    @include mixins.text-ellipsis;
+  }
+
+  &-in-view {
+    flex: none;
+    font-size: 11px;
+    color: var(--mut);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+
+  &-setup {
+    flex: none;
+    white-space: nowrap;
+    @include mixins.outline-button(8px, 3px 9px, 11.5px, var(--tx2));
+
+    &:hover {
+      color: var(--tx);
+    }
+  }
+
+  &-notice {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+    min-height: 30px;
+    padding: 0 5px;
+    font-size: 12.5px;
+    color: var(--tx2);
+
+    &-failure {
+      color: var(--danger);
+    }
+
+    &-detail {
+      font-size: 11.5px;
+      color: var(--mut);
+      font-variant-numeric: tabular-nums;
+    }
+
+    &-action {
+      background: var(--accBg);
+      border: 1px solid var(--accLine);
+      border-radius: 8px;
+      color: var(--accT);
+      font-size: 11.5px;
+      font-weight: 600;
+      padding: 3px 10px;
+      cursor: pointer;
+
+      &:hover {
+        border-color: var(--acc);
+      }
+    }
+  }
+
+  &-plot {
+    display: flex;
+  }
+
+  &-gutter {
+    flex: none;
+    overflow-y: scroll;
+    scrollbar-gutter: stable;
+    visibility: hidden;
+  }
+
+  &-lanes {
+    flex: 1;
+    min-width: 0;
+    position: relative;
+    margin: 0 5px;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+  }
+
+  &-mark,
+  &-cursor {
+    position: absolute;
+    top: -4px;
+    bottom: -4px;
+    width: 0;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  &-mark {
+    border-left: 1.5px dashed transparent;
+    opacity: 0.55;
+
+    &-selected {
+      border-left-style: solid;
+      opacity: 0.95;
+    }
+  }
+
+  &-cursor {
+    border-left: 1px dashed var(--mut);
+  }
+
+  &-lane {
+    position: relative;
+    height: 14px;
+
+    &-plain {
+      --type-color: var(--line);
+    }
+  }
+
+  &-baseline {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 7px;
+    height: 1px;
+    background: color-mix(in srgb, var(--type-color) 30%, transparent);
+  }
+
+  &-lane-plain &-baseline {
+    background: var(--line);
+  }
+
+  &-marker {
+    position: absolute;
+    top: 7px;
+    width: 14px;
+    height: 14px;
+    transform: translate(-50%, -50%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: none;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    z-index: 1;
+    --dot-size: 6px;
+
+    &:not(:disabled):active {
+      transform: translate(-50%, -50%);
+    }
+
+    &-grouped {
+      --dot-size: 8px;
+    }
+
+    &-raised {
+      z-index: 2;
+      --dot-size: 9px;
+    }
+
+    &-grouped#{&}-raised {
+      --dot-size: 11px;
+    }
+
+    &-selected {
+      z-index: 3;
+    }
+  }
+
+  &-dot {
+    flex: none;
+    box-sizing: content-box;
+    width: var(--dot-size);
+    height: var(--dot-size);
+    border-radius: 50%;
+    background: var(--marker-color);
+    border: 1px solid var(--bg2);
+    transition:
+      width 0.12s ease,
+      height 0.12s ease;
+  }
+
+  &-marker-selected &-dot {
+    box-shadow:
+      0 0 0 2px var(--bg2),
+      0 0 0 3.5px var(--marker-color);
+  }
+}

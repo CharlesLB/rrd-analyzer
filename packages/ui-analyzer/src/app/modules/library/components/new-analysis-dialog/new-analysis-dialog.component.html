@@ -1,0 +1,50 @@
+<div class="new-analysis-dialog-scrim" appDismissOnScrim (dismissed)="close()">
+  <form class="new-analysis-dialog" appFocusTrap role="dialog" aria-modal="true" [attr.aria-labelledby]="titleId" [formRoot]="draftForm">
+    <div class="new-analysis-dialog-header">
+      <div class="new-analysis-dialog-heading">
+        <div class="new-analysis-dialog-title" [id]="titleId">{{ texts().newAnalysisDialog.title }}</div>
+        <div class="new-analysis-dialog-helper">{{ texts().newAnalysisDialog.helper }}</div>
+      </div>
+      <button class="new-analysis-dialog-close" type="button" [title]="texts().newAnalysisDialog.close" [attr.aria-label]="texts().newAnalysisDialog.close" (click)="close()">{{ glyphs.CLOSE }}</button>
+    </div>
+
+    <div class="new-analysis-dialog-body">
+      <div class="new-analysis-dialog-field">
+        <label class="new-analysis-dialog-label" [for]="nameFieldId">{{ texts().newAnalysisDialog.nameLabel }}</label>
+        <input
+          #nameField
+          [id]="nameFieldId"
+          class="new-analysis-dialog-input"
+          [formField]="draftForm.name"
+          [placeholder]="texts().newAnalysisDialog.namePlaceholder"
+        />
+      </div>
+
+      <div class="new-analysis-dialog-field">
+        <span class="new-analysis-dialog-label">{{ texts().newAnalysisDialog.sourcesLabel }}</span>
+        <app-source-drop-zone
+          [isActive]="isDropActive()"
+          (browseRequested)="browse()"
+          (hoverChanged)="markDropZone($event)"
+          (filesDropped)="addDroppedFiles($event)"
+        />
+      </div>
+
+      <app-pending-source-list [sources]="sources()" (removed)="removeAt($event)" (clearedAll)="clearAll()" />
+    </div>
+
+    <div class="new-analysis-dialog-footer">
+      <span class="new-analysis-dialog-hint" [class.new-analysis-dialog-hint-missing]="isMissingSource()">{{ hint() }}</span>
+      <button class="new-analysis-dialog-cancel" type="button" (click)="cancel()">{{ texts().newAnalysisDialog.cancel }}</button>
+      <button
+        class="new-analysis-dialog-create"
+        type="submit"
+        [disabled]="draftForm().submitting()"
+        [attr.aria-busy]="draftForm().submitting()"
+        [class.new-analysis-dialog-create-ready]="isReady()"
+      >
+        {{ createLabel() }}
+      </button>
+    </div>
+  </form>
+</div>

@@ -1,0 +1,17 @@
+:host {
+  display: contents;
+}
+
+.brand-mark {
+  width: 26px;
+  height: 26px;
+  flex: none;
+
+  &-column {
+    fill: var(--brand);
+  }
+
+  &-peak {
+    fill: var(--brandPeak);
+  }
+}

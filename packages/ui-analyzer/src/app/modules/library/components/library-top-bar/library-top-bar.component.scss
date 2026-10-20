@@ -1,0 +1,18 @@
+:host {
+  display: block;
+  flex: none;
+}
+
+.library-top-bar {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+  padding: 0 16px;
+
+  &-title {
+    font-size: 15.5px;
+    font-weight: 600;
+  }
+}

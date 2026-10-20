@@ -1,0 +1,135 @@
+# yaml-language-server: $schema=https://goreleaser.com/static/schema.json
+#
+# linux/amd64 half of the release. The window is WebKitGTK reached through cgo, so this half has
+# to be built on a Linux host that carries the GTK and WebKit development headers — `make deps`
+# names them. That is also why the configuration is split per platform rather than listing every
+# target in one file: no single runner can link the webview of every operating system.
+#
+# Linux is split again by architecture because `targets` does not expand templates, and each
+# architecture is built natively rather than through a cross toolchain.
+#
+# Dry run:  make release-snapshot
+version: 2
+
+project_name: rrd-analyzer
+
+before:
+  hooks:
+    - go -C packages/daemon mod download
+    - pnpm install --frozen-lockfile
+    - pnpm --filter @rrd-analyzer/ui-analyzer build
+
+builds:
+  - id: rrd-analyzer-linux-amd64
+    dir: packages/daemon
+    main: ./cmd/rrd-analyzer
+    binary: rrd-analyzer
+    # The desktop and production tags are what select the real WebKitGTK window; without them
+    # Wails compiles its stubs and the binary starts without ever drawing anything.
+    # webkit2_41 switches Wails' cgo pkg-config from webkit2gtk-4.0 to 4.1. The 4.0 stack has
+    # been dropped by Arch and by every distribution that has moved to libsoup3, so linking it
+    # is what limited this binary to the Debian family. 4.1 is present everywhere 4.0 still is,
+    # so nothing is lost by asking for the newer one.
+    tags:
+      - desktop
+      - production
+      - webkit2_41
+    env:
+      - CGO_ENABLED=1
+    goos:
+      - linux
+    goarch:
+      - amd64
+    flags:
+      - -trimpath
+    ldflags:
+      - -s -w
+      - -X github.com/CharlesLB/rrd-analyzer/packages/daemon/internal/shared/version.Version={{ .Version }}
+      - -X github.com/CharlesLB/rrd-analyzer/packages/daemon/internal/shared/version.Commit={{ .FullCommit }}
+      - -X github.com/CharlesLB/rrd-analyzer/packages/daemon/internal/shared/version.Date={{ .CommitDate }}
+    mod_timestamp: "{{ .CommitTimestamp }}"
+
+archives:
+  - id: rrd-analyzer-linux-amd64
+    ids:
+      - rrd-analyzer-linux-amd64
+    name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+    formats:
+      - tar.gz
+    files:
+      - README.md
+
+# The .deb and the Arch package are the installed counterparts of the archive above: the same
+# binary, laid out under the filesystem hierarchy standard, with the desktop entry and icon that
+# put the application in the menu. The web assets are not listed because they are embedded in the
+# binary itself.
+#
+# Both formats are one nfpm entry because everything but the dependency names is shared: the
+# files, where they go, and the metadata. The Arch package is named like every other artefact
+# rather than with pacman's conventional name, since pacman -U reads the package's own metadata
+# and never the file name.
+#
+# Keep this block in step with .goreleaser.linux-arm64.yaml; the two differ only in their ids.
+nfpms:
+  - id: rrd-analyzer-linux-amd64
+    ids:
+      - rrd-analyzer-linux-amd64
+    package_name: rrd-analyzer
+    file_name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+    formats:
+      - deb
+      - archlinux
+    maintainer: Charles Braga <charles.braga.jf.cb@gmail.com>
+    vendor: Charles Braga
+    homepage: https://github.com/CharlesLB/rrd-analyzer
+    license: MIT
+    description: |-
+      Desktop explorer for RRD round-robin database dumps.
+      Reads .rrd databases and rrdtool XML dumps, plots them as stacked charts you can reorder,
+      merge and split, and exports the window or a selection as CSV or PNG.
+    section: utils
+    priority: optional
+    bindir: /usr/bin
+    dependencies:
+      # The runtime halves of what `make deps` installs to build. No alternation on the webview:
+      # the binary needs the 4.1 soname specifically, and an alternation apt could satisfy with
+      # the other one would install cleanly and then fail to start.
+      - libgtk-3-0 | libgtk-3-0t64
+      - libwebkit2gtk-4.1-0
+    recommends:
+      # Binary .rrd files are read by shelling out to rrdtool; XML dumps need nothing.
+      - rrdtool
+    # The dependencies above are Debian's package names. Arch names the same two libraries gtk3
+    # and webkit2gtk-4.1, and the latter is the libsoup3 build Arch ships, which is exactly the
+    # soname the webkit2_41 tag links. nfpm writes no optdepends for Arch, so rrdtool is not
+    # carried over; pacman -S rrdtool covers the layouts the binary cannot read in place.
+    overrides:
+      archlinux:
+        dependencies:
+          - gtk3
+          - webkit2gtk-4.1
+    archlinux:
+      packager: Charles Braga <charles.braga.jf.cb@gmail.com>
+    contents:
+      # Named after the window's WM_CLASS, not after the binary. GTK derives the class by
+      # capitalising the program name, so the window reports "Rrd-analyzer", and WSLg keys its
+      # application list on the desktop file's own name rather than on StartupWMClass. A file
+      # called rrd-analyzer.desktop is never matched to the window, and the title bar falls
+      # back to a blank icon. Every other desktop matches on StartupWMClass and does not care.
+      - src: packaging/linux/Rrd-analyzer.desktop
+        dst: /usr/share/applications/Rrd-analyzer.desktop
+      - src: packaging/linux/rrd-analyzer.svg
+        dst: /usr/share/icons/hicolor/scalable/apps/rrd-analyzer.svg
+      - src: README.md
+        dst: /usr/share/doc/rrd-analyzer/README.md
+
+# One checksum file covering every platform is produced by the release workflow, once the halves
+# are back together. A per-half file would collide on merge.
+checksum:
+  disable: true
+
+release:
+  disable: true
+
+snapshot:
+  version_template: "{{ incpatch .Version }}-next"

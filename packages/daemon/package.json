@@ -1,0 +1,19 @@
+{
+  "name": "@rrd-analyzer/daemon",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Go backend: RRD parsing, series aggregation, the analysis library and exports",
+  "scripts": {
+    "start": "go run ./cmd/rrd-analyzer-dev -store $HOME/.rrd-analyzer/development.db",
+    "start:scratch": "go run ./cmd/rrd-analyzer-dev -store ${TMPDIR:-/tmp}/rrd-analyzer-scratch.db",
+    "build": "go build -o bin/rrd-analyzer-dev ./cmd/rrd-analyzer-dev",
+    "build:browser": "../../tools/build-browser-runtime.sh",
+    "test": "go test -race -cover ./...",
+    "test:ci": "go test -race -cover ./...",
+    "lint": "../../tools/golangci-lint.sh run && ../../tools/check-unfused-arithmetic.sh",
+    "lint:fix": "../../tools/golangci-lint.sh run --fix",
+    "format": "../../tools/golangci-lint.sh fmt",
+    "format:check": "../../tools/golangci-lint.sh fmt --diff",
+    "audit:vulns": "go run golang.org/x/vuln/cmd/govulncheck@latest ./..."
+  }
+}

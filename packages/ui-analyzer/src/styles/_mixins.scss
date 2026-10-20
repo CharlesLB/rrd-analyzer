@@ -1,0 +1,209 @@
+$ease-settle: cubic-bezier(0.22, 0.9, 0.3, 1);
+$ease-pop: cubic-bezier(0.2, 0.9, 0.25, 1.05);
+
+@mixin text-ellipsis {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+@mixin series-card($radius, $dot-size) {
+  border: 1.5px solid var(--line);
+  border-radius: $radius;
+  background: var(--bg2);
+  cursor: pointer;
+  overflow: hidden;
+
+  &-on-canvas {
+    border-color: var(--accLine);
+  }
+
+  &-active {
+    border-color: var(--acc);
+    background: var(--accBg);
+  }
+
+  &-dot {
+    width: $dot-size;
+    height: $dot-size;
+    border-radius: 50%;
+    background: transparent;
+    flex: none;
+  }
+
+  &-on-canvas &-dot {
+    background: var(--acc);
+  }
+
+  &-name {
+    font-weight: 600;
+    color: var(--tx2);
+    @include text-ellipsis;
+  }
+
+  &-on-canvas &-name {
+    color: var(--tx);
+  }
+}
+
+@mixin caption-text {
+  font-size: 11px;
+  color: var(--mut);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+@mixin icon-button($hover-color, $padding) {
+  background: none;
+  border: none;
+  color: var(--mut);
+  font-size: 15px;
+  cursor: pointer;
+  padding: $padding;
+
+  &:hover {
+    color: $hover-color;
+  }
+}
+
+@mixin outline-button($radius, $padding, $font-size, $color) {
+  background: none;
+  border: 1px solid var(--line);
+  border-radius: $radius;
+  color: $color;
+  font-size: $font-size;
+  padding: $padding;
+  cursor: pointer;
+
+  &:hover {
+    border-color: var(--accLine);
+  }
+}
+
+@mixin primary-button {
+  background: var(--acc);
+  border: 1px solid var(--acc);
+  border-radius: 9px;
+  color: var(--accInk);
+  font-size: 13px;
+  padding: 6px 16px;
+  cursor: pointer;
+}
+
+@mixin dashed-accent-box($radius) {
+  border: 1.5px dashed var(--accLine);
+  border-radius: $radius;
+  background: var(--accBg);
+  cursor: pointer;
+
+  &:hover,
+  &-active {
+    border-color: var(--acc);
+  }
+}
+
+@mixin menu-surface($radius) {
+  background: var(--bg2);
+  border: 1px solid var(--line2);
+  border-radius: $radius;
+}
+
+@mixin popover-surface {
+  animation: om-pop 0.25s $ease-pop both;
+  @include menu-surface(14px);
+  overflow: hidden;
+}
+
+@mixin menu-backdrop($z-index) {
+  position: fixed;
+  inset: 0;
+  z-index: $z-index;
+}
+
+@mixin menu-divider($margin: 4px 2px) {
+  height: 1px;
+  background: var(--line);
+  margin: $margin;
+}
+
+@mixin menu-item($radius, $padding) {
+  background: none;
+  border: none;
+  border-radius: $radius;
+  padding: $padding;
+  cursor: pointer;
+  text-align: left;
+  width: 100%;
+
+  &:hover {
+    background: var(--surf2);
+  }
+}
+
+@mixin text-input($radius, $padding, $border-width: 1px) {
+  background: var(--surf);
+  border: $border-width solid var(--line);
+  border-radius: $radius;
+  color: var(--tx);
+  font-size: 13px;
+  padding: $padding;
+}
+
+@mixin select-trigger($radius, $padding, $font-size, $gap) {
+  display: flex;
+  align-items: center;
+  gap: $gap;
+  background: var(--surf);
+  border: 1px solid var(--line);
+  border-radius: $radius;
+  color: var(--tx);
+  font-size: $font-size;
+  padding: $padding;
+  cursor: pointer;
+
+  &:hover {
+    border-color: var(--accLine);
+  }
+}
+
+@mixin routed-page {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  animation: om-view 0.45s $ease-settle both;
+}
+
+@mixin window-drag-region {
+  --wails-draggable: drag;
+}
+
+@mixin window-drag-exempt {
+  --wails-draggable: no-drag;
+}
+
+@mixin native-file-drop-target {
+  --wails-drop-target: drop;
+}
+
+@mixin switch-rail {
+  position: relative;
+  flex: none;
+  width: 26px;
+  height: 15px;
+  border-radius: 8px;
+  background: var(--line2);
+  transition: background-color 0.2s ease;
+}
+
+@mixin switch-knob {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  background: var(--bg2);
+  transition: left 0.2s ease;
+}

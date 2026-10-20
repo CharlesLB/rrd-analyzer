@@ -1,0 +1,93 @@
+# yaml-language-server: $schema=https://goreleaser.com/static/schema.json
+#
+# Windows half of the release. See .goreleaser.linux-amd64.yaml for why the configuration is
+# split per operating system, and why this half is the one that would not have needed splitting:
+# Wails reaches WebView2 through a pure-Go binding that loads the runtime DLL at startup, so
+# nothing here links a C toolchain and any host can produce this executable. The workflow builds
+# it on a Linux runner for that reason.
+#
+# amd64 only, as a target choice rather than a toolchain limit.
+version: 2
+
+project_name: rrd-analyzer
+
+before:
+  hooks:
+    - go -C packages/daemon mod download
+    - pnpm install --frozen-lockfile
+    - pnpm --filter @rrd-analyzer/ui-analyzer build
+    # A stripped Go binary carrying no publisher, no description and no version is the shape
+    # SmartScreen has nothing to weigh, and this one opens a window and writes files. The
+    # behaviour is the product; the anonymity is not. This embeds a VERSIONINFO resource, which
+    # is what puts a product name and a company in the executable's Properties → Details.
+    #
+    # It is not a substitute for signing, but it is the half that costs nothing. Generated
+    # rather than committed so the resource carries the version being released, and named for
+    # windows/amd64 so the Linux builds ignore it: a bare resource.syso goes to every linker.
+    - >-
+      go -C packages/daemon run github.com/josephspurrier/goversioninfo/cmd/goversioninfo@v1.4.1
+      -64
+      -o cmd/rrd-analyzer/resource_windows_amd64.syso
+      -file-version "{{ .Version }}"
+      -product-version "{{ .Version }}"
+      -ver-major {{ .Major }} -ver-minor {{ .Minor }} -ver-patch {{ .Patch }} -ver-build 0
+      -product-ver-major {{ .Major }} -product-ver-minor {{ .Minor }}
+      -product-ver-patch {{ .Patch }} -product-ver-build 0
+      ../../packaging/windows/versioninfo.json
+
+builds:
+  - id: rrd-analyzer-windows
+    dir: packages/daemon
+    main: ./cmd/rrd-analyzer
+    binary: rrd-analyzer
+    tags:
+      - desktop
+      - production
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - windows
+    goarch:
+      - amd64
+    flags:
+      - -trimpath
+    ldflags:
+      # -H windowsgui is what makes this a desktop application rather than a console one: without
+      # it Windows opens a command window behind the app for the lifetime of the process.
+      - -s -w -H windowsgui
+      - -X github.com/CharlesLB/rrd-analyzer/packages/daemon/internal/shared/version.Version={{ .Version }}
+      - -X github.com/CharlesLB/rrd-analyzer/packages/daemon/internal/shared/version.Commit={{ .FullCommit }}
+      - -X github.com/CharlesLB/rrd-analyzer/packages/daemon/internal/shared/version.Date={{ .CommitDate }}
+    mod_timestamp: "{{ .CommitTimestamp }}"
+    # Authenticode, the only thing that actually answers "Windows says this is not trusted". The
+    # VERSIONINFO resource above lowers the heuristic score; a signature is what gives the binary
+    # a publisher to accumulate SmartScreen reputation against.
+    #
+    # A build hook rather than binary_signs because Authenticode lives inside the executable
+    # rather than in a file beside it. Running here also signs before archiving, so the zip and
+    # the installer both carry the signed executable.
+    #
+    # The wrapper is a no-op when no certificate is configured, which is what keeps this harmless
+    # today: releases run exactly as they do now until WINDOWS_SIGN_PKCS12 is set.
+    hooks:
+      post:
+        - ./tools/sign-windows.sh "{{ .Path }}"
+
+archives:
+  - id: rrd-analyzer-windows
+    ids:
+      - rrd-analyzer-windows
+    name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+    formats:
+      - zip
+    files:
+      - README.md
+
+checksum:
+  disable: true
+
+release:
+  disable: true
+
+snapshot:
+  version_template: "{{ incpatch .Version }}-next"

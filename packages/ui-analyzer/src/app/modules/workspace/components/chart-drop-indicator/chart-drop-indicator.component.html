@@ -1,0 +1,7 @@
+@if (label(); as text) {
+  <div class="chart-drop-indicator-box" [class]="positionClass()">
+    <span class="chart-drop-indicator-label">{{ text }}</span>
+  </div>
+} @else {
+  <div class="chart-drop-indicator-bar" [class]="positionClass()"></div>
+}

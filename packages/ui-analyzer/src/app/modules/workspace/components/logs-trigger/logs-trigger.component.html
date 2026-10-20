@@ -1,0 +1,28 @@
+@if (hasFile()) {
+  <div class="logs-trigger" [class.logs-trigger-shown]="isShown()">
+    <button class="logs-trigger-switch" type="button" role="switch" [attr.aria-checked]="isShown()" [title]="texts().logs.toggleTip" (click)="toggled.emit()">
+      <span class="logs-trigger-rail"><span class="logs-trigger-knob"></span></span>
+      <span class="logs-trigger-label">{{ texts().logs.toggleLabel }}</span>
+      @if (countLabel() !== '' && !isCompact()) {
+        <span class="logs-trigger-count">{{ countLabel() }}</span>
+      }
+    </button>
+    <button class="logs-trigger-remove" type="button" [title]="texts().logs.removeTip" [attr.aria-label]="texts().logs.removeTip" (click)="removeRequested.emit()">
+      <app-trash-icon class="logs-trigger-remove-icon" />
+    </button>
+  </div>
+} @else {
+  <button
+    class="logs-trigger-add"
+    type="button"
+    [appFilePick]="accept"
+    [title]="texts().logs.addTip"
+    [attr.aria-label]="texts().logs.addLabel"
+    (filePicked)="filePicked.emit($event)"
+  >
+    <span class="logs-trigger-add-glyph">{{ glyphs.NEW }}</span>
+    @if (!isCompact()) {
+      <span class="logs-trigger-label">{{ texts().logs.addLabel }}</span>
+    }
+  </button>
+}

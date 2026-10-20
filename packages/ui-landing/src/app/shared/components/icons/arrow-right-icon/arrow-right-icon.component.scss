@@ -1,0 +1,9 @@
+@use 'mixins';
+
+:host {
+  display: block;
+}
+
+.arrow-right-icon {
+  @include mixins.stroked-icon(2.2);
+}

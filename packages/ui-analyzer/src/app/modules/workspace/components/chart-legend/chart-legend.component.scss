@@ -1,0 +1,37 @@
+@use 'mixins';
+
+:host {
+  display: contents;
+}
+
+.chart-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 14px;
+  padding: 5px 11px 0;
+  flex: none;
+
+  &-entry {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    min-width: 0;
+    font-size: 11.5px;
+  }
+
+  &-name {
+    color: var(--tx2);
+    @include mixins.text-ellipsis;
+  }
+
+  &-value {
+    color: var(--mut);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+
+    &-live {
+      color: var(--tx);
+      font-weight: 600;
+    }
+  }
+}

@@ -1,0 +1,9 @@
+<div class="side-panel-header">
+  <ng-content select="[sidePanelLead]" />
+  <span class="side-panel-title">{{ title() }}</span>
+  <ng-content select="[sidePanelMeta]" />
+  <span class="spacer"></span>
+  <ng-content select="[sidePanelActions]" />
+  <button class="side-panel-close" type="button" [title]="closeLabel()" [attr.aria-label]="closeLabel()" (click)="closeRequested.emit()">{{ glyphs.CLOSE }}</button>
+</div>
+<ng-content />

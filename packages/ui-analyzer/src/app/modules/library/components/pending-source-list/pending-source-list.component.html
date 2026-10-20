@@ -1,0 +1,29 @@
+@if (rows().length > 0) {
+  <div class="pending-source-list">
+    <div class="pending-source-list-header">
+      <span class="pending-source-list-count">{{ countLabel() }}</span>
+      <span class="spacer"></span>
+      <button class="pending-source-list-clear" type="button" (click)="clearedAll.emit()">{{ texts().newAnalysisDialog.removeAll }}</button>
+    </div>
+    <div class="pending-source-list-scroll">
+      @for (row of rows(); track row.identity) {
+        <div class="pending-source-list-row">
+          <app-color-swatch [color]="row.color" [size]="swatchSize" />
+          <span class="pending-source-list-name" [title]="row.path">{{ row.name }}</span>
+          <span class="pending-source-list-size">{{ row.size }}</span>
+          <button
+            class="pending-source-list-row-remove"
+            type="button"
+            [title]="texts().newAnalysisDialog.removeSource"
+            [attr.aria-label]="texts().newAnalysisDialog.removeSource"
+            (click)="removed.emit(row.index)"
+          >
+            {{ glyphs.CLOSE }}
+          </button>
+        </div>
+      }
+    </div>
+  </div>
+} @else {
+  <div class="pending-source-list-empty">{{ texts().newAnalysisDialog.empty }}</div>
+}

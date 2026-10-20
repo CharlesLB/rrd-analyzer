@@ -1,0 +1,191 @@
+@use 'mixins';
+
+:host {
+  display: contents;
+}
+
+.insights-trigger {
+  flex: none;
+  position: relative;
+
+  &-idle {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--accBg);
+    border: 1px solid var(--accLine);
+    border-radius: 10px;
+    color: var(--tx);
+    font-size: 13px;
+    padding: 6px 12px;
+    cursor: pointer;
+    white-space: nowrap;
+
+    &:hover {
+      border-color: var(--acc);
+    }
+  }
+
+  &-chip {
+    display: flex;
+    align-items: stretch;
+    background: var(--bg2);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    overflow: hidden;
+
+    &-shown {
+      background: var(--accBg);
+      border-color: var(--accLine);
+    }
+
+    &-stale {
+      background: var(--surf);
+      border-color: var(--line2);
+    }
+  }
+
+  &-switch,
+  &-pill {
+    display: flex;
+    align-items: center;
+    background: none;
+    border: none;
+    cursor: pointer;
+
+    &:hover {
+      background: var(--surf2);
+    }
+  }
+
+  &-switch {
+    padding: 0 9px;
+    border-right: 1px solid var(--line);
+  }
+
+  &-chip-shown &-switch {
+    border-right-color: var(--accLine);
+  }
+
+  &-chip-stale &-switch {
+    border-right-color: var(--line2);
+  }
+
+  &-rail {
+    @include mixins.switch-rail;
+  }
+
+  &-chip-shown &-rail {
+    background: var(--acc);
+  }
+
+  &-knob {
+    @include mixins.switch-knob;
+  }
+
+  &-chip-shown &-knob {
+    left: 13px;
+    background: var(--accInk);
+  }
+
+  &-pill {
+    gap: 8px;
+    font-size: 13px;
+    padding: 6px 12px 6px 10px;
+    white-space: nowrap;
+  }
+
+  &-glyph {
+    color: var(--accT);
+    font-size: 12.5px;
+    line-height: 1;
+  }
+
+  &-label {
+    font-weight: 600;
+  }
+
+  &-count {
+    font-weight: 600;
+    color: var(--tx);
+    font-variant-numeric: tabular-nums;
+  }
+
+  &-pill-stale &-count {
+    color: var(--mut);
+  }
+
+  &-stale-mark {
+    color: var(--mut);
+    font-size: 11px;
+    line-height: 1;
+  }
+
+  &-key {
+    font-family: var(--font-monospace);
+    font-size: 10px;
+    color: var(--mut);
+    border: 1px solid var(--line2);
+    border-radius: 5px;
+    padding: 1px 5px;
+    line-height: 1.4;
+  }
+
+  &-running {
+    width: 214px;
+    background: var(--accBg);
+    border: 1px solid var(--accLine);
+    border-radius: 10px;
+    padding: 5px 11px 6px;
+  }
+
+  &-stage {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+
+    &-label {
+      font-size: 12px;
+      font-weight: 600;
+      flex: 1;
+      @include mixins.text-ellipsis;
+    }
+
+    &-step {
+      font-family: var(--font-monospace);
+      font-size: 10.5px;
+      color: var(--mut);
+      font-variant-numeric: tabular-nums;
+    }
+  }
+
+  &-cancel {
+    flex: none;
+    background: none;
+    border: none;
+    padding: 0 2px;
+    color: var(--mut);
+    font-size: 12px;
+    line-height: 1;
+    cursor: pointer;
+
+    &:hover {
+      color: var(--tx);
+    }
+  }
+
+  &-track {
+    height: 3px;
+    border-radius: 2px;
+    background: var(--surf2);
+    overflow: hidden;
+    margin-top: 5px;
+  }
+
+  &-fill {
+    height: 100%;
+    background: var(--acc);
+    border-radius: 2px;
+    transition: width 0.12s linear;
+  }
+}

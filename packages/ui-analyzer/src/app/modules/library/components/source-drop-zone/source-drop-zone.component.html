@@ -1,0 +1,14 @@
+<div
+  #zone
+  class="source-drop-zone"
+  appPressable
+  [class.source-drop-zone-active]="isActive()"
+  (click)="browseRequested.emit()"
+  (dragenter)="highlight()"
+  (dragover)="allowDrop($event)"
+  (dragleave)="clearHighlight($event)"
+  (drop)="drop($event)"
+>
+  <div class="source-drop-zone-title">{{ texts().newAnalysisDialog.dropTitle }}</div>
+  <div class="source-drop-zone-subtitle">{{ texts().newAnalysisDialog.dropSubtitle }}</div>
+</div>

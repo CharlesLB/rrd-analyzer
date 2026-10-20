@@ -1,0 +1,89 @@
+@use 'mixins';
+
+body {
+  margin: 0;
+  background: var(--bg);
+  font-family: 'Nunito', system-ui, -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  letter-spacing: -0.011em;
+}
+
+a {
+  color: var(--link);
+  text-decoration: none;
+
+  &:hover {
+    color: var(--linkHover);
+  }
+}
+
+input,
+select,
+button {
+  font-family: inherit;
+  transition:
+    background-color 0.22s ease,
+    border-color 0.22s ease,
+    color 0.22s ease,
+    opacity 0.22s ease,
+    transform 0.18s ease;
+}
+
+input:focus,
+select:focus,
+button:focus-visible,
+a:focus-visible,
+[appPressable]:focus-visible {
+  outline: 2px solid var(--acc);
+  outline-offset: 1px;
+}
+
+a,
+button,
+input,
+select,
+textarea {
+  @include mixins.window-drag-exempt;
+}
+
+button:not(:disabled):active {
+  transform: scale(0.96);
+}
+
+.spacer {
+  flex: 1;
+}
+
+@supports not selector(::-webkit-scrollbar) {
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--line2) transparent;
+  }
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track,
+::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: var(--line2);
+  background-clip: padding-box;
+  border: 3px solid transparent;
+  border-radius: 999px;
+
+  &:hover {
+    background-color: var(--mut);
+    border-width: 2px;
+  }
+}
+
+::selection {
+  background: var(--textSelectionFill);
+  color: var(--textSelectionInk);
+}

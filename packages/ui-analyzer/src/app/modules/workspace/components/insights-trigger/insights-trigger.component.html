@@ -1,0 +1,54 @@
+<div class="insights-trigger">
+  @switch (status()) {
+    @case (statuses.RUNNING) {
+      <div class="insights-trigger-running">
+        <div class="insights-trigger-stage">
+          <span class="insights-trigger-glyph">{{ glyphs.INSIGHTS }}</span>
+          <span class="insights-trigger-stage-label">{{ stageLabel() }}</span>
+          <span class="insights-trigger-stage-step">{{ stageStep() }}</span>
+          <button
+            class="insights-trigger-cancel"
+            type="button"
+            [title]="texts().insights.cancelTip"
+            [attr.aria-label]="texts().insights.cancelTip"
+            (click)="cancelRequested.emit()"
+          >
+            {{ glyphs.CLOSE }}
+          </button>
+        </div>
+        <div class="insights-trigger-track">
+          <div class="insights-trigger-fill" [style.width]="progressWidth()"></div>
+        </div>
+      </div>
+    }
+    @case (statuses.DONE) {
+      <div class="insights-trigger-chip" [class.insights-trigger-chip-shown]="isShown()" [class.insights-trigger-chip-stale]="isStale()">
+        <button
+          class="insights-trigger-switch"
+          type="button"
+          role="switch"
+          [attr.aria-checked]="isShown()"
+          [title]="texts().insights.shownTip"
+          [attr.aria-label]="texts().insights.shownTip"
+          (click)="shownToggled.emit()"
+        >
+          <span class="insights-trigger-rail"><span class="insights-trigger-knob"></span></span>
+        </button>
+        <button class="insights-trigger-pill" [class.insights-trigger-pill-stale]="isStale()" type="button" [title]="pillTip()" (click)="panelToggled.emit()">
+          <span class="insights-trigger-glyph" [style.color]="badgeColor()">{{ glyphs.INSIGHTS }}</span>
+          <span class="insights-trigger-count">{{ countLabel() }}</span>
+          @if (isStale()) {
+            <span class="insights-trigger-stale-mark">{{ glyphs.RERUN }}</span>
+          }
+        </button>
+      </div>
+    }
+    @default {
+      <button class="insights-trigger-idle" type="button" [title]="texts().insights.runTip" (click)="runRequested.emit()">
+        <span class="insights-trigger-glyph">{{ glyphs.INSIGHTS }}</span>
+        <span class="insights-trigger-label">{{ texts().insights.runLabel }}</span>
+        <span class="insights-trigger-key">{{ texts().insights.keyHint }}</span>
+      </button>
+    }
+  }
+</div>

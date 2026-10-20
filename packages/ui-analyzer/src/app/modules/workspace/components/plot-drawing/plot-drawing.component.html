@@ -1,0 +1,48 @@
+<svg class="plot-drawing" [attr.viewBox]="viewBox" preserveAspectRatio="none">
+  @for (y of horizontalGridLines; track $index) {
+    <line class="plot-drawing-grid" x1="0" [attr.x2]="plotWidth" [attr.y1]="y" [attr.y2]="y"></line>
+  }
+  @for (x of verticalGridLines; track $index) {
+    <line class="plot-drawing-grid" [attr.x1]="x" [attr.x2]="x" y1="0" [attr.y2]="plotHeight"></line>
+  }
+  @for (band of overlays().bands; track $index) {
+    <rect
+      class="plot-drawing-band"
+      [attr.x]="band.x"
+      y="0"
+      [attr.width]="band.width"
+      [attr.height]="plotHeight"
+      [attr.fill]="band.fill"
+      [attr.opacity]="band.opacity"
+      [attr.stroke]="band.stroke"
+    ></rect>
+  }
+  @for (mark of overlays().marks; track $index) {
+    <line class="plot-drawing-mark" [attr.x1]="mark.x" [attr.x2]="mark.x" y1="0" [attr.y2]="plotHeight" [attr.stroke]="mark.color" [attr.opacity]="mark.opacity"></line>
+  }
+  @for (mark of logMarks(); track $index) {
+    <line
+      class="plot-drawing-log-mark"
+      [class.plot-drawing-log-mark-selected]="mark.isSelected"
+      [attr.x1]="mark.x"
+      [attr.x2]="mark.x"
+      y1="0"
+      [attr.y2]="plotHeight"
+      [attr.stroke]="mark.color"
+    ></line>
+  }
+  @for (reference of referenceLines(); track reference.key) {
+    <line
+      class="plot-drawing-reference"
+      x1="0"
+      [attr.x2]="plotWidth"
+      [attr.y1]="reference.y"
+      [attr.y2]="reference.y"
+      [attr.stroke]="referenceColor()"
+      [attr.stroke-dasharray]="reference.dash"
+    ></line>
+  }
+  @for (line of lines(); track line.seriesId) {
+    <path class="plot-drawing-line" [attr.d]="line.path" [attr.stroke]="line.color"></path>
+  }
+</svg>

@@ -1,0 +1,118 @@
+@use 'mixins';
+
+:host {
+  display: contents;
+}
+
+.logs-trigger {
+  display: flex;
+  align-items: stretch;
+  flex: none;
+  height: 32px;
+  background: var(--bg2);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  overflow: hidden;
+  animation: om-pop 0.2s ease both;
+
+  &-shown {
+    background: var(--accBg);
+    border-color: var(--accLine);
+  }
+
+  &-switch {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: none;
+    border: none;
+    color: var(--tx);
+    font-size: 13px;
+    padding: 0 10px 0 9px;
+    cursor: pointer;
+    white-space: nowrap;
+
+    &:hover {
+      background: var(--surf2);
+    }
+  }
+
+  &-rail {
+    @include mixins.switch-rail;
+  }
+
+  &-shown &-rail {
+    background: var(--acc);
+  }
+
+  &-knob {
+    @include mixins.switch-knob;
+  }
+
+  &-shown &-knob {
+    left: 13px;
+    background: var(--accInk);
+  }
+
+  &-label {
+    font-weight: 600;
+  }
+
+  &-count {
+    font-size: 11px;
+    color: var(--mut);
+    font-variant-numeric: tabular-nums;
+  }
+
+  &-remove {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    background: none;
+    border: none;
+    border-left: 1px solid var(--line);
+    color: var(--mut);
+    cursor: pointer;
+    padding: 0;
+
+    &:hover {
+      color: var(--danger);
+      background: var(--surf2);
+    }
+
+    &-icon {
+      width: 13px;
+      height: 13px;
+    }
+  }
+
+  &-shown &-remove {
+    border-left-color: var(--accLine);
+  }
+
+  &-add {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    flex: none;
+    background: var(--bg2);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    color: var(--tx);
+    font-size: 13px;
+    padding: 6px 11px;
+    cursor: pointer;
+    white-space: nowrap;
+
+    &:hover {
+      border-color: var(--accLine);
+    }
+
+    &-glyph {
+      color: var(--accT);
+      font-size: 15px;
+      line-height: 1;
+    }
+  }
+}

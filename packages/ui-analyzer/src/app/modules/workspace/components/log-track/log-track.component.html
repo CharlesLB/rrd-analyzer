@@ -1,0 +1,66 @@
+<div class="log-track">
+  <div class="log-track-header">
+    <span class="log-track-caption">{{ texts().logs.track.caption }}</span>
+    @if (hasLoadedFile()) {
+      <span class="log-track-file" [title]="fileName()">{{ fileName() }}</span>
+    }
+    <app-log-type-chips [chips]="chips()" (toggled)="typeToggled.emit($event)" />
+    <span class="spacer"></span>
+    <span class="log-track-in-view">{{ inViewLabel() }}</span>
+    @if (hasLoadedFile()) {
+      <button class="log-track-setup" type="button" [title]="texts().logs.track.fieldsAndColorsTip" (click)="setupRequested.emit()">
+        {{ texts().logs.track.fieldsAndColors }}
+      </button>
+    }
+  </div>
+  @if (notice(); as notice) {
+    <div class="log-track-notice" [class.log-track-notice-failure]="notice.isFailure">
+      <span class="log-track-notice-text">{{ notice.text }}</span>
+      @if (notice.detail !== '') {
+        <span class="log-track-notice-detail">{{ notice.detail }}</span>
+      }
+      @if (notice.action; as action) {
+        <button class="log-track-notice-action" type="button" (click)="performNoticeAction(action.kind)">{{ action.label }}</button>
+      }
+    </div>
+  } @else {
+    <div class="log-track-plot">
+      <div class="log-track-lanes">
+        @for (mark of markLines(); track $index) {
+          <span class="log-track-mark" [class.log-track-mark-selected]="mark.isSelected" [style.left]="mark.left" [style.border-left-color]="mark.color"></span>
+        }
+        @if (cursorLeft(); as left) {
+          <span class="log-track-cursor" [style.left]="left"></span>
+        }
+        @for (lane of lanes(); track lane.name) {
+          <div class="log-track-lane" [class.log-track-lane-plain]="lane.color === null" [title]="lane.name" [style.--type-color]="lane.color">
+            <span class="log-track-baseline"></span>
+            @for (marker of lane.markers; track marker.group.key) {
+              <button
+                class="log-track-marker"
+                [class.log-track-marker-grouped]="marker.isGrouped"
+                [class.log-track-marker-raised]="marker.group.key === selectedKey() || marker.group.key === hoveredKey()"
+                [class.log-track-marker-selected]="marker.group.key === selectedKey()"
+                type="button"
+                [attr.aria-label]="marker.label"
+                [style.left]="marker.left"
+                [style.--marker-color]="marker.group.color"
+                (mouseenter)="hoverGroup(marker.group)"
+                (mouseleave)="hoverGroup(null)"
+                (focus)="hoverGroup(marker.group)"
+                (blur)="hoverGroup(null)"
+                (click)="selectGroup(marker.group)"
+              >
+                <span class="log-track-dot"></span>
+              </button>
+            }
+          </div>
+        }
+        @if (tip(); as tip) {
+          <app-log-track-tip [tip]="tip" />
+        }
+      </div>
+      <span class="log-track-gutter"></span>
+    </div>
+  }
+</div>

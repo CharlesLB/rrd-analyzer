@@ -1,0 +1,14 @@
+{
+  "$schema": "https://wails.io/schemas/config.v2.json",
+  "name": "rrd-analyzer",
+  "outputfilename": "rrd-analyzer",
+  "frontend:install": "pnpm install",
+  "frontend:build": "pnpm build",
+  "frontend:dev:watcher": "pnpm start",
+  "frontend:dev:serverUrl": "http://localhost:4200",
+  "frontend:dir": "../../../ui-analyzer",
+  "wailsjsdir": "../../../ui-analyzer",
+  "author": {
+    "name": "Charles Braga"
+  }
+}

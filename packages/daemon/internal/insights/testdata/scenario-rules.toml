@@ -1,0 +1,61 @@
+# Scenario rules for the service tests: the technical spec's worked examples, with windows and
+# allowances sized for the five-minute fixtures built in usecase/scenario_test.go. They are test
+# material, not defaults.
+
+[[rule]]
+id = "oom-from-disk-io"
+severity = "critical"
+title = "Crash from out-of-memory triggered by disk I/O"
+trigger = "system.down"
+cause = "System likely went down out of memory. RAM crossed {memory.used.peak} about {disk.read→memory.used.lag} after disk reads rose from {disk.read.base} to {disk.read.peak} — probable thrashing consuming memory."
+
+[[rule.condition]]
+type = "disk.read"
+when = "rising"
+cf = "MAX"
+window = "15m"
+lookback = "2h"
+
+[[rule.condition]]
+type = "memory.used"
+when = "> 90%"
+percent_of = { sum = ["memory.used", "memory.free", "memory.cached", "memory.buffered"] }
+after = "disk.read"
+within = "45m"
+lookback = "2h"
+
+[[rule]]
+id = "disk-filling"
+severity = "warning"
+title = "Disk filling up"
+cause = "Disk usage climbed from {disk.space.base} to {disk.space.peak} over {disk.space.duration}."
+
+[[rule.condition]]
+type = "disk.space"
+when = "rising"
+window = "2h"
+theta = 3
+sustain = 12
+
+[[rule]]
+id = "uptime-bounce"
+severity = "warning"
+title = "Host restarted"
+cause = "Uptime reset near {restart.end}; the host was likely down for part of {restart.duration}."
+
+[rule.trigger]
+as = "restart"
+type = "system.up"
+when = "reset"
+
+[[rule]]
+id = "cpu-saturated"
+severity = "warning"
+title = "CPU saturated"
+cause = "CPU stayed above 90% for {cpu.usage.duration}, peaking at {cpu.usage.peak}."
+
+[[rule.condition]]
+type = "cpu.usage"
+when = "> 90%"
+percent_of = "self"
+min_duration = "30m"

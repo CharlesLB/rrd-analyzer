@@ -1,0 +1,12 @@
+@let footer = texts().footer;
+<footer class="site-footer">
+  <app-brand [isCompact]="true" />
+  <span class="site-footer-license">{{ footer.license }}</span>
+  <span class="site-footer-spacer"></span>
+  <a class="site-footer-link" appExternalLink [href]="links.repository">{{ footer.github }}</a>
+  <a class="site-footer-link" appExternalLink [href]="links.releases">{{ footer.releases }}</a>
+  <a class="site-footer-link" appExternalLink [href]="links.issues">{{ footer.reportIssue }}</a>
+  <button class="site-footer-theme" type="button" [title]="footer.toggleTheme" [attr.aria-label]="footer.toggleTheme" (click)="toggleTheme()">
+    <app-theme-icon class="site-footer-theme-icon" />
+  </button>
+</footer>

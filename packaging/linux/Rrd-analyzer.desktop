@@ -1,0 +1,12 @@
+[Desktop Entry]
+Type=Application
+Name=RRD Analyzer
+GenericName=RRD Explorer
+Comment=Explore RRD round-robin database dumps
+Exec=rrd-analyzer %F
+Icon=rrd-analyzer
+Terminal=false
+Categories=Development;Monitor;Utility;
+Keywords=rrd;rrdtool;metrics;timeseries;monitoring;
+MimeType=application/x-rrd;
+StartupWMClass=Rrd-analyzer

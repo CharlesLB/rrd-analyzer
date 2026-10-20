@@ -1,0 +1,150 @@
+@use 'mixins';
+
+:host {
+  display: contents;
+}
+
+.log-field-row {
+  padding: 7px 14px 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+
+  &-heading {
+    display: flex;
+    align-items: baseline;
+    gap: 7px;
+  }
+
+  &-label {
+    font-size: 12.5px;
+    font-weight: 700;
+  }
+
+  &-hint {
+    min-width: 0;
+    font-size: 11px;
+    color: var(--mut);
+    @include mixins.text-ellipsis;
+  }
+
+  &-detected {
+    flex: none;
+    font-size: 10px;
+    color: var(--accT);
+    border: 1px solid var(--accLine);
+    border-radius: 5px;
+    padding: 0 5px;
+    line-height: 1.5;
+  }
+
+  &-trigger {
+    width: 100%;
+    text-align: left;
+    @include mixins.select-trigger(9px, 6px 10px, 12px, 8px);
+
+    &-blocked {
+      border-color: var(--danger);
+    }
+
+    &-open {
+      border-color: var(--acc);
+    }
+  }
+
+  &-path {
+    flex: 1;
+    min-width: 0;
+    font-family: var(--font-monospace);
+    font-size: 12px;
+    color: var(--tx);
+    @include mixins.text-ellipsis;
+
+    &-empty {
+      color: var(--mut);
+    }
+  }
+
+  &-caret {
+    color: var(--mut);
+    font-size: 9px;
+  }
+
+  &-options {
+    border: 1px solid var(--line2);
+    border-radius: 10px;
+    padding: 4px;
+    max-height: 224px;
+    overflow-y: auto;
+    animation: om-pop 0.16s ease both;
+  }
+
+  &-option {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    @include mixins.menu-item(7px, 5px 8px);
+
+    &-chosen {
+      background: var(--accBg);
+    }
+
+    &-path {
+      flex: none;
+      max-width: 50%;
+      font-family: var(--font-monospace);
+      font-size: 11.5px;
+      color: var(--tx);
+      @include mixins.text-ellipsis;
+    }
+
+    &-chosen &-path {
+      color: var(--accT);
+    }
+
+    &-sample {
+      flex: 1;
+      min-width: 0;
+      text-align: right;
+      font-family: var(--font-monospace);
+      font-size: 10.5px;
+      color: var(--mut);
+      @include mixins.text-ellipsis;
+    }
+
+    &-check {
+      flex: none;
+      width: 9px;
+      color: var(--accT);
+      font-size: 10px;
+    }
+  }
+
+  &-note {
+    display: flex;
+    gap: 6px;
+    font-size: 11.5px;
+    line-height: 1.45;
+    color: var(--tx2);
+
+    &-warned {
+      color: var(--insWarnFg);
+    }
+
+    &-blocked {
+      color: var(--danger);
+    }
+
+    &-glyph {
+      flex: none;
+      width: 9px;
+      font-weight: 700;
+    }
+
+    &-text {
+      min-width: 0;
+      overflow-wrap: anywhere;
+      text-wrap: pretty;
+    }
+  }
+}

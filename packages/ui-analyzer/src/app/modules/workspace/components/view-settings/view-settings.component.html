@@ -1,0 +1,33 @@
+<button
+  class="view-settings-toggle"
+  [class.view-settings-toggle-open]="isMenuOpen()"
+  type="button"
+  [title]="texts().viewSettings.menu"
+  [attr.aria-label]="texts().viewSettings.menu"
+  [attr.aria-expanded]="isMenuOpen()"
+  (click)="toggleMenu()"
+>
+  {{ glyphs.SETTINGS }}
+</button>
+@if (menuPlacement(); as placement) {
+  <app-anchored-menu [placement]="placement" [width]="menuWidth" (closeRequested)="closeMenu()">
+    <button class="view-settings-item" type="button" role="menuitemcheckbox" [attr.aria-checked]="thumbnailFill()" (click)="thumbnailFillToggled.emit()">
+      <span class="view-settings-label">{{ texts().viewSettings.thumbnailFill }}</span>
+      <span class="view-settings-check">{{ thumbnailFill() ? glyphs.CHECK : '' }}</span>
+    </button>
+    <button
+      class="view-settings-item"
+      type="button"
+      role="menuitemcheckbox"
+      [attr.aria-checked]="synchronizedCrosshair()"
+      (click)="synchronizedCrosshairToggled.emit()"
+    >
+      <span class="view-settings-label">{{ texts().viewSettings.synchronizedCrosshair }}</span>
+      <span class="view-settings-check">{{ synchronizedCrosshair() ? glyphs.CHECK : '' }}</span>
+    </button>
+    <button class="view-settings-item" type="button" role="menuitemcheckbox" [attr.aria-checked]="logLanes()" (click)="logLanesToggled.emit()">
+      <span class="view-settings-label">{{ texts().viewSettings.logLanes }}</span>
+      <span class="view-settings-check">{{ logLanes() ? glyphs.CHECK : '' }}</span>
+    </button>
+  </app-anchored-menu>
+}

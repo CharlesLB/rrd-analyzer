@@ -1,0 +1,54 @@
+@use 'mixins';
+
+:host {
+  display: block;
+}
+
+.new-analysis-card {
+  transition: border-color 0.25s ease;
+  padding: 22px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 14px;
+  @include mixins.dashed-accent-box(14px);
+  @include mixins.native-file-drop-target;
+
+  &-mark {
+    width: 40px;
+    height: 42px;
+    flex: none;
+    border: 1.5px solid var(--acc);
+    border-radius: 13px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--acc);
+    font-size: 22px;
+  }
+
+  &-text {
+    flex: 1;
+    min-width: 0;
+  }
+
+  &-title {
+    font-size: 16px;
+    font-weight: 600;
+  }
+
+  &-subtitle {
+    font-size: 13.5px;
+    color: var(--tx2);
+    margin-top: 3px;
+  }
+
+  &-action {
+    font-size: 13px;
+    color: var(--accT);
+    border: 1px solid var(--accLine);
+    border-radius: 9px;
+    padding: 5px 11px;
+    white-space: nowrap;
+  }
+}

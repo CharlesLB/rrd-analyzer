@@ -1,0 +1,15 @@
+<app-anchored-menu [placement]="placement()" [width]="menuWidth" (closeRequested)="closeRequested.emit()">
+  <div class="chart-series-menu-caption">{{ texts().seriesMenu.caption }}</div>
+  @for (line of lines(); track line.seriesId) {
+    <div class="chart-series-menu-row">
+      <app-color-swatch [color]="line.color" />
+      <span class="chart-series-menu-name" [title]="line.name">{{ line.name }}</span>
+      <span class="chart-series-menu-unit">{{ line.unitLabel }}</span>
+      <span class="chart-series-menu-axis">
+        <app-option-select [items]="line.axisItems" [selected]="line.selectedAxis" [size]="compactSize" (chosen)="chooseAxis(line.seriesId, $event)" />
+      </span>
+    </div>
+  }
+  <div class="chart-series-menu-divider"></div>
+  <button class="chart-series-menu-separate" type="button" (click)="separateRequested.emit()">{{ separateLabel() }}</button>
+</app-anchored-menu>

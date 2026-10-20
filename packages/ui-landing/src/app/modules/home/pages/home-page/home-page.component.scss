@@ -1,0 +1,9 @@
+@use 'mixins';
+
+:host {
+  display: block;
+}
+
+.home-page-main {
+  scroll-margin-top: mixins.$header-height;
+}

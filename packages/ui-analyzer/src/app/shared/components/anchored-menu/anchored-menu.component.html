@@ -1,0 +1,13 @@
+<div class="anchored-menu-backdrop" (click)="closeRequested.emit()"></div>
+<div
+  #menu
+  class="anchored-menu"
+  tabindex="-1"
+  [style.top.px]="placement().top"
+  [style.bottom.px]="placement().bottom"
+  [style.right.px]="placement().right"
+  [style.width.px]="width()"
+  (keydown)="handleKey($event)"
+>
+  <ng-content />
+</div>

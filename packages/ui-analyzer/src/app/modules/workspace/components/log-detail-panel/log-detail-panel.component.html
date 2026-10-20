@@ -1,0 +1,91 @@
+<app-side-panel
+  class="log-detail-panel"
+  appFocusScope
+  [title]="texts().logs.detail.title"
+  [closeLabel]="texts().logs.detail.close"
+  [width]="panelWidth"
+  (closeRequested)="closeRequested.emit()"
+>
+  <span sidePanelMeta class="log-detail-panel-position">{{ positionLabel() }}</span>
+  <div sidePanelActions class="log-detail-panel-steps">
+    <button
+      class="log-detail-panel-step"
+      type="button"
+      [disabled]="!canStepBackward()"
+      [title]="texts().logs.detail.previous"
+      [attr.aria-label]="texts().logs.detail.previous"
+      (click)="stepRequested.emit(directions.BACKWARD)"
+    >
+      {{ glyphs.PREVIOUS }}
+    </button>
+    <button
+      class="log-detail-panel-step"
+      type="button"
+      [disabled]="!canStepForward()"
+      [title]="texts().logs.detail.next"
+      [attr.aria-label]="texts().logs.detail.next"
+      (click)="stepRequested.emit(directions.FORWARD)"
+    >
+      {{ glyphs.NEXT }}
+    </button>
+  </div>
+  <div class="log-detail-panel-summary">
+    <div class="log-detail-panel-facts">
+      <span class="log-detail-panel-badge" [style.--type-color]="color()">
+        <span class="log-detail-panel-badge-dot"></span>
+        <span class="log-detail-panel-badge-type">{{ entry().type }}</span>
+      </span>
+      <span class="log-detail-panel-time">{{ time() }}</span>
+      <span class="spacer"></span>
+      <button class="log-detail-panel-center" type="button" [title]="texts().logs.detail.centerTip" (click)="centerRequested.emit()">
+        {{ texts().logs.detail.center }}
+      </button>
+    </div>
+    <div class="log-detail-panel-message">{{ entry().message }}</div>
+    <div class="log-detail-panel-mapping">
+      @for (role of mappedRoles(); track role.label) {
+        <span class="log-detail-panel-role">{{ role.label }} {{ glyphs.MAPPED_FROM }} <span class="log-detail-panel-role-path">{{ role.path }}</span></span>
+      }
+    </div>
+  </div>
+  <div class="log-detail-panel-toolbar">
+    <span class="log-detail-panel-caption">{{ texts().logs.detail.jsonCaption }}</span>
+    <span class="log-detail-panel-lines">{{ lineCount() }}</span>
+    <span class="spacer"></span>
+    <button
+      class="log-detail-panel-find"
+      [class.log-detail-panel-find-open]="isSearchOpen()"
+      type="button"
+      [title]="findTip()"
+      [attr.aria-pressed]="isSearchOpen()"
+      (click)="toggleSearch()"
+    >
+      <app-search-icon class="log-detail-panel-find-icon" />
+      <span>{{ texts().logs.detail.find }}</span>
+    </button>
+    <button class="log-detail-panel-copy" type="button" [title]="texts().logs.detail.copyTip" (click)="copyJson()">
+      @if (isCopied()) {
+        {{ glyphs.CHECK }} {{ texts().logs.detail.copied }}
+      } @else {
+        {{ texts().logs.detail.copy }}
+      }
+    </button>
+  </div>
+  <app-json-viewer
+    [lines]="searchedLines()"
+    [entryKey]="entry().index"
+    [isSearchOpen]="isSearchOpen()"
+    [matchCounter]="matchCounter()"
+    [hasNoResults]="hasNoResults()"
+    [focusRequests]="focusRequests()"
+    [previousMatchTip]="previousMatchTip()"
+    [query]="query()"
+    [queryHistory]="queryHistory()"
+    (queryChange)="typeQuery($event)"
+    (queryCommitted)="rememberQuery($event)"
+    (queryForgotten)="forgetQuery($event)"
+    (matchStepped)="stepMatch($event)"
+    (searchClosed)="closeSearch()"
+  />
+  <div class="log-detail-panel-footer">{{ shortcutsHint() }}</div>
+</app-side-panel>

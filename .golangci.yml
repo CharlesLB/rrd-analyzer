@@ -1,0 +1,99 @@
+# golangci-lint configuration for packages/daemon.
+# Run it from the module directory: cd packages/daemon && golangci-lint run
+version: "2"
+
+run:
+  timeout: 5m
+  tests: true
+
+linters:
+  default: standard
+  enable:
+    - bodyclose
+    - copyloopvar
+    - errname
+    - errorlint
+    - gocritic
+    - gosec
+    - misspell
+    - nilerr
+    - noctx
+    - nolintlint
+    - revive
+    - sqlclosecheck
+    - unconvert
+    - unparam
+    - usestdlibvars
+    - wastedassign
+
+  settings:
+    errcheck:
+      check-type-assertions: true
+    gocritic:
+      enabled-tags:
+        - diagnostic
+        - performance
+        - style
+      disabled-checks:
+        # The codebase spells every parameter and result type out, which reads better than the
+        # combined forms these two checks ask for.
+        - paramTypeCombine
+        - unnamedResult
+        # Wire-format fixtures append one protocol field per line on purpose.
+        - appendCombine
+        - hugeParam
+        - rangeValCopy
+    govet:
+      enable-all: true
+      disable:
+        # Shadowing err inside an if-statement scope is idiomatic Go, not a defect.
+        - shadow
+        - fieldalignment
+    # No locale is set on purpose: prose here mixes British and American spelling, so only real
+    # misspellings are worth reporting, not one variant of a word rewritten into the other.
+    nolintlint:
+      require-explanation: true
+      require-specific: true
+    revive:
+      rules:
+        # `exported` is deliberately absent: requiring a comment on every exported identifier
+        # produced mostly restatements of the signature. Doc comments here earn their place by
+        # saying something the declaration does not.
+        - name: package-comments
+        - name: var-naming
+        - name: error-strings
+        - name: error-return
+        - name: context-as-argument
+        - name: receiver-naming
+        - name: indent-error-flow
+        - name: unreachable-code
+    staticcheck:
+      checks:
+        - all
+
+  exclusions:
+    generated: lax
+    presets:
+      - common-false-positives
+      - std-error-handling
+    rules:
+      - path: _test\.go
+        linters:
+          - errcheck
+          - gosec
+          - noctx
+          - unparam
+
+issues:
+  # Report every occurrence: a gate that hides duplicates lets them accumulate silently.
+  max-issues-per-linter: 0
+  max-same-issues: 0
+
+formatters:
+  enable:
+    - gofmt
+    - goimports
+  settings:
+    goimports:
+      local-prefixes:
+        - github.com/CharlesLB/rrd-analyzer

@@ -1,0 +1,232 @@
+# Default series classifier.
+#
+# Each [[match]] maps a series to a semantic type. Clauses that are set must all hold:
+#   file_any     a phrase appears in the file name (extension dropped)
+#   ds_any       a phrase appears in the data source name
+#   name_any     a phrase appears in either
+#   ds_type_any  the data source type is one of these (GAUGE, COUNTER, DERIVE, ABSOLUTE)
+#   exclude_any  no phrase appears in either
+# Names are split into lower-case tokens on anything that is not a letter or a digit. A phrase is
+# one or more words joined by "_" that must appear as consecutive tokens; a trailing "*" lets the
+# last word match as a prefix. The first entry that matches wins, so narrow entries come first.
+# Entries in the user's classifier.toml are tried before these.
+
+[[match]]
+type = "process.up"
+name_any = ["application_uptime", "app_uptime", "process_uptime", "service_uptime"]
+
+[[match]]
+type = "system.up"
+name_any = ["uptime"]
+
+[[match]]
+type = "swap.util"
+name_any = ["swap_used_percent", "swap_percent"]
+
+[[match]]
+type = "swap.used"
+name_any = ["swap_used"]
+
+[[match]]
+type = "swap.used"
+file_any = ["swap"]
+ds_any = ["used"]
+
+[[match]]
+type = "swap.free"
+name_any = ["swap_free"]
+
+[[match]]
+type = "memory.util"
+name_any = ["memory_used_percent", "mem_used_percent", "memory_percent", "memory_utilization"]
+
+[[match]]
+type = "memory.used"
+file_any = ["memory_used", "mem_used", "ram_used"]
+
+[[match]]
+type = "memory.used"
+file_any = ["memory", "mem", "ram"]
+ds_any = ["used"]
+
+[[match]]
+type = "memory.free"
+file_any = ["memory_free", "mem_free"]
+
+[[match]]
+type = "memory.free"
+file_any = ["memory", "mem", "ram"]
+ds_any = ["free"]
+
+[[match]]
+type = "memory.cached"
+file_any = ["memory_cached", "mem_cached"]
+
+[[match]]
+type = "memory.cached"
+file_any = ["memory", "mem", "ram"]
+ds_any = ["cached"]
+
+[[match]]
+type = "memory.buffered"
+file_any = ["memory_buffers", "memory_buffered", "mem_buffers"]
+
+[[match]]
+type = "memory.buffered"
+file_any = ["memory", "mem", "ram"]
+ds_any = ["buffered", "buffers"]
+
+[[match]]
+type = "memory.available"
+file_any = ["memory_available", "mem_available"]
+
+[[match]]
+type = "heap.objects"
+name_any = ["heap_objects"]
+
+[[match]]
+type = "runtime.heap.used"
+name_any = ["heap_inuse", "heap_in_use", "heap_used"]
+
+[[match]]
+type = "runtime.heap.alloc"
+name_any = ["heap_alloc", "heap_allocated"]
+
+[[match]]
+type = "runtime.heap"
+name_any = ["heap"]
+
+[[match]]
+type = "runtime.goroutines"
+name_any = ["goroutines", "num_goroutine"]
+
+[[match]]
+type = "runtime.gc.pause"
+name_any = ["gc_pause_last*", "gc_last_pause*", "gc_pause"]
+exclude_any = ["total"]
+
+[[match]]
+type = "runtime.gc.count"
+name_any = ["num_gc", "gc_count", "gc_cycles"]
+
+[[match]]
+type = "runtime.gc"
+name_any = ["gc"]
+
+[[match]]
+type = "cpu.user"
+name_any = ["cpu_user"]
+
+[[match]]
+type = "cpu.system"
+name_any = ["cpu_system"]
+
+[[match]]
+type = "cpu.iowait"
+name_any = ["cpu_iowait", "cpu_wait"]
+
+[[match]]
+type = "cpu.steal"
+name_any = ["cpu_steal"]
+
+[[match]]
+type = "cpu.idle"
+name_any = ["cpu_idle"]
+
+[[match]]
+type = "cpu.usage"
+name_any = ["cpu_utilization", "cpu_usage", "cpu_percent", "cpu_busy", "cpu_load"]
+
+[[match]]
+type = "load.1m"
+name_any = ["load_1min", "load_1m", "load1", "loadavg_1"]
+
+[[match]]
+type = "load.1m"
+file_any = ["load"]
+ds_any = ["shortterm"]
+
+[[match]]
+type = "load.avg"
+name_any = ["load", "loadavg", "load_average"]
+
+[[match]]
+type = "disk.util"
+name_any = ["disk_util*", "disk_busy", "disk_io_time", "io_time"]
+
+[[match]]
+type = "disk.space"
+name_any = ["disk_used_percent", "disk_percent", "df_complex", "df", "filesystem_used_percent"]
+
+[[match]]
+type = "disk.read"
+file_any = ["disk*", "sd*", "nvme*", "hdd*", "vd*", "xvd*", "md*"]
+name_any = ["read", "reads", "rd", "read_bytes"]
+
+[[match]]
+type = "disk.write"
+file_any = ["disk*", "sd*", "nvme*", "hdd*", "vd*", "xvd*", "md*"]
+name_any = ["write", "writes", "wr", "written", "write_bytes"]
+
+[[match]]
+type = "disk.used"
+name_any = ["disk_used"]
+
+[[match]]
+type = "disk.free"
+name_any = ["disk_available", "disk_free"]
+
+[[match]]
+type = "net.rx.packets"
+name_any = ["packets_recv", "packets_received", "rx_packets", "packets_in"]
+exclude_any = ["errors", "errs", "drops", "dropped", "drop"]
+
+[[match]]
+type = "net.tx.packets"
+name_any = ["packets_sent", "tx_packets", "packets_out"]
+exclude_any = ["errors", "errs", "drops", "dropped", "drop"]
+
+[[match]]
+type = "net.rx.packets"
+file_any = ["if_packets"]
+ds_any = ["rx"]
+
+[[match]]
+type = "net.tx.packets"
+file_any = ["if_packets"]
+ds_any = ["tx"]
+
+[[match]]
+type = "net.rx"
+file_any = ["network", "net", "interface", "if_octets", "if_packets", "eth*", "ens*", "enp*", "eno*", "wlan*"]
+name_any = ["recv", "rx", "received", "receive", "incoming", "inbound"]
+exclude_any = ["errors", "errs", "drops", "dropped", "drop"]
+
+[[match]]
+type = "net.tx"
+file_any = ["network", "net", "interface", "if_octets", "if_packets", "eth*", "ens*", "enp*", "eno*", "wlan*"]
+name_any = ["sent", "tx", "transmit", "transmitted", "outgoing", "outbound"]
+exclude_any = ["errors", "errs", "drops", "dropped", "drop"]
+
+[[match]]
+type = "search.nodes"
+file_any = ["elasticsearch*", "opensearch*"]
+name_any = ["node_count", "nodes", "number_of_nodes"]
+
+[[match]]
+type = "search.queries"
+file_any = ["elasticsearch*", "opensearch*"]
+name_any = ["search_rate", "queries_executed", "query_total", "query_rate"]
+
+[[match]]
+type = "search.indexing"
+file_any = ["elasticsearch*", "opensearch*"]
+name_any = ["indexing_rate", "index_total", "indexing_total"]
+
+[[match]]
+type = "http.requests"
+name_any = ["requests", "request", "req", "qps", "rps"]
+
+[[match]]
+type = "http.latency"
+name_any = ["latency", "response_time"]

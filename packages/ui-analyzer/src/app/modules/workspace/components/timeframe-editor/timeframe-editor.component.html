@@ -1,0 +1,21 @@
+<app-timeframe-popover [(tab)]="tab" [leftOffset]="leftOffset()" [isCompact]="isCompact()" (closeRequested)="closeRequested.emit()">
+  @if (tab() === tabs.QUICK) {
+    <app-quick-select
+      [(count)]="quickCount"
+      [(unit)]="quickUnit"
+      [activePresetKey]="activePresetKey()"
+      (applyRequested)="trailingCountApplied.emit()"
+      (presetChosen)="presetChosen.emit($event)"
+      (closeRequested)="closeRequested.emit()"
+    />
+  } @else {
+    <app-absolute-range
+      [(draft)]="absoluteDraft"
+      [window]="window()"
+      [bounds]="bounds()"
+      [notice]="absoluteNotice()"
+      (applyRequested)="applyAbsolute()"
+      (closeRequested)="closeRequested.emit()"
+    />
+  }
+</app-timeframe-popover>

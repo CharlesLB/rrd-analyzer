@@ -1,0 +1,134 @@
+@use 'mixins';
+
+:host {
+  display: block;
+}
+
+.color-mixer {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  animation: om-fade 0.16s ease both;
+
+  &-shade {
+    position: relative;
+    height: 132px;
+    border-radius: 9px;
+    cursor: crosshair;
+    touch-action: none;
+    box-shadow: inset 0 0 0 1px var(--line);
+
+    &:focus-visible {
+      outline: 2px solid var(--acc);
+      outline-offset: 2px;
+    }
+
+    &-thumb {
+      position: absolute;
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      border: 2px solid var(--bg2);
+      box-shadow:
+        0 0 0 1px var(--line2),
+        0 1px 4px color-mix(in srgb, var(--tx) 30%, transparent);
+      transform: translate(-50%, -50%);
+      pointer-events: none;
+    }
+  }
+
+  &-hue {
+    position: relative;
+    height: 12px;
+    border-radius: 999px;
+    cursor: pointer;
+    touch-action: none;
+    box-shadow: inset 0 0 0 1px var(--line);
+
+    &:focus-visible {
+      outline: 2px solid var(--acc);
+      outline-offset: 2px;
+    }
+
+    &-thumb {
+      position: absolute;
+      top: 50%;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      border: 2px solid var(--bg2);
+      box-shadow:
+        0 0 0 1px var(--line2),
+        0 1px 4px color-mix(in srgb, var(--tx) 30%, transparent);
+      transform: translate(-50%, -50%);
+      pointer-events: none;
+    }
+  }
+
+  &-row {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+  }
+
+  &-preview {
+    flex: none;
+    display: flex;
+    width: 44px;
+    height: 26px;
+    border-radius: 7px;
+    overflow: hidden;
+    box-shadow: inset 0 0 0 1px var(--line);
+
+    &-half {
+      flex: 1;
+    }
+  }
+
+  &-hex {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    @include mixins.text-input(7px, 3px 8px);
+
+    &:focus-within {
+      border-color: var(--acc);
+    }
+
+    &-label {
+      font-size: 11px;
+      color: var(--mut);
+    }
+
+    &-input {
+      flex: 1;
+      min-width: 0;
+      background: none;
+      border: none;
+      color: var(--tx);
+      font-family: var(--font-monospace);
+      font-size: 12px;
+      padding: 0;
+      outline: none;
+    }
+  }
+
+  &-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 7px;
+  }
+
+  &-cancel {
+    @include mixins.outline-button(8px, 4px 12px, 12px, var(--tx2));
+  }
+
+  &-apply {
+    @include mixins.primary-button;
+    border-radius: 8px;
+    font-size: 12px;
+    padding: 4px 14px;
+  }
+}

@@ -1,0 +1,16 @@
+<div
+  class="log-track-tip"
+  role="tooltip"
+  [style.left]="tip().left"
+  [style.transform]="tip().shift"
+>
+  <div class="log-track-tip-heading">
+    <span class="log-track-tip-dot" [style.background]="tip().color"></span>
+    <span class="log-track-tip-type">{{ tip().type }}</span>
+    <span class="log-track-tip-time">{{ tip().time }}</span>
+  </div>
+  <div class="log-track-tip-message">{{ tip().message }}</div>
+  @if (tip().more !== '') {
+    <div class="log-track-tip-more">{{ tip().more }}</div>
+  }
+</div>

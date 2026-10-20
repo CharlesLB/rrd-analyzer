@@ -1,0 +1,16 @@
+services:
+  landing:
+    build:
+      context: ../..
+      dockerfile: packages/ui-landing/Dockerfile
+    image: rrd-analyzer-landing
+    ports:
+      - "8080:8080"
+    restart: unless-stopped
+    read_only: true
+    tmpfs:
+      - /tmp
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL

@@ -1,0 +1,38 @@
+{
+  "name": "rrd-analyzer",
+  "version": "0.0.0",
+  "private": true,
+  "packageManager": "pnpm@10.2.1",
+  "engines": {
+    "node": ">=22",
+    "pnpm": ">=10"
+  },
+  "scripts": {
+    "start": "pnpm --filter @rrd-analyzer/ui-analyzer start",
+    "start:daemon": "pnpm --filter @rrd-analyzer/daemon start",
+    "start:daemon:scratch": "pnpm --filter @rrd-analyzer/daemon start:scratch",
+    "start:landing": "pnpm --filter @rrd-analyzer/ui-landing start",
+    "start:browser": "pnpm --filter @rrd-analyzer/ui-analyzer start:browser",
+    "build": "pnpm --recursive --sequential build",
+    "build:landing": "pnpm --filter @rrd-analyzer/ui-landing build",
+    "test": "pnpm --recursive --sequential test:ci",
+    "lint": "biome check . && eslint . && pnpm --filter @rrd-analyzer/daemon lint",
+    "lint:fix": "biome check --write . && eslint --fix . && pnpm --filter @rrd-analyzer/daemon lint:fix",
+    "format": "biome format --write . && pnpm --filter @rrd-analyzer/daemon format",
+    "format:check": "biome format . && pnpm --filter @rrd-analyzer/daemon format:check",
+    "typecheck": "pnpm --filter @rrd-analyzer/shared typecheck && pnpm --filter @rrd-analyzer/ui-analyzer typecheck && pnpm --filter @rrd-analyzer/ui-landing typecheck",
+    "design:check": "pnpm --filter @rrd-analyzer/ui-analyzer design:check",
+    "audit:deps": "pnpm audit --audit-level=high --prod && pnpm --filter @rrd-analyzer/daemon audit:vulns",
+    "verify": "pnpm format:check && pnpm lint && pnpm typecheck && pnpm test && pnpm test:e2e && pnpm build",
+    "test:e2e": "pnpm --filter @rrd-analyzer/ui-analyzer test:e2e && pnpm --filter @rrd-analyzer/ui-landing test:e2e",
+    "test:e2e:report": "pnpm --filter @rrd-analyzer/ui-analyzer test:e2e:report",
+    "e2e:install": "pnpm --filter @rrd-analyzer/ui-analyzer e2e:install"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^2.5.11",
+    "@stylistic/eslint-plugin": "^5.10.0",
+    "eslint": "^10.9.1",
+    "eslint-plugin-security": "^4.0.1",
+    "typescript-eslint": "^8.68.0"
+  }
+}

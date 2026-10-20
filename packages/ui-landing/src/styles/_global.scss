@@ -1,0 +1,53 @@
+@use 'mixins';
+
+html {
+  scroll-behavior: smooth;
+
+  @include mixins.reduced-motion {
+    scroll-behavior: auto;
+  }
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--tx);
+  font-family: 'Nunito', system-ui, -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  letter-spacing: -0.011em;
+  transition:
+    background-color 0.25s ease,
+    color 0.25s ease;
+
+  @include mixins.reduced-motion {
+    transition: none;
+  }
+}
+
+a {
+  color: var(--accT);
+  text-decoration: none;
+
+  &:hover {
+    color: var(--linkHover);
+  }
+}
+
+button {
+  font-family: inherit;
+}
+
+a:focus-visible,
+button:focus-visible {
+  outline: 2px solid var(--acc);
+  outline-offset: 2px;
+}
+
+::selection {
+  background: var(--selectionFill);
+  color: var(--selectionInk);
+}
+
+.app-visually-hidden {
+  @include mixins.visually-hidden;
+}

@@ -1,0 +1,13 @@
+@use 'mixins';
+
+:host {
+  display: block;
+}
+
+.theme-icon {
+  @include mixins.stroked-icon(2);
+
+  &-half {
+    fill: currentColor;
+  }
+}

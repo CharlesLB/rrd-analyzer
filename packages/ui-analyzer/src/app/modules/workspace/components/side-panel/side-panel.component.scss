@@ -1,0 +1,42 @@
+@use 'mixins';
+
+:host {
+  width: var(--side-panel-width);
+  flex: none;
+  border-left: 1px solid var(--line);
+  background: var(--bg2);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  animation: om-fade 0.22s ease both;
+}
+
+:host(.side-panel-compact) {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 30;
+  width: min(var(--side-panel-width), 100%);
+}
+
+.side-panel {
+  &-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    height: 38px;
+    padding: var(--side-panel-header-padding, 0 10px 0 14px);
+    border-bottom: 1px solid var(--line);
+    flex: none;
+  }
+
+  &-title {
+    font-size: 13px;
+    font-weight: 700;
+  }
+
+  &-close {
+    @include mixins.icon-button(var(--tx), 0 4px);
+  }
+}

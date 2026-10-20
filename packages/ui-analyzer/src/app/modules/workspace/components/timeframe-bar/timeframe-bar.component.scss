@@ -1,0 +1,46 @@
+@use 'mixins';
+
+:host {
+  display: block;
+  flex: none;
+  position: relative;
+  z-index: 40;
+}
+
+.timeframe-bar {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  padding: 0 12px;
+
+  &-back {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 26px;
+    height: 26px;
+    border: 1px solid var(--line);
+    border-radius: 9px;
+    background: none;
+    color: var(--tx2);
+    font-size: 15px;
+    cursor: pointer;
+    flex: none;
+    padding: 0 0 2px;
+
+    &:hover {
+      border-color: var(--accLine);
+      color: var(--tx);
+    }
+  }
+
+  &-divider {
+    width: 1px;
+    height: 19px;
+    background: var(--line);
+    flex: none;
+  }
+}
+

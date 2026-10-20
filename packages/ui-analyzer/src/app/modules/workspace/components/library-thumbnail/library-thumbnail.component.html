@@ -1,0 +1,22 @@
+<div
+  class="library-thumbnail"
+  appPressable
+  [class.library-thumbnail-on-canvas]="entry().isOnCanvas"
+  [class.library-thumbnail-active]="entry().isActive"
+  draggable="true"
+  [title]="tip()"
+  (dragstart)="startDrag($event)"
+  (dragend)="dragEnded.emit()"
+  (click)="opened.emit(entry().series.id)"
+  (contextmenu)="openContextMenu($event)"
+>
+  <div class="library-thumbnail-head">
+    <span class="library-thumbnail-dot"></span>
+    <span class="library-thumbnail-name">{{ entry().series.label }}</span>
+    <span class="spacer"></span>
+    <span class="library-thumbnail-unit">{{ entry().series.unit }}</span>
+  </div>
+  <div class="library-thumbnail-spark">
+    <app-sparkline [samples]="entry().samples" [color]="entry().series.color" [showsAreaFill]="showsAreaFill()" />
+  </div>
+</div>

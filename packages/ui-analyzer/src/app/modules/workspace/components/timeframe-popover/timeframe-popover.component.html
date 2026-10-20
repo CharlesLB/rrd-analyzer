@@ -1,0 +1,12 @@
+<div class="timeframe-popover-backdrop" (click)="closeRequested.emit()"></div>
+<div class="timeframe-popover" appFocusScope [class.timeframe-popover-compact]="isCompact()" [style.left]="anchoredLeft()">
+  <div class="timeframe-popover-tabs">
+    @for (button of tabButtons(); track button.tab) {
+      <button class="timeframe-popover-tab" [class.timeframe-popover-tab-active]="tab() === button.tab" type="button" (click)="showTab(button.tab)">
+        {{ button.label }}
+      </button>
+    }
+  </div>
+  <div class="timeframe-popover-divider"></div>
+  <ng-content />
+</div>

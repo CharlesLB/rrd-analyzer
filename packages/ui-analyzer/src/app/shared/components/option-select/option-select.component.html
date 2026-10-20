@@ -1,0 +1,17 @@
+<button
+  #trigger
+  class="option-select-trigger"
+  type="button"
+  aria-haspopup="listbox"
+  [attr.aria-expanded]="isOpen()"
+  [class.option-select-trigger-compact]="size() === compactSize"
+  [class.option-select-trigger-open]="isOpen()"
+  (click)="toggle()"
+  (keydown.arrowDown)="openFromKeyboard($event)"
+>
+  <span>{{ selectedLabel() }}</span>
+  <span class="option-select-caret">{{ caret }}</span>
+</button>
+@if (isOpen()) {
+  <app-option-menu class="option-select-menu" [items]="items()" [selected]="selected()" [size]="size()" (chosen)="choose($event)" />
+}

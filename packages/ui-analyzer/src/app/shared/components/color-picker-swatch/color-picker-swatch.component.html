@@ -1,0 +1,12 @@
+<button
+  #swatch
+  class="color-picker-swatch"
+  [class.color-picker-swatch-open]="isOpen()"
+  type="button"
+  [title]="label()"
+  [attr.aria-label]="label()"
+  [attr.aria-expanded]="isOpen()"
+  (click)="pickRequested.emit(anchorOf(swatch))"
+>
+  <app-color-swatch [color]="color()" [size]="size()" />
+</button>

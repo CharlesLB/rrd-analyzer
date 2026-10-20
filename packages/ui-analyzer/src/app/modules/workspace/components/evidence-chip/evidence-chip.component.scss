@@ -1,0 +1,79 @@
+@use 'mixins';
+
+:host {
+  display: contents;
+}
+
+.evidence-chip {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 6px 8px;
+  cursor: pointer;
+  background: var(--surf);
+
+  &:hover {
+    border-color: var(--accLine);
+  }
+
+  &-head {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  &-badge {
+    font-size: 10px;
+    font-weight: 700;
+    border: 1px solid;
+    border-radius: 5px;
+    padding: 1px 5px;
+    max-width: 132px;
+    @include mixins.text-ellipsis;
+  }
+
+  &-glyph {
+    font-size: 11px;
+    font-weight: 700;
+  }
+
+  &-values {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    margin-top: 4px;
+    font-family: var(--font-monospace);
+    font-size: 11px;
+    font-variant-numeric: tabular-nums;
+  }
+
+  &-span-values {
+    color: var(--tx);
+    flex: 0 0 auto;
+    white-space: nowrap;
+  }
+
+  &-source {
+    color: var(--mut);
+    font-size: 10px;
+    flex: 1 1 0;
+    min-width: 0;
+    max-width: 44%;
+    text-align: right;
+    direction: rtl;
+    @include mixins.text-ellipsis;
+  }
+
+  &-when {
+    margin-top: 2px;
+    font-family: var(--font-monospace);
+    font-size: 10.5px;
+    font-variant-numeric: tabular-nums;
+    color: var(--tx2);
+    @include mixins.text-ellipsis;
+  }
+
+  &-plot {
+    margin-top: 5px;
+    @include mixins.outline-button(6px, 2px 7px, 10.5px, var(--accT));
+  }
+}

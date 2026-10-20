@@ -1,0 +1,76 @@
+@use 'mixins';
+
+:host {
+  @include mixins.routed-page;
+}
+
+.library {
+  &-scroll {
+    flex: 1;
+    overflow-y: auto;
+    padding: 26px 19px;
+  }
+
+  &-column {
+    max-width: 880px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 9px;
+    animation: om-fade-up 0.5s mixins.$ease-settle both;
+  }
+
+  &-heading {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-height: 30px;
+    margin-bottom: 2px;
+  }
+
+  &-caption {
+    flex: 1;
+    @include mixins.caption-text;
+  }
+
+  &-filter {
+    width: 240px;
+    max-width: 60%;
+  }
+
+  &-failure {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 13.5px;
+    color: var(--danger);
+
+    &-retry {
+      @include mixins.outline-button(9px, 4px 11px, 13px, var(--tx2));
+    }
+  }
+
+  &-note {
+    font-size: 13.5px;
+    color: var(--mut);
+    padding: 14px 2px;
+  }
+
+  &-version {
+    position: fixed;
+    right: 14px;
+    bottom: 10px;
+    font-family: var(--font-monospace);
+    font-size: 11px;
+    color: var(--mut);
+  }
+
+  &-dialog-failure {
+    position: fixed;
+    bottom: 16px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 13.5px;
+    color: var(--danger);
+  }
+}

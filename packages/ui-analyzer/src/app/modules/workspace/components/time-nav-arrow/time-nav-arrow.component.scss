@@ -1,0 +1,87 @@
+:host {
+  display: contents;
+}
+
+.time-nav-arrow {
+  position: relative;
+  height: 100%;
+
+  &-button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 100%;
+    padding: 0;
+    background: none;
+    border: none;
+    color: var(--tx2);
+    cursor: pointer;
+
+    &:hover {
+      background: var(--surf2);
+    }
+
+    &[aria-disabled='true'] {
+      color: var(--line2);
+      cursor: default;
+      pointer-events: none;
+    }
+  }
+
+  &-icon {
+    width: 14px;
+    height: 14px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.8;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+
+  &-backward &-button {
+    border-right: 1px solid var(--line);
+    border-radius: 10px 0 0 10px;
+  }
+
+  &-forward &-button {
+    border-left: 1px solid var(--line);
+    border-radius: 0 10px 10px 0;
+  }
+
+  &-tip {
+    animation: om-fade 0.14s ease both;
+    position: absolute;
+    top: 38px;
+    z-index: 60;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 7px 10px;
+    background: var(--bg2);
+    border: 1px solid var(--line2);
+    border-radius: 10px;
+    white-space: nowrap;
+    pointer-events: none;
+
+    &-title {
+      font-size: 12.5px;
+      font-weight: 700;
+      color: var(--tx);
+    }
+
+    &-detail {
+      font-size: 11.5px;
+      color: var(--mut);
+      font-variant-numeric: tabular-nums;
+    }
+  }
+
+  &-backward &-tip {
+    left: 0;
+  }
+
+  &-forward &-tip {
+    right: 0;
+  }
+}

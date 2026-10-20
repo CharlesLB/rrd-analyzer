@@ -1,0 +1,45 @@
+@let demo = texts().demo;
+<section class="demo-section" [id]="sectionId">
+  <app-section-heading class="demo-section-heading" [eyebrow]="demo.eyebrow" [title]="demo.title" [introduction]="demo.introduction" />
+
+  <ul class="demo-section-privacy">
+    @for (point of demo.privacyPoints; track point.title) {
+      <li class="demo-section-privacy-point">
+        <h3 class="demo-section-privacy-title">{{ point.title }}</h3>
+        <p class="demo-section-privacy-body">{{ point.body }}</p>
+      </li>
+    }
+    <li class="demo-section-privacy-point">
+      <h3 class="demo-section-privacy-title">{{ demo.offlineTitle }}</h3>
+      <p class="demo-section-privacy-body">{{ demo.offlineBody }}</p>
+      <a class="demo-section-offline" [href]="downloadAnchor">
+        {{ demo.offlineDownload }}
+        <app-arrow-right-icon class="demo-section-offline-icon" />
+      </a>
+    </li>
+  </ul>
+
+  <app-browser-frame class="demo-section-frame" [title]="demo.frameTitle" [isTitleCentered]="true">
+    <div class="demo-section-stage">
+      <a class="demo-section-poster" [href]="appLink">
+        <img class="demo-section-poster-image" [src]="poster.source" alt="" loading="lazy" decoding="async" />
+        <span class="demo-section-poster-content">
+          <span class="demo-section-play"><app-play-icon class="demo-section-play-icon" /></span>
+          <span class="demo-section-open">{{ demo.open }}</span>
+          <span class="demo-section-open-detail">{{ demo.openDetail }}</span>
+        </span>
+      </a>
+      <div class="demo-section-notice">
+        <img class="demo-section-notice-image" [src]="poster.source" alt="" loading="lazy" decoding="async" />
+        <div class="demo-section-notice-card">
+          <div class="demo-section-notice-title">{{ demo.smallScreenTitle }}</div>
+          <div class="demo-section-notice-body">{{ demo.smallScreenBody }}</div>
+          <a class="demo-section-notice-open" [href]="appLink">
+            <app-play-icon class="demo-section-notice-open-icon" />
+            {{ demo.smallScreenOpen }}
+          </a>
+        </div>
+      </div>
+    </div>
+  </app-browser-frame>
+</section>

@@ -1,0 +1,54 @@
+@use 'mixins';
+
+:host {
+  display: block;
+}
+
+.feature-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 48px 64px;
+
+  &-mirrored {
+    flex-direction: row-reverse;
+    flex-wrap: wrap-reverse;
+  }
+
+  &-text {
+    flex: 1 1 320px;
+    min-width: 0;
+    max-width: 420px;
+  }
+
+  &-ordinal {
+    font-size: 13px;
+    font-weight: 800;
+    color: var(--mut);
+    font-variant-numeric: tabular-nums;
+  }
+
+  &-title {
+    font-size: 30px;
+    line-height: 1.15;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    margin: 10px 0 0;
+  }
+
+  &-screenshot {
+    @include mixins.framed-surface(14px);
+    flex: 1.6 1 420px;
+    min-width: 0;
+
+    &-dark-surround {
+      background: var(--exportSurround);
+    }
+  }
+
+  &-image {
+    display: block;
+    width: 100%;
+    height: auto;
+  }
+}

@@ -1,0 +1,37 @@
+@use 'mixins';
+
+:host {
+  display: contents;
+}
+
+.option-select {
+  &-trigger {
+    @include mixins.select-trigger(9px, 6px 11px, 13px, 8px);
+
+    &-open {
+      border-color: var(--accLine);
+    }
+
+    &-compact {
+      gap: 6px;
+      border-radius: 8px;
+      font-size: 11.5px;
+      padding: 3px 8px;
+    }
+  }
+
+  &-caret {
+    color: var(--mut);
+    font-size: 9px;
+  }
+
+  &-trigger-compact &-caret {
+    font-size: 8px;
+  }
+
+  &-menu {
+    top: var(--option-select-menu-top);
+    left: var(--option-select-menu-left, 0);
+    right: var(--option-select-menu-right, auto);
+  }
+}

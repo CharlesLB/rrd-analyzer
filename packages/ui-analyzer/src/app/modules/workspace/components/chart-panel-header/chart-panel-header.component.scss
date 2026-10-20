@@ -1,0 +1,143 @@
+@use 'mixins';
+
+:host {
+  display: contents;
+}
+
+.chart-panel-header {
+  cursor: grab;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 42px;
+  padding: 0 6px 0 11px;
+  border-bottom: 1px solid var(--line);
+  flex: none;
+
+  &-swatches {
+    display: flex;
+    gap: 3px;
+    flex: none;
+  }
+
+  &-title {
+    font-size: 13px;
+    font-weight: 600;
+    min-width: 60px;
+    @include mixins.text-ellipsis;
+  }
+
+  &-unit {
+    font-size: 11px;
+    color: var(--mut);
+    flex: none;
+  }
+
+  &-stats {
+    display: flex;
+    flex-direction: row-reverse;
+    flex-wrap: wrap;
+    justify-content: flex-start;
+    align-items: center;
+    column-gap: 2px;
+    height: 24px;
+    overflow: hidden;
+    min-width: 0;
+    flex: 0 1 auto;
+    font-size: 12px;
+    color: var(--mut);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+
+    &-empty {
+      flex: none;
+    }
+
+    &-unit {
+      flex: none;
+      font-size: 12px;
+      color: var(--mut);
+      padding-right: 4px;
+    }
+  }
+
+  &-stat {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    height: 24px;
+    flex: none;
+
+    &-chip {
+      display: flex;
+      align-items: center;
+      gap: 3px;
+      padding: 1px 4px;
+      background: none;
+      border: 1px solid transparent;
+      border-radius: 6px;
+      color: inherit;
+      font-size: inherit;
+      font-variant-numeric: inherit;
+      cursor: pointer;
+
+      &:hover {
+        border-color: var(--accLine);
+      }
+
+      &-active {
+        background: var(--accBg);
+        border-color: var(--accLine);
+
+        .chart-panel-header-stat-label,
+        .chart-panel-header-stat-value {
+          color: var(--accT);
+        }
+      }
+    }
+
+    &-label {
+      color: var(--mut);
+    }
+
+    &-value {
+      font-weight: 600;
+      color: var(--tx2);
+
+      &-current {
+        font-weight: 700;
+        color: var(--tx);
+      }
+    }
+  }
+
+  &-export,
+  &-series {
+    background: none;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    color: var(--mut);
+    font-size: 11.5px;
+    cursor: pointer;
+    padding: 3px 7px;
+    flex: none;
+    line-height: 1.25;
+    white-space: nowrap;
+
+    &-open {
+      background: var(--accBg);
+      border-color: var(--acc);
+      color: var(--accT);
+    }
+
+    &:hover {
+      border-color: var(--acc);
+      color: var(--tx);
+    }
+  }
+
+  &-remove {
+    flex: none;
+    @include mixins.icon-button(var(--danger), 0 5px);
+  }
+}

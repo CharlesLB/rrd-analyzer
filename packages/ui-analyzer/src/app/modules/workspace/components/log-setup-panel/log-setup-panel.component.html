@@ -1,0 +1,74 @@
+<app-side-panel
+  class="log-setup-panel"
+  appFocusScope
+  [title]="texts().logs.setup.title"
+  [closeLabel]="texts().logs.setup.close"
+  [width]="panelWidth"
+  (closeRequested)="closeRequested.emit()"
+>
+  <span sidePanelMeta class="log-setup-panel-step">{{ stepLabel() }}</span>
+  <div class="log-setup-panel-body">
+    @switch (status()) {
+      @case (statuses.LOADING) {
+        <div class="log-setup-panel-loading">
+          <span class="log-setup-panel-loading-file">{{ fileName() }}</span>
+          <span class="log-setup-panel-loading-text">{{ texts().logs.setup.parsing }}</span>
+          <div class="log-setup-panel-progress"><div class="log-setup-panel-progress-fill"></div></div>
+        </div>
+      }
+      @case (statuses.FAILED) {
+        <app-log-setup-failure [failure]="failure()" [fileName]="fileName()" (filePicked)="filePicked.emit($event)" />
+      }
+      @default {
+        <app-log-file-summary [fileName]="fileName()" [meta]="fileMeta()" (filePicked)="filePicked.emit($event)" (removeRequested)="removeRequested.emit()" />
+        @for (note of notes(); track $index) {
+          <div class="log-setup-panel-note">{{ note }}</div>
+        }
+        <div class="log-setup-panel-caption">{{ texts().logs.setup.mapCaption }}</div>
+        @for (row of fieldRows(); track row.role) {
+          <app-log-field-row
+            [label]="row.label"
+            [hint]="row.hint"
+            [path]="row.path"
+            [isDetected]="row.isDetected"
+            [isOpen]="row.isOpen"
+            [validation]="row.validation"
+            [options]="fieldOptions()"
+            (toggled)="toggleFieldPicker(row.role)"
+            (chosen)="chooseField(row.role, $event)"
+          />
+        }
+        @if (colorRows().length > 0) {
+          <div class="log-setup-panel-colors">
+            <span class="log-setup-panel-colors-caption">{{ texts().logs.setup.colorsCaption }}</span>
+            <span class="spacer"></span>
+            @if (hasChosenColors()) {
+              <button class="log-setup-panel-colors-reset" type="button" (click)="colorsReset.emit()">{{ texts().logs.setup.resetColors }}</button>
+            }
+          </div>
+          <div class="log-setup-panel-color-list">
+            @for (row of colorRows(); track row.name) {
+              <app-log-color-row
+                [name]="row.name"
+                [count]="row.count"
+                [color]="row.color"
+                [isOpen]="row.isOpen"
+                [canReset]="row.canReset"
+                (toggled)="toggleColorPicker(row.name)"
+                (colorChosen)="colorChosen.emit({ type: row.name, color: $event })"
+                (resetRequested)="colorReset.emit(row.name)"
+              />
+            }
+          </div>
+        }
+      }
+    }
+  </div>
+  @if (validation() !== null) {
+    <div class="log-setup-panel-footer">
+      <span class="log-setup-panel-hint" [class.log-setup-panel-hint-blocked]="isBlocked()">{{ confirmHint() }}</span>
+      <button class="log-setup-panel-cancel" type="button" (click)="closeRequested.emit()">{{ texts().logs.setup.cancel }}</button>
+      <button class="log-setup-panel-confirm" type="button" [disabled]="isBlocked()" (click)="confirmed.emit()">{{ confirmLabel() }}</button>
+    </div>
+  }
+</app-side-panel>

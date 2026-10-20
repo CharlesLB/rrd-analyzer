@@ -1,0 +1,79 @@
+@mixin light-theme {
+  --bg: #f4f4f2;
+  --bg2: #ffffff;
+  --surf: #fafaf9;
+  --surf2: #efefed;
+  --line: #e3e3e0;
+  --line2: #cfcfcb;
+  --tx: #1b1d1f;
+  --tx2: #4e5357;
+  --mut: #767b80;
+  --acc: #005581;
+  --accInk: #fffffa;
+  --accT: #005581;
+  --accBg: #eaf6fd;
+  --accLine: #b9ddf0;
+  --linkHover: #1e88c0;
+  --shadow: 0 1px 2px rgba(20, 25, 30, 0.05), 0 18px 50px -18px rgba(0, 60, 95, 0.28);
+  --lightThemeDisplay: block;
+  --darkThemeDisplay: none;
+}
+
+@mixin dark-theme {
+  --bg: #101113;
+  --bg2: #17181b;
+  --surf: #1e2023;
+  --surf2: #26282c;
+  --line: #26282c;
+  --line2: #35383d;
+  --tx: #fffffa;
+  --tx2: #c4c7cb;
+  --mut: #959aa0;
+  --acc: #72cdf4;
+  --accInk: #0b2c3e;
+  --accT: #72cdf4;
+  --accBg: #12242e;
+  --accLine: #1f4a60;
+  --linkHover: #a9e0f8;
+  --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 18px 50px -18px rgba(0, 0, 0, 0.7);
+  --lightThemeDisplay: none;
+  --darkThemeDisplay: block;
+}
+
+:root {
+  @include light-theme;
+
+  --peak: #ffd200;
+  --peakInk: #1b1d1f;
+  --peakUnderline: linear-gradient(transparent 62%, color-mix(in srgb, var(--peak) 70%, transparent) 62%);
+  --headerFill: color-mix(in srgb, var(--bg) 86%, transparent);
+  --accGlow: color-mix(in srgb, var(--acc) 70%, transparent);
+  --accGlowStrong: color-mix(in srgb, var(--acc) 80%, transparent);
+  --iconTint: color-mix(in srgb, currentColor 12%, transparent);
+  --raisedShadow: 0 20px 50px -20px rgba(0, 0, 0, 0.45);
+  --selectionFill: #ffe552;
+  --selectionInk: #005581;
+  --logFatal: #8e2a22;
+  --logError: #c8402f;
+  --logWarning: #d99a1e;
+  --logInfo: #1d80ac;
+  --logDebug: #84898e;
+  --donationMark: #d9485f;
+  --donationMarkInk: #fffffa;
+  --exportSurround: #3a3d41;
+  --font-monospace: ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    @include dark-theme;
+  }
+}
+
+.light {
+  @include light-theme;
+}
+
+.dark {
+  @include dark-theme;
+}

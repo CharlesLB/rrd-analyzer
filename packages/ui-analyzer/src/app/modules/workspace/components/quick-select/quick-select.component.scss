@@ -1,0 +1,63 @@
+@use 'mixins';
+
+.quick-select {
+  padding: 14px;
+
+  &-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  &-last {
+    font-size: 13px;
+    color: var(--tx2);
+  }
+
+  &-count {
+    width: 56px;
+    @include mixins.text-input(9px, 6px 9px);
+    font-variant-numeric: tabular-nums;
+
+    &-invalid {
+      border-color: var(--danger);
+    }
+  }
+
+  &-problem {
+    font-size: 11.5px;
+    color: var(--danger);
+  }
+
+  &-unit {
+    position: relative;
+    --option-select-menu-top: 35px;
+    --option-menu-width: 128px;
+  }
+
+  &-apply {
+    @include mixins.primary-button;
+  }
+
+  &-caption {
+    margin: 15px 0 8px;
+    @include mixins.caption-text;
+  }
+
+  &-presets {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 6px;
+  }
+
+  &-preset {
+    white-space: nowrap;
+    @include mixins.outline-button(9px, 7px 4px, 13px, var(--tx2));
+
+    &-active {
+      background: var(--accBg);
+      border-color: var(--accLine);
+      color: var(--accT);
+    }
+  }
+}

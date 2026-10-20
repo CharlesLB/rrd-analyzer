@@ -1,0 +1,9 @@
+<div class="log-file-summary">
+  <span class="log-file-summary-badge">{{ badge() }}</span>
+  <div class="log-file-summary-texts">
+    <span class="log-file-summary-name" [title]="fileName()">{{ fileName() }}</span>
+    <span class="log-file-summary-meta">{{ meta() }}</span>
+  </div>
+  <button class="log-file-summary-replace" type="button" [appFilePick]="accept" (filePicked)="filePicked.emit($event)">{{ texts().logs.setup.replace }}</button>
+  <button class="log-file-summary-remove" type="button" (click)="removeRequested.emit()">{{ texts().logs.setup.remove }}</button>
+</div>

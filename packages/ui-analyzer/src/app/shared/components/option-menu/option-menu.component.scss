@@ -1,0 +1,52 @@
+@use 'mixins';
+
+:host {
+  display: block;
+  position: absolute;
+  z-index: 70;
+}
+
+.option-menu {
+  width: var(--option-menu-width, auto);
+  animation: om-pop 0.18s ease both;
+  @include mixins.menu-surface(11px);
+  padding: 4px;
+
+  &-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    @include mixins.menu-item(8px, 7px 10px);
+    color: var(--tx);
+    font-size: 13px;
+
+    &-selected {
+      background: var(--accBg);
+      color: var(--accT);
+    }
+  }
+
+  &-label {
+    flex: 1;
+  }
+
+  &-check {
+    color: var(--accT);
+    font-size: 11px;
+  }
+
+  &-compact {
+    animation-duration: 0.16s;
+    border-radius: 10px;
+  }
+
+  &-compact &-item {
+    border-radius: 7px;
+    font-size: 12px;
+    padding: 6px 9px;
+  }
+
+  &-compact &-check {
+    font-size: 10px;
+  }
+}

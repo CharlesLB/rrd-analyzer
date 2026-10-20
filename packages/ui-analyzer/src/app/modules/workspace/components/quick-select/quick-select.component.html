@@ -1,0 +1,31 @@
+<div class="quick-select">
+  <div class="quick-select-row">
+    <span class="quick-select-last">{{ texts().timeframePopover.lastLabel }}</span>
+    <input
+      class="quick-select-count"
+      [class.quick-select-count-invalid]="isCountInvalid()"
+      [attr.aria-label]="texts().timeframePopover.lastLabel"
+      [attr.aria-invalid]="isCountInvalid()"
+      [value]="count()"
+      (input)="typeCount($event)"
+      (keydown.enter)="apply()"
+      (keydown.escape)="closeRequested.emit()"
+    />
+    <div class="quick-select-unit">
+      <app-option-select [items]="unitItems()" [selected]="unit()" (chosen)="chooseUnit($event)" />
+    </div>
+    <span class="spacer"></span>
+    <button class="quick-select-apply" type="button" (click)="apply()">{{ texts().timeframePopover.apply }}</button>
+  </div>
+  @if (isCountInvalid()) {
+    <div class="quick-select-problem" role="alert">{{ texts().timeframePopover.invalidCount }}</div>
+  }
+  <div class="quick-select-caption">{{ texts().timeframePopover.commonlyUsed }}</div>
+  <div class="quick-select-presets">
+    @for (preset of presets; track preset.key) {
+      <button class="quick-select-preset" [class.quick-select-preset-active]="preset.key === activePresetKey()" type="button" (click)="presetChosen.emit(preset.milliseconds)">
+        {{ texts().timeframePopover.presets[preset.key] }}
+      </button>
+    }
+  </div>
+</div>

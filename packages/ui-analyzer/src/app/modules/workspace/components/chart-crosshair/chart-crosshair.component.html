@@ -1,0 +1,16 @@
+<div class="chart-crosshair-line" [style.left]="left()"></div>
+@for (reading of readings(); track reading.seriesId) {
+  <div class="chart-crosshair-dot" [style.left]="left()" [style.top]="reading.top" [style.background]="reading.color"></div>
+}
+<div class="chart-crosshair-tip" [class.chart-crosshair-tip-flipped]="isFlipped()" [style.left]="left()" [style.top]="tipTop()">
+  <span class="chart-crosshair-tip-time">{{ time() }}</span>
+  @for (reading of readings(); track reading.seriesId) {
+    <div class="chart-crosshair-tip-reading">
+      <app-color-swatch [color]="reading.color" [size]="swatchSize" />
+      <span class="chart-crosshair-tip-value">{{ reading.value }}</span>
+    </div>
+  }
+  @if (isOverGap()) {
+    <span class="chart-crosshair-tip-gap">{{ texts().canvas.noData }}</span>
+  }
+</div>

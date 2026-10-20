@@ -1,0 +1,54 @@
+<div class="json-viewer">
+  @if (isSearchOpen()) {
+    <div class="json-viewer-search" role="search">
+      <app-search-field
+        class="json-viewer-search-field"
+        [size]="searchFieldSize"
+        [isMonospace]="true"
+        [matchesNothing]="hasNoResults()"
+        [placeholder]="texts().logs.detail.searchPlaceholder"
+        [history]="queryHistory()"
+        [(value)]="query"
+        (committed)="queryCommitted.emit($event)"
+        (forgotten)="queryForgotten.emit($event)"
+        (keydown)="respondToKey($event)"
+      />
+      <span class="json-viewer-search-counter" [class.json-viewer-search-counter-empty]="hasNoResults()" aria-live="polite">{{ matchCounter() }}</span>
+      <button
+        class="json-viewer-search-step"
+        type="button"
+        [title]="previousMatchTip()"
+        [attr.aria-label]="previousMatchTip()"
+        (click)="matchStepped.emit(directions.BACKWARD)"
+      >
+        {{ glyphs.UPWARD }}
+      </button>
+      <button
+        class="json-viewer-search-step"
+        type="button"
+        [title]="texts().logs.detail.nextMatch"
+        [attr.aria-label]="texts().logs.detail.nextMatch"
+        (click)="matchStepped.emit(directions.FORWARD)"
+      >
+        {{ glyphs.DOWNWARD }}
+      </button>
+      <button
+        class="json-viewer-search-close"
+        type="button"
+        [title]="texts().logs.detail.closeSearch"
+        [attr.aria-label]="texts().logs.detail.closeSearch"
+        (click)="searchClosed.emit()"
+      >
+        {{ glyphs.CLOSE }}
+      </button>
+    </div>
+  }
+  <div #scroller class="json-viewer-lines" [class.json-viewer-lines-searching]="isSearchOpen()">
+    @for (row of rows(); track row.number) {
+      <div class="json-viewer-line">
+        <span class="json-viewer-number">{{ row.number }}</span>
+        <span class="json-viewer-text">@for (segment of row.segments; track $index) {<span [class]="segment.className">{{ segment.text }}</span>}</span>
+      </div>
+    }
+  </div>
+</div>

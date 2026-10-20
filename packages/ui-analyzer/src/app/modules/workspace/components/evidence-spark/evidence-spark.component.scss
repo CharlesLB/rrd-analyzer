@@ -1,0 +1,15 @@
+:host {
+  display: contents;
+}
+
+.evidence-spark {
+  width: 46px;
+  height: 15px;
+  flex: none;
+
+  &-line {
+    stroke-width: 1.3;
+    fill: none;
+    vector-effect: non-scaling-stroke;
+  }
+}

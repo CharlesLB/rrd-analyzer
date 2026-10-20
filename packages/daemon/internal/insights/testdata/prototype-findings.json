@@ -1,0 +1,556 @@
+{
+  "anchorMilliseconds": 1788026400000,
+  "dataStartMilliseconds": 1785434400000,
+  "stepMilliseconds": 300000,
+  "series": [
+    {
+      "id": "f0",
+      "file": "atlas_runtime_goroutines.rrd",
+      "name": "atlas_runtime_goroutines",
+      "label": "runtime_goroutines",
+      "unit": "",
+      "color": "#005581"
+    },
+    {
+      "id": "f1",
+      "file": "atlas_runtime_gc_pause.rrd",
+      "name": "atlas_runtime_gc_pause",
+      "label": "runtime_gc_pause",
+      "unit": "ms",
+      "color": "#E5B800"
+    },
+    {
+      "id": "f2",
+      "file": "atlas_runtime_heap_objects.rrd",
+      "name": "atlas_runtime_heap_objects",
+      "label": "runtime_heap_objects",
+      "unit": "",
+      "color": "#3FB3E8"
+    },
+    {
+      "id": "f3",
+      "file": "atlas_system_cpu_user.rrd",
+      "name": "atlas_system_cpu_user",
+      "label": "system_cpu_user",
+      "unit": "%",
+      "color": "#8A6D00"
+    },
+    {
+      "id": "f4",
+      "file": "atlas_system_cpu_system.rrd",
+      "name": "atlas_system_cpu_system",
+      "label": "system_cpu_system",
+      "unit": "%",
+      "color": "#1D80AC"
+    },
+    {
+      "id": "f5",
+      "file": "atlas_system_memory_used.rrd",
+      "name": "atlas_system_memory_used",
+      "label": "system_memory_used",
+      "unit": "B",
+      "color": "#F2CD4E"
+    },
+    {
+      "id": "f6",
+      "file": "atlas_system_network_packets_sent.rrd",
+      "name": "atlas_system_network_packets_sent",
+      "label": "system_network_packets_sent",
+      "unit": "pkt/s",
+      "color": "#123F58"
+    },
+    {
+      "id": "f7",
+      "file": "atlas_system_network_packets_recv.rrd",
+      "name": "atlas_system_network_packets_recv",
+      "label": "system_network_packets_recv",
+      "unit": "pkt/s",
+      "color": "#C79B1E"
+    },
+    {
+      "id": "f8",
+      "file": "atlas_http_requests_rate.rrd",
+      "name": "atlas_http_requests_rate",
+      "label": "http_requests_rate",
+      "unit": "req/s",
+      "color": "#72CDF4"
+    },
+    {
+      "id": "f9",
+      "file": "atlas_http_latency_p95.rrd",
+      "name": "atlas_http_latency_p95",
+      "label": "http_latency_p95",
+      "unit": "ms",
+      "color": "#6F94A6"
+    }
+  ],
+  "findings": {
+    "all": {
+      "window": null,
+      "findings": [
+        {
+          "id": "fd0",
+          "severity": "crit",
+          "title": "Process likely went down out of memory",
+          "fromMilliseconds": 1787030400000,
+          "untilMilliseconds": 1787055300000,
+          "inferred": true,
+          "match": "evidence order matches rule",
+          "cause": [
+            {
+              "text": "Heap objects and resident memory climbed for ",
+              "emphasis": false
+            },
+            {
+              "text": "3.1 h",
+              "emphasis": true
+            },
+            {
+              "text": " — memory reached ",
+              "emphasis": false
+            },
+            {
+              "text": "6.18 GiB",
+              "emphasis": true
+            },
+            {
+              "text": " — then all reporting stopped for ",
+              "emphasis": false
+            },
+            {
+              "text": "3.8 h",
+              "emphasis": true
+            },
+            {
+              "text": ". The process was likely killed out of memory; its end is inferred from the gap, not observed.",
+              "emphasis": false
+            }
+          ],
+          "evidence": [
+            {
+              "seriesLabel": "runtime_heap_objects",
+              "semantic": "heap.objects",
+              "source": "atlas_runtime_heap_objects.rrd",
+              "kind": "rise",
+              "fromIndex": 5320,
+              "untilIndex": 5356,
+              "fromMilliseconds": 1787030400000,
+              "untilMilliseconds": 1787041200000,
+              "fromValue": 1084056.438552585,
+              "toValue": 1373376.9833030328,
+              "sparkPath": "M0.0 11.1 L2.4 10.6 L4.8 10.2 L7.2 9.6 L9.6 8.9 L12.0 8.4 L14.4 8.2 L16.8 8.1 L19.2 7.6 L21.6 7.3 L24.0 6.9 L26.4 6.6 L28.8 6.1 L31.2 5.6 L33.6 5.2 L36.0 4.7 L38.4 4.2 L40.8 3.6 L43.2 3.3 L45.6 3.0 L48.0 2.6 L50.4 2.0 L52.8 8.2 L55.2 14.6 L57.6 18.0 L60.0 18.0"
+            },
+            {
+              "seriesLabel": "system_memory_used",
+              "semantic": "memory.used",
+              "source": "atlas_system_memory_used.rrd",
+              "kind": "rise",
+              "fromIndex": 5321,
+              "untilIndex": 5356,
+              "fromMilliseconds": 1787030700000,
+              "untilMilliseconds": 1787041200000,
+              "fromValue": 5625835727.304597,
+              "toValue": 6632664690.340441,
+              "sparkPath": "M0.0 18.0 L2.4 17.9 L4.8 17.4 L7.2 16.2 L9.6 14.9 L12.0 14.4 L14.4 13.6 L16.8 12.9 L19.2 12.5 L21.6 11.6 L24.0 10.3 L26.4 9.4 L28.8 7.9 L31.2 7.1 L33.6 5.3 L36.0 4.8 L38.4 4.9 L40.8 5.7 L43.2 5.9 L45.6 5.1 L48.0 3.2 L50.4 2.9 L52.8 2.0 L55.2 2.5"
+            },
+            {
+              "seriesLabel": "system_memory_used",
+              "semantic": "memory.used",
+              "source": "atlas_system_memory_used.rrd",
+              "kind": "gap",
+              "fromIndex": 5357,
+              "untilIndex": 5402,
+              "fromMilliseconds": 1787041500000,
+              "untilMilliseconds": 1787055000000,
+              "fromValue": null,
+              "toValue": null,
+              "sparkPath": "M0.0 9.1 L2.4 8.6 L4.8 7.2 L7.2 6.2 L9.6 4.6 L12.0 3.7 L14.4 4.3 L16.8 4.3 L19.2 2.5 L21.6 2.0 M55.2 17.9 L57.6 18.0 L60.0 17.8"
+            },
+            {
+              "seriesLabel": "http_latency_p95",
+              "semantic": "latency.p95",
+              "source": "atlas_http_latency_p95.rrd",
+              "kind": "gap",
+              "fromIndex": 5357,
+              "untilIndex": 5402,
+              "fromMilliseconds": 1787041500000,
+              "untilMilliseconds": 1787055000000,
+              "fromValue": null,
+              "toValue": null,
+              "sparkPath": "M0.0 9.4 L2.4 12.6 L4.8 18.0 L7.2 16.6 L9.6 9.2 L12.0 10.2 L14.4 9.3 L16.8 9.9 L19.2 7.8 L21.6 9.1 M55.2 2.0 L57.6 3.5 L60.0 5.3"
+            }
+          ]
+        },
+        {
+          "id": "fd1",
+          "severity": "warn",
+          "title": "Sustained CPU saturation",
+          "fromMilliseconds": 1786596600000,
+          "untilMilliseconds": 1786623900000,
+          "inferred": false,
+          "match": "partial match — single signal",
+          "cause": [
+            {
+              "text": "User CPU likely saturated — ",
+              "emphasis": false
+            },
+            {
+              "text": "53.3%",
+              "emphasis": true
+            },
+            {
+              "text": " → ",
+              "emphasis": false
+            },
+            {
+              "text": "97.0%",
+              "emphasis": true
+            },
+            {
+              "text": " over ",
+              "emphasis": false
+            },
+            {
+              "text": "7.6 h",
+              "emphasis": true
+            },
+            {
+              "text": ". No matching upstream driver was found.",
+              "emphasis": false
+            }
+          ],
+          "evidence": [
+            {
+              "seriesLabel": "system_cpu_user",
+              "semantic": "cpu.user",
+              "source": "atlas_system_cpu_user.rrd",
+              "kind": "rise",
+              "fromIndex": 3874,
+              "untilIndex": 3965,
+              "fromMilliseconds": 1786596600000,
+              "untilMilliseconds": 1786623900000,
+              "fromValue": 53.292996580623246,
+              "toValue": 97,
+              "sparkPath": "M0.0 18.0 L2.4 17.4 L4.8 14.7 L7.2 13.9 L9.6 13.3 L12.0 6.1 L14.4 2.0 L16.8 2.0 L19.2 2.0 L21.6 2.0 L24.0 2.0 L26.4 2.0 L28.8 6.4 L31.2 13.4 L33.6 13.1 L36.0 13.4 L38.4 12.6 L40.8 14.0 L43.2 15.5 L45.6 14.3 L48.0 14.8 L50.4 15.6 L52.8 15.6 L55.2 15.2 L57.6 16.5 L60.0 15.8"
+            }
+          ]
+        },
+        {
+          "id": "fd2",
+          "severity": "info",
+          "title": "p95 latency trending upward",
+          "fromMilliseconds": 1785434400000,
+          "untilMilliseconds": 1788026400000,
+          "inferred": false,
+          "match": "slow trend — informational",
+          "cause": [
+            {
+              "text": "p95 latency has likely been drifting up — ",
+              "emphasis": false
+            },
+            {
+              "text": "155 ms",
+              "emphasis": true
+            },
+            {
+              "text": " to ",
+              "emphasis": false
+            },
+            {
+              "text": "218 ms",
+              "emphasis": true
+            },
+            {
+              "text": " on average over ",
+              "emphasis": false
+            },
+            {
+              "text": "30 d",
+              "emphasis": true
+            },
+            {
+              "text": ". Worth watching; no failure implied.",
+              "emphasis": false
+            }
+          ],
+          "evidence": [
+            {
+              "seriesLabel": "http_latency_p95",
+              "semantic": "latency.p95",
+              "source": "atlas_http_latency_p95.rrd",
+              "kind": "trend",
+              "fromIndex": 0,
+              "untilIndex": 8640,
+              "fromMilliseconds": 1785434400000,
+              "untilMilliseconds": 1788026400000,
+              "fromValue": 155.09393639152603,
+              "toValue": 217.78950856838367,
+              "sparkPath": "M0.0 14.5 L2.4 11.6 L4.8 15.4 L7.2 11.1 L9.6 11.3 L12.0 14.6 L14.4 14.0 L16.8 11.3 L19.2 13.0 L21.6 10.5 L24.0 15.4 L26.4 18.0 L28.8 7.4 L31.2 12.9 L33.6 11.7 L36.0 8.0 L38.4 13.9 L40.8 13.0 L43.2 2.0 L45.6 9.8 L48.0 11.6 L50.4 16.7 L52.8 15.9 L55.2 9.5 L57.6 5.2 L60.0 11.6"
+            }
+          ]
+        }
+      ]
+    },
+    "last24h": {
+      "window": [
+        1787940000000,
+        1788026400000
+      ],
+      "findings": [
+        {
+          "id": "fd0",
+          "severity": "info",
+          "title": "p95 latency trending upward",
+          "fromMilliseconds": 1787940000000,
+          "untilMilliseconds": 1788026400000,
+          "inferred": false,
+          "match": "slow trend — informational",
+          "cause": [
+            {
+              "text": "p95 latency has likely been drifting up — ",
+              "emphasis": false
+            },
+            {
+              "text": "207 ms",
+              "emphasis": true
+            },
+            {
+              "text": " to ",
+              "emphasis": false
+            },
+            {
+              "text": "275 ms",
+              "emphasis": true
+            },
+            {
+              "text": " on average over ",
+              "emphasis": false
+            },
+            {
+              "text": "24 h",
+              "emphasis": true
+            },
+            {
+              "text": ". Worth watching; no failure implied.",
+              "emphasis": false
+            }
+          ],
+          "evidence": [
+            {
+              "seriesLabel": "http_latency_p95",
+              "semantic": "latency.p95",
+              "source": "atlas_http_latency_p95.rrd",
+              "kind": "trend",
+              "fromIndex": 8352,
+              "untilIndex": 8640,
+              "fromMilliseconds": 1787940000000,
+              "untilMilliseconds": 1788026400000,
+              "fromValue": 206.74814673529883,
+              "toValue": 274.63990580745525,
+              "sparkPath": "M0.0 9.2 L2.4 10.6 L4.8 12.8 L7.2 16.9 L9.6 18.0 L12.0 15.5 L14.4 14.1 L16.8 15.5 L19.2 14.4 L21.6 12.4 L24.0 10.6 L26.4 12.8 L28.8 11.6 L31.2 13.0 L33.6 11.9 L36.0 9.7 L38.4 9.8 L40.8 9.0 L43.2 6.7 L45.6 4.1 L48.0 2.9 L50.4 2.0 L52.8 6.5 L55.2 8.0 L57.6 9.6 L60.0 11.6"
+            }
+          ]
+        }
+      ]
+    },
+    "last7d": {
+      "window": [
+        1787421600000,
+        1788026400000
+      ],
+      "findings": [
+        {
+          "id": "fd0",
+          "severity": "warn",
+          "title": "Sustained CPU saturation under a request burst",
+          "fromMilliseconds": 1787724900000,
+          "untilMilliseconds": 1787765700000,
+          "inferred": false,
+          "match": "evidence order matches rule",
+          "cause": [
+            {
+              "text": "User CPU likely saturated — ",
+              "emphasis": false
+            },
+            {
+              "text": "51.3%",
+              "emphasis": true
+            },
+            {
+              "text": " → ",
+              "emphasis": false
+            },
+            {
+              "text": "84.4%",
+              "emphasis": true
+            },
+            {
+              "text": " over ",
+              "emphasis": false
+            },
+            {
+              "text": "10 h",
+              "emphasis": true
+            },
+            {
+              "text": ", probably driven by requests climbing to ",
+              "emphasis": false
+            },
+            {
+              "text": "1315 req/s",
+              "emphasis": true
+            },
+            {
+              "text": ".",
+              "emphasis": false
+            }
+          ],
+          "evidence": [
+            {
+              "seriesLabel": "http_requests_rate",
+              "semantic": "requests.rate",
+              "source": "atlas_http_requests_rate.rrd",
+              "kind": "rise",
+              "fromIndex": 7696,
+              "untilIndex": 7771,
+              "fromMilliseconds": 1787743200000,
+              "untilMilliseconds": 1787765700000,
+              "fromValue": 831.1821899793194,
+              "toValue": 1315.0754008968338,
+              "sparkPath": "M0.0 16.3 L2.4 16.3 L4.8 13.9 L7.2 10.5 L9.6 7.6 L12.0 5.8 L14.4 7.5 L16.8 10.7 L19.2 10.1 L21.6 8.3 L24.0 5.9 L26.4 5.5 L28.8 3.8 L31.2 3.6 L33.6 5.1 L36.0 5.2 L38.4 2.9 L40.8 3.3 L43.2 2.3 L45.6 2.0 L48.0 4.5 L50.4 9.1 L52.8 12.0 L55.2 14.8 L57.6 15.9 L60.0 18.0"
+            },
+            {
+              "seriesLabel": "system_cpu_user",
+              "semantic": "cpu.user",
+              "source": "atlas_system_cpu_user.rrd",
+              "kind": "rise",
+              "fromIndex": 7635,
+              "untilIndex": 7757,
+              "fromMilliseconds": 1787724900000,
+              "untilMilliseconds": 1787761500000,
+              "fromValue": 51.27696906746584,
+              "toValue": 84.39001049664864,
+              "sparkPath": "M0.0 18.0 L2.4 14.3 L4.8 10.5 L7.2 9.8 L9.6 11.1 L12.0 9.5 L14.4 9.4 L16.8 8.8 L19.2 10.2 L21.6 9.3 L24.0 9.7 L26.4 8.0 L28.8 7.1 L31.2 6.1 L33.6 4.5 L36.0 3.4 L38.4 2.0 L40.8 2.0 L43.2 4.0 L45.6 5.4 L48.0 6.8 L50.4 8.3 L52.8 10.1 L55.2 11.2 L57.6 13.3 L60.0 12.6"
+            }
+          ]
+        }
+      ]
+    },
+    "last3d": {
+      "window": [
+        1787767200000,
+        1788026400000
+      ],
+      "findings": [
+        {
+          "id": "fd0",
+          "severity": "warn",
+          "title": "Sustained CPU saturation",
+          "fromMilliseconds": 1787767200000,
+          "untilMilliseconds": 1787790000000,
+          "inferred": false,
+          "match": "partial match — single signal",
+          "cause": [
+            {
+              "text": "User CPU likely saturated — ",
+              "emphasis": false
+            },
+            {
+              "text": "59.2%",
+              "emphasis": true
+            },
+            {
+              "text": " → ",
+              "emphasis": false
+            },
+            {
+              "text": "67.0%",
+              "emphasis": true
+            },
+            {
+              "text": " over ",
+              "emphasis": false
+            },
+            {
+              "text": "6.3 h",
+              "emphasis": true
+            },
+            {
+              "text": ". No matching upstream driver was found.",
+              "emphasis": false
+            }
+          ],
+          "evidence": [
+            {
+              "seriesLabel": "system_cpu_user",
+              "semantic": "cpu.user",
+              "source": "atlas_system_cpu_user.rrd",
+              "kind": "rise",
+              "fromIndex": 7776,
+              "untilIndex": 7852,
+              "fromMilliseconds": 1787767200000,
+              "untilMilliseconds": 1787790000000,
+              "fromValue": 59.170691494323876,
+              "toValue": 66.99838961283409,
+              "sparkPath": "M0.0 7.9 L2.4 7.5 L4.8 5.2 L7.2 3.6 L9.6 2.5 L12.0 2.0 L14.4 3.6 L16.8 4.0 L19.2 3.6 L21.6 4.0 L24.0 5.1 L26.4 8.3 L28.8 12.3 L31.2 12.3 L33.6 13.0 L36.0 12.2 L38.4 11.8 L40.8 11.1 L43.2 10.0 L45.6 12.4 L48.0 11.8 L50.4 7.4 L52.8 8.0 L55.2 13.4 L57.6 17.1 L60.0 18.0"
+            }
+          ]
+        },
+        {
+          "id": "fd1",
+          "severity": "info",
+          "title": "p95 latency trending upward",
+          "fromMilliseconds": 1787767200000,
+          "untilMilliseconds": 1788026400000,
+          "inferred": false,
+          "match": "slow trend — informational",
+          "cause": [
+            {
+              "text": "p95 latency has likely been drifting up — ",
+              "emphasis": false
+            },
+            {
+              "text": "148 ms",
+              "emphasis": true
+            },
+            {
+              "text": " to ",
+              "emphasis": false
+            },
+            {
+              "text": "380 ms",
+              "emphasis": true
+            },
+            {
+              "text": " on average over ",
+              "emphasis": false
+            },
+            {
+              "text": "3.0 d",
+              "emphasis": true
+            },
+            {
+              "text": ". Worth watching; no failure implied.",
+              "emphasis": false
+            }
+          ],
+          "evidence": [
+            {
+              "seriesLabel": "http_latency_p95",
+              "semantic": "latency.p95",
+              "source": "atlas_http_latency_p95.rrd",
+              "kind": "trend",
+              "fromIndex": 7776,
+              "untilIndex": 8640,
+              "fromMilliseconds": 1787767200000,
+              "untilMilliseconds": 1788026400000,
+              "fromValue": 147.7353554576318,
+              "toValue": 379.98628244512537,
+              "sparkPath": "M0.0 11.3 L2.4 13.7 L4.8 11.8 L7.2 9.8 L9.6 5.9 L12.0 8.7 L14.4 5.9 L16.8 12.4 L19.2 12.0 L21.6 16.5 L24.0 15.4 L26.4 18.0 L28.8 15.0 L31.2 8.9 L33.6 4.6 L36.0 3.0 L38.4 7.5 L40.8 8.8 L43.2 15.5 L45.6 14.2 L48.0 8.8 L50.4 10.7 L52.8 7.8 L55.2 2.0 L57.6 4.7 L60.0 10.1"
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

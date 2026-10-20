@@ -1,0 +1,68 @@
+<div class="timeline-strip">
+  <div
+    #track
+    class="timeline-strip-track"
+    (pointerdown)="recentreAndDrag($event)"
+    (pointermove)="continueDrag($event)"
+    (pointerup)="endDrag()"
+    (pointercancel)="endDrag()"
+    (lostpointercapture)="endDrag()"
+    [style.--strip-start]="placement().startLeft"
+    [style.--strip-end]="placement().endLeft"
+  >
+    @for (tick of ticks(); track tick.left) {
+      <span class="timeline-strip-tick" [style.left]="tick.left"></span>
+      <span class="timeline-strip-tick-label" [style.left]="tick.left" [style.transform]="tick.transform">{{ tick.label }}</span>
+    }
+    @if (overview(); as overview) {
+      <app-timeline-overview [overview]="overview" />
+    }
+    <div
+      class="timeline-strip-window"
+      [class.timeline-strip-window-held]="isHeld()"
+      [style.left]="placement().startLeft"
+      [style.width]="placement().width"
+      role="slider"
+      tabindex="0"
+      aria-valuemin="0"
+      aria-valuemax="100"
+      [attr.aria-label]="sliders().body.label"
+      [attr.aria-valuenow]="sliders().body.percent"
+      [attr.aria-valuetext]="sliders().body.text"
+      (pointerdown)="beginDrag($event, handles.BODY)"
+      (keydown.arrowleft)="nudge($event, handles.BODY, -1)"
+      (keydown.arrowright)="nudge($event, handles.BODY, 1)"
+      (blur)="endNudging()"
+    ></div>
+    <div
+      class="timeline-strip-handle timeline-strip-handle-start"
+      [class.timeline-strip-handle-outside]="placement().isNarrow"
+      role="slider"
+      tabindex="0"
+      aria-valuemin="0"
+      aria-valuemax="100"
+      [attr.aria-label]="sliders().start.label"
+      [attr.aria-valuenow]="sliders().start.percent"
+      [attr.aria-valuetext]="sliders().start.text"
+      (pointerdown)="beginDrag($event, handles.START)"
+      (keydown.arrowleft)="nudge($event, handles.START, -1)"
+      (keydown.arrowright)="nudge($event, handles.START, 1)"
+      (blur)="endNudging()"
+    ></div>
+    <div
+      class="timeline-strip-handle timeline-strip-handle-end"
+      [class.timeline-strip-handle-outside]="placement().isNarrow"
+      role="slider"
+      tabindex="0"
+      aria-valuemin="0"
+      aria-valuemax="100"
+      [attr.aria-label]="sliders().end.label"
+      [attr.aria-valuenow]="sliders().end.percent"
+      [attr.aria-valuetext]="sliders().end.text"
+      (pointerdown)="beginDrag($event, handles.END)"
+      (keydown.arrowleft)="nudge($event, handles.END, -1)"
+      (keydown.arrowright)="nudge($event, handles.END, 1)"
+      (blur)="endNudging()"
+    ></div>
+  </div>
+</div>

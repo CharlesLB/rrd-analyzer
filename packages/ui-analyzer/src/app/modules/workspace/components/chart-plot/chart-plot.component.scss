@@ -1,0 +1,41 @@
+:host {
+  display: contents;
+}
+
+.chart-plot {
+  &-reference-label {
+    position: absolute;
+    right: 5px;
+    z-index: 3;
+    transform: translateY(-50%);
+    padding: 1px 6px;
+    border-radius: 5px;
+    color: var(--bg2);
+    font-size: 10.5px;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+    pointer-events: none;
+  }
+
+  &-axis-label {
+    position: absolute;
+    left: 5px;
+    transform: translateY(-50%);
+    display: flex;
+    gap: 7px;
+    font-size: 10.5px;
+    color: var(--mut);
+    font-variant-numeric: tabular-nums;
+    pointer-events: none;
+    padding: 0 3px;
+    border-radius: 5px;
+    background: color-mix(in srgb, var(--bg2) 80%, transparent);
+  }
+
+  &-axis-value {
+    &-colored {
+      color: color-mix(in srgb, var(--axis-color) 70%, var(--tx));
+    }
+  }
+}

@@ -1,0 +1,81 @@
+@let features = texts().features;
+<section class="features" [id]="sectionId">
+  <app-section-heading class="features-heading" [eyebrow]="features.eyebrow" [title]="features.title" />
+
+  <div class="features-rows">
+    <app-feature-row
+      [ordinal]="features.canvas.ordinal"
+      [title]="features.canvas.title"
+      [screenshot]="screenshots.WORKSPACE"
+      [screenshotDescription]="features.canvas.screenshotDescription"
+    >
+      <p class="features-body">{{ features.canvas.body }}</p>
+      <ul class="features-points">
+        @for (point of features.canvas.points; track point) {
+          <li class="features-point">
+            <span class="features-point-mark" aria-hidden="true">{{ bullet }}</span>
+            <span>{{ point }}</span>
+          </li>
+        }
+      </ul>
+    </app-feature-row>
+
+    <app-feature-row
+      [ordinal]="features.timeWindow.ordinal"
+      [title]="features.timeWindow.title"
+      [screenshot]="screenshots.TIME_WINDOW"
+      [screenshotDescription]="features.timeWindow.screenshotDescription"
+      [isMirrored]="true"
+    >
+      <p class="features-body">{{ features.timeWindow.body }}</p>
+    </app-feature-row>
+
+    <app-feature-row
+      [ordinal]="features.insights.ordinal"
+      [title]="features.insights.title"
+      [screenshot]="screenshots.INSIGHTS"
+      [screenshotDescription]="features.insights.screenshotDescription"
+    >
+      <p class="features-body">
+        {{ features.insights.shortcutLead }} <kbd class="features-key">{{ features.insights.shortcutKey }}</kbd> {{ features.insights.body }}
+      </p>
+      <p class="features-note">{{ features.insights.note }}</p>
+    </app-feature-row>
+
+    <app-feature-row
+      [ordinal]="features.logs.ordinal"
+      [title]="features.logs.title"
+      [screenshot]="screenshots.LOGS"
+      [screenshotDescription]="features.logs.screenshotDescription"
+      [isMirrored]="true"
+    >
+      <p class="features-body">{{ features.logs.body }}</p>
+      <ul class="features-log-types">
+        @for (logType of logTypes(); track logType.name) {
+          <li class="features-log-type">
+            <span class="features-log-type-dot" [style.background]="logType.color"></span>
+            {{ logType.label }}
+          </li>
+        }
+      </ul>
+    </app-feature-row>
+
+    <app-feature-row
+      [ordinal]="features.export.ordinal"
+      [title]="features.export.title"
+      [screenshot]="screenshots.EXPORT"
+      [screenshotDescription]="features.export.screenshotDescription"
+    >
+      <p class="features-body">{{ features.export.body }}</p>
+    </app-feature-row>
+  </div>
+
+  <ul class="features-highlights">
+    @for (highlight of features.highlights; track highlight.title) {
+      <li class="features-highlight">
+        <h3 class="features-highlight-title">{{ highlight.title }}</h3>
+        <p class="features-highlight-body">{{ highlight.body }}</p>
+      </li>
+    }
+  </ul>
+</section>

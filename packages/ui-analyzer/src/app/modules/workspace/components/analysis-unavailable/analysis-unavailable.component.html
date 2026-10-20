@@ -1,0 +1,18 @@
+<div class="analysis-unavailable" role="alert">
+  <span class="analysis-unavailable-title">{{ texts().analysisUnavailable.title }}</span>
+  @if (hasMissingSources()) {
+    <span class="analysis-unavailable-summary">{{ missingSourcesSummary() }}</span>
+    <ul class="analysis-unavailable-sources">
+      @for (source of missingSources(); track source.path) {
+        <li class="analysis-unavailable-source">{{ source.path }}</li>
+      }
+    </ul>
+    <span class="analysis-unavailable-hint">{{ texts().analysisUnavailable.missingSourcesHint }}</span>
+  } @else {
+    <span class="analysis-unavailable-hint">{{ texts().analysisUnavailable.unexplainedHint }}</span>
+  }
+  <div class="analysis-unavailable-actions">
+    <button type="button" class="analysis-unavailable-back" (click)="backRequested.emit()">{{ texts().analysisUnavailable.backToLibrary }}</button>
+    <button type="button" class="analysis-unavailable-retry" (click)="retryRequested.emit()">{{ texts().analysisUnavailable.retry }}</button>
+  </div>
+</div>

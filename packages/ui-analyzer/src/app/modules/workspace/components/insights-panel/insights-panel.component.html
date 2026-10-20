@@ -1,0 +1,57 @@
+<app-side-panel class="insights-panel" [title]="texts().insights.panelTitle" [closeLabel]="texts().insights.close" [width]="panelWidth" (closeRequested)="closeRequested.emit()">
+  <span sidePanelLead class="insights-panel-glyph">{{ glyphs.INSIGHTS }}</span>
+  <ng-container ngProjectAs="[sidePanelMeta]">
+    <span class="insights-panel-beta" [title]="texts().insights.betaTip">{{ texts().insights.beta }}</span>
+    <span class="insights-panel-count">{{ rankedLabel() }}</span>
+  </ng-container>
+  @if (findings().length > 0) {
+    <button
+      sidePanelActions
+      class="insights-panel-overlays"
+      [class.insights-panel-overlays-hidden]="areOverlaysHidden()"
+      type="button"
+      [title]="overlaysToggle().tip"
+      (click)="overlaysToggled.emit()"
+    >
+      {{ overlaysToggle().label }}
+    </button>
+  }
+  <div class="insights-panel-scope">
+    <span class="insights-panel-scope-label">{{ texts().insights.scopeLabel }}</span>
+    <app-option-select [items]="scopeItems()" [selected]="scope()" [size]="compactMenu" (chosen)="chooseScope($event)" />
+    <span class="spacer"></span>
+    <span class="insights-panel-ran">{{ ranAtLabel() }}</span>
+    <button class="insights-panel-rerun" type="button" [title]="texts().insights.rerunTip" [attr.aria-label]="texts().insights.rerun" (click)="rerunRequested.emit()">{{ glyphs.RERUN }}</button>
+  </div>
+  @if (staleReason() !== null) {
+    <div class="insights-panel-stale">
+      <span class="insights-panel-stale-text">{{ staleBanner() }}</span>
+      <button class="insights-panel-stale-rerun" type="button" (click)="rerunRequested.emit()">{{ texts().insights.rerun }}</button>
+    </div>
+  }
+  <div class="insights-panel-list">
+    @for (row of findingRows(); track row.finding.id) {
+      <app-finding-card
+        [finding]="row.finding"
+        [isOpen]="row.isOpen"
+        [isFocused]="row.isFocused"
+        [plottedColors]="plottedColors()"
+        (toggled)="findingToggled.emit(row.index)"
+        (hovered)="hover(row.finding, $event)"
+        (showOnChartRequested)="showOnChartRequested.emit(row.finding)"
+        (evidenceJumpRequested)="jumpToEvidence(row.finding, $event)"
+        (plotRequested)="plotRequested.emit($event)"
+      />
+    }
+    @if (findings().length === 0) {
+      <div class="insights-panel-empty">
+        {{ texts().insights.noIssues }}
+        <br />
+        {{ analyzedLine() }}
+      </div>
+    }
+    @if (unclassifiedNote() !== '') {
+      <div class="insights-panel-unclassified">{{ unclassifiedNote() }}</div>
+    }
+  </div>
+</app-side-panel>

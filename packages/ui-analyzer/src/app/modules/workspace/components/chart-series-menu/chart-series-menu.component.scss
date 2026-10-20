@@ -1,0 +1,55 @@
+@use 'mixins';
+
+:host {
+  display: contents;
+}
+
+.chart-series-menu {
+  &-caption {
+    font-size: 11px;
+    color: var(--mut);
+    padding: 3px 8px 6px;
+  }
+
+  &-row {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    padding: 4px 8px;
+    min-height: 32px;
+  }
+
+  &-name {
+    flex: 1;
+    min-width: 0;
+    font-size: 12.5px;
+    font-weight: 600;
+    color: var(--tx);
+    @include mixins.text-ellipsis;
+  }
+
+  &-unit {
+    font-size: 11px;
+    color: var(--mut);
+    flex: none;
+  }
+
+  &-axis {
+    position: relative;
+    flex: none;
+    --option-select-menu-top: 28px;
+    --option-select-menu-left: auto;
+    --option-select-menu-right: 0;
+    --option-menu-width: 140px;
+  }
+
+  &-divider {
+    @include mixins.menu-divider;
+  }
+
+  &-separate {
+    @include mixins.menu-item(9px, 7px 9px);
+    font-size: 12px;
+    color: var(--tx2);
+  }
+}

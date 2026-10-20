@@ -1,0 +1,23 @@
+@use 'mixins';
+
+:host {
+  display: contents;
+}
+
+.source-drop-zone {
+  padding: 20px;
+  text-align: center;
+  @include mixins.dashed-accent-box(11px);
+  @include mixins.native-file-drop-target;
+
+  &-title {
+    font-size: 14px;
+    font-weight: 600;
+  }
+
+  &-subtitle {
+    font-size: 12.5px;
+    color: var(--tx2);
+    margin-top: 3px;
+  }
+}

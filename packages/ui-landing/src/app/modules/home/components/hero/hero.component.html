@@ -1,0 +1,47 @@
+<section class="hero">
+  <a class="hero-release" [href]="anchors.DOWNLOAD">
+    <span class="hero-release-version">{{ versionLabel() }}</span>
+    <span>{{ texts().hero.releaseHeadline }}</span>
+    <app-arrow-right-icon class="hero-release-icon" />
+  </a>
+  <h1 class="hero-title">
+    {{ texts().hero.titleLead }}<span class="hero-title-highlight">{{ texts().hero.titleHighlight }}</span>
+  </h1>
+  <p class="hero-introduction">{{ texts().hero.introduction }}</p>
+  <div class="hero-actions">
+    <a class="hero-download" [href]="downloadCall().href">
+      <span class="hero-download-label">
+        <app-download-icon class="hero-download-icon" />
+        <span>{{ downloadCall().label }}</span>
+      </span>
+      <span class="hero-download-detail">{{ downloadCall().detail }}</span>
+    </a>
+    <a class="hero-demo" [href]="anchors.DEMO">
+      <span class="hero-demo-badge"><app-play-icon class="hero-demo-icon" /></span>
+      {{ texts().hero.tryDemo }}
+    </a>
+  </div>
+  <p class="hero-availability">
+    {{ texts().hero.availability }}{{ texts().common.separator }}<a class="hero-availability-link" [href]="anchors.DOWNLOAD">{{ texts().hero.otherPlatforms }}</a>
+  </p>
+  <app-browser-frame class="hero-screenshot" [title]="texts().hero.screenshotTitle">
+    <img
+      class="hero-screenshot-image hero-screenshot-image-light"
+      [src]="lightScreenshot.source"
+      [width]="lightScreenshot.width"
+      [height]="lightScreenshot.height"
+      [alt]="texts().hero.lightScreenshotDescription"
+      loading="lazy"
+      decoding="async"
+    />
+    <img
+      class="hero-screenshot-image hero-screenshot-image-dark"
+      [src]="darkScreenshot.source"
+      [width]="darkScreenshot.width"
+      [height]="darkScreenshot.height"
+      [alt]="texts().hero.darkScreenshotDescription"
+      loading="lazy"
+      decoding="async"
+    />
+  </app-browser-frame>
+</section>

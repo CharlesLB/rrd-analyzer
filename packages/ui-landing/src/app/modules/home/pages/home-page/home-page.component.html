@@ -1,0 +1,9 @@
+<app-site-header [downloadCall]="downloadCall()" />
+<main class="home-page-main" [id]="topId">
+  <app-hero [version]="version" [downloadCall]="downloadCall()" />
+  <app-features />
+  <app-demo-section />
+  <app-download-section [version]="version" [platforms]="platforms()" />
+  <app-donate-section />
+</main>
+<app-site-footer (themeToggled)="toggleTheme()" />

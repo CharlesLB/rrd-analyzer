@@ -1,0 +1,151 @@
+@use 'mixins';
+
+:host {
+  display: contents;
+}
+
+.json-viewer {
+  flex: 1;
+  min-height: 0;
+  position: relative;
+
+  &-search {
+    position: absolute;
+    top: 7px;
+    right: 12px;
+    left: 12px;
+    z-index: 5;
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    padding: 3px 4px;
+    @include mixins.menu-surface(9px);
+    animation: om-pop 0.14s ease both;
+
+    &-field {
+      flex: 1;
+      min-width: 0;
+    }
+
+    &-counter {
+      min-width: 66px;
+      text-align: center;
+      font-size: 11px;
+      color: var(--tx2);
+      font-variant-numeric: tabular-nums;
+      white-space: nowrap;
+
+      &-empty {
+        color: var(--danger);
+      }
+    }
+
+    &-step,
+    &-close {
+      width: 24px;
+      height: 24px;
+      background: none;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      padding: 0;
+
+      &:hover {
+        background: var(--surf2);
+      }
+    }
+
+    &-step {
+      color: var(--tx2);
+      font-size: 13px;
+    }
+
+    &-close {
+      color: var(--mut);
+      font-size: 14px;
+
+      &:hover {
+        color: var(--tx);
+      }
+    }
+  }
+
+  &-lines {
+    position: absolute;
+    inset: 0;
+    overflow: auto;
+    padding: 8px 0 16px;
+    font-family: var(--font-monospace);
+    font-size: 12px;
+    line-height: 19px;
+
+    &-searching {
+      padding-top: 46px;
+    }
+  }
+
+  &-line {
+    display: flex;
+    min-width: 0;
+  }
+
+  &-number {
+    flex: none;
+    box-sizing: border-box;
+    width: 36px;
+    padding-right: 12px;
+    text-align: right;
+    color: var(--mut);
+    opacity: 0.7;
+    user-select: none;
+    font-variant-numeric: tabular-nums;
+  }
+
+  &-text {
+    flex: 1;
+    min-width: 0;
+    padding-right: 14px;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+  }
+
+  &-token {
+    &-plain {
+      color: var(--tx2);
+    }
+
+    &-key {
+      color: var(--jsonKey);
+    }
+
+    &-string {
+      color: var(--jsonString);
+    }
+
+    &-number {
+      color: var(--jsonNumber);
+    }
+
+    &-boolean {
+      color: var(--jsonBoolean);
+    }
+
+    &-null {
+      color: var(--jsonNull);
+    }
+
+    &-punctuation {
+      color: var(--mut);
+    }
+  }
+
+  &-hit {
+    background: var(--searchHit);
+    border-radius: 2px;
+
+    &-current {
+      background: var(--searchHitCurrent);
+      color: var(--searchHitInk);
+    }
+  }
+}

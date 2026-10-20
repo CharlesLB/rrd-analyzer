@@ -1,0 +1,178 @@
+# Publishes a GitHub release from a tag.
+#
+# Run by hand only. Releases are normally published from a workstation with `make publish`, which
+# spends no Actions minutes; a tag push that also started this workflow would build everything a
+# second time and upload over the same release.
+#
+# The three platform halves cannot share a runner. Linux links WebKitGTK through cgo, so each
+# architecture is built natively rather than cross-compiled, and Windows reaches WebView2 through
+# a pure-Go binding, so it cross-compiles from Linux with no C toolchain at all. GoReleaser OSS
+# has no --dist flag either, so every configuration would write over the same dist/: separate
+# jobs are what keeps them apart.
+#
+# Nothing is published until the suites have passed. The build jobs run alongside them, but the
+# release job waits on everything.
+#
+# Every runner is pinned to 22.04 rather than following ubuntu-latest, and deliberately to the
+# oldest image that carries the WebKitGTK 4.1 headers. glibc is forwards compatible but not
+# backwards: a binary linked on 24.04 refuses to start on 22.04, so building on the oldest
+# supported image is what sets the floor of who can run the result.
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: The existing tag to build and publish
+        required: true
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    name: Checks
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.tag || github.ref }}
+      - uses: ./.github/actions/toolchain
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm format:check
+      - run: pnpm lint
+      - run: pnpm typecheck
+      - run: pnpm test
+      - run: pnpm build
+
+  end-to-end:
+    name: End to end
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.tag || github.ref }}
+      - uses: ./.github/actions/toolchain
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm e2e:install
+      - run: pnpm test:e2e
+      - if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: end-to-end-report
+          path: packages/ui-analyzer/e2e/report
+          retention-days: 7
+
+  linux:
+    name: Linux ${{ matrix.arch }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: amd64
+            runner: ubuntu-22.04
+          # A native runner, because the window is WebKitGTK through cgo and there is no
+          # cross toolchain for it here. GitHub's arm images are free for public repositories
+          # and need a larger-runner plan for private ones.
+          - arch: arm64
+            runner: ubuntu-22.04-arm
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.tag || github.ref }}
+          fetch-depth: 0
+      - uses: ./.github/actions/toolchain
+      - name: Install the WebKitGTK headers
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes libgtk-3-dev libwebkit2gtk-4.1-dev
+      - uses: goreleaser/goreleaser-action@v6
+        with:
+          version: "~> v2"
+          args: release --clean --config .goreleaser.linux-${{ matrix.arch }}.yaml
+      - uses: actions/upload-artifact@v4
+        with:
+          name: artefacts-linux-${{ matrix.arch }}
+          path: |
+            dist/*.tar.gz
+            dist/*.deb
+            dist/*.pkg.tar.zst
+          if-no-files-found: error
+
+  windows:
+    name: Windows amd64
+    runs-on: ubuntu-22.04
+    env:
+      SIGNING_CERTIFICATE: ${{ secrets.WINDOWS_SIGN_PKCS12 }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.tag || github.ref }}
+          fetch-depth: 0
+      - uses: ./.github/actions/toolchain
+      - name: Install the installer compiler
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes nsis osslsigncode
+      # Authenticode is what answers "Windows says this is not trusted". Both steps are no-ops
+      # while the secret is unset, so the release runs unchanged until a certificate exists.
+      - name: Unpack the signing certificate
+        if: env.SIGNING_CERTIFICATE != ''
+        run: |
+          printf '%s' "$SIGNING_CERTIFICATE" | base64 --decode > "$RUNNER_TEMP/signing.p12"
+          echo "WINDOWS_SIGN_PKCS12=$RUNNER_TEMP/signing.p12" >> "$GITHUB_ENV"
+      - uses: goreleaser/goreleaser-action@v6
+        env:
+          WINDOWS_SIGN_PASSWORD: ${{ secrets.WINDOWS_SIGN_PASSWORD }}
+        with:
+          version: "~> v2"
+          args: release --clean --config .goreleaser.windows.yaml
+      # Two artefacts the OSS pipeline stops short of: installer packaging is a Pro feature, and
+      # the bare executable ships beside it as the portable option, named like everything else
+      # rather than left in the build directory GoReleaser wrote it to.
+      - name: Build the installer and name the portable executable
+        run: |
+          version="$(jq -r .version dist/metadata.json)"
+          ./tools/build-nsis.sh "$version"
+          cp "$(find dist -type f -name rrd-analyzer.exe -print -quit)" "dist/rrd-analyzer_${version}_windows_amd64.exe"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: artefacts-windows-amd64
+          path: |
+            dist/*.zip
+            dist/*.exe
+          if-no-files-found: error
+
+  release:
+    name: Publish
+    needs: [verify, end-to-end, linux, windows]
+    runs-on: ubuntu-22.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.tag || github.ref }}
+      - uses: actions/download-artifact@v4
+        with:
+          path: staging
+          pattern: artefacts-*
+          merge-multiple: true
+      # One checksums.txt over everything, which each configuration disables so that three of
+      # them cannot each publish a partial one. Written outside the directory being listed, or
+      # it would checksum itself.
+      - name: Assemble the release directory
+        run: |
+          mkdir -p dist
+          find staging -maxdepth 1 -type f -exec mv {} dist/ \;
+          cd dist
+          sha256sum * > "$RUNNER_TEMP/checksums.txt"
+          mv "$RUNNER_TEMP/checksums.txt" checksums.txt
+          ls -la
+      - uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ inputs.tag || github.ref_name }}
+          files: dist/*
+          generate_release_notes: true
+          fail_on_unmatched_files: true

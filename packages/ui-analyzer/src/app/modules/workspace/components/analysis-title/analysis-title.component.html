@@ -1,0 +1,44 @@
+@if (isEditing()) {
+  <form class="analysis-title-form" [formRoot]="nameForm">
+    <input
+      #nameField
+      class="analysis-title-input"
+      [class.analysis-title-input-compact]="isCompact()"
+      [formField]="nameForm.name"
+      [attr.aria-label]="texts().analysisTitle.nameLabel"
+      (keydown.escape)="cancelEditing()"
+      (blur)="finishEditing()"
+    />
+  </form>
+} @else {
+  <button class="analysis-title-name" [class.analysis-title-name-compact]="isCompact()" type="button" [title]="texts().analysisTitle.rename" (click)="startEditing()">{{ name() }}</button>
+}
+<button
+  class="analysis-title-menu-toggle"
+  [class.analysis-title-menu-toggle-open]="isMenuOpen()"
+  type="button"
+  [title]="texts().analysisTitle.menu"
+  [attr.aria-label]="texts().analysisTitle.menu"
+  [attr.aria-expanded]="isMenuOpen()"
+  (click)="toggleMenu()"
+>
+  {{ glyphs.CARET }}
+</button>
+@if (menuPlacement(); as placement) {
+  <app-anchored-menu [placement]="placement" [width]="menuWidth" (closeRequested)="closeMenu()">
+    <button class="analysis-title-menu-item" type="button" (click)="addSources()">
+      <span class="analysis-title-menu-tag">{{ texts().analysisTitle.addSourcesTag }}</span>
+      <span class="analysis-title-menu-text">
+        <span class="analysis-title-menu-title">{{ texts().analysisTitle.addSourcesTitle }}</span>
+        <span class="analysis-title-menu-detail">{{ texts().analysisTitle.addSourcesDetail }}</span>
+      </span>
+    </button>
+    <button class="analysis-title-menu-item" type="button" (click)="exportSources()">
+      <span class="analysis-title-menu-tag">{{ texts().analysisTitle.sourcesTag }}</span>
+      <span class="analysis-title-menu-text">
+        <span class="analysis-title-menu-title">{{ texts().analysisTitle.sourcesTitle }}</span>
+        <span class="analysis-title-menu-detail">{{ sourcesDetail() }}</span>
+      </span>
+    </button>
+  </app-anchored-menu>
+}

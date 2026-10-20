@@ -1,0 +1,19 @@
+{
+  "$schema": "./node_modules/@biomejs/biome/configuration_schema.json",
+  "root": false,
+  "extends": "//",
+  "files": {
+    "includes": [
+      "src/**/*.ts",
+      "src/**/*.json",
+      "e2e/**/*.ts",
+      "playwright.config.ts",
+      "*.json",
+      "!**/dist",
+      "!**/.angular",
+      "!**/node_modules",
+      "!e2e/report",
+      "!e2e/.artifacts"
+    ]
+  }
+}

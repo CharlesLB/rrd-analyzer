@@ -1,0 +1,123 @@
+@use 'mixins';
+
+:host {
+  display: block;
+}
+
+.search-field {
+  position: relative;
+
+  &-input {
+    display: block;
+    width: 100%;
+    box-sizing: border-box;
+    @include mixins.text-input(9px, 5px 26px 5px 9px);
+
+    &-monospace {
+      font-family: var(--font-monospace);
+      font-size: 12px;
+    }
+
+    &-matches-nothing {
+      border-color: var(--danger);
+    }
+  }
+
+  &-compact &-input {
+    border-radius: 6px;
+    padding: 4px 22px 4px 7px;
+  }
+
+  &-roomy &-input {
+    border-radius: 10px;
+    padding: 6px 28px 6px 10px;
+  }
+
+  &-clear {
+    position: absolute;
+    top: 50%;
+    right: 4px;
+    transform: translateY(-50%);
+    width: 18px;
+    height: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    background: none;
+    border: none;
+    border-radius: 50%;
+    color: var(--mut);
+    font-size: 14px;
+    line-height: 1;
+    cursor: pointer;
+
+    &:hover {
+      background: var(--surf2);
+      color: var(--tx);
+    }
+  }
+
+  &-history {
+    position: absolute;
+    top: calc(100% + 4px);
+    right: 0;
+    left: 0;
+    z-index: 60;
+    margin: 0;
+    padding: 3px;
+    list-style: none;
+    max-height: 240px;
+    overflow-y: auto;
+    animation: om-pop 0.14s ease both;
+    @include mixins.menu-surface(9px);
+
+    &-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      @include mixins.menu-item(6px, 5px 4px 5px 8px);
+      box-sizing: border-box;
+      color: var(--tx);
+      font-size: 12.5px;
+
+      &-highlighted {
+        background: var(--surf2);
+      }
+    }
+
+    &-item:hover &-forget,
+    &-item-highlighted &-forget {
+      visibility: visible;
+    }
+
+    &-term {
+      flex: 1;
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    &-forget {
+      visibility: hidden;
+      width: 18px;
+      height: 18px;
+      flex: none;
+      padding: 0;
+      background: none;
+      border: none;
+      border-radius: 50%;
+      color: var(--mut);
+      font-size: 13px;
+      line-height: 1;
+      cursor: pointer;
+
+      &:hover {
+        background: var(--surf);
+        color: var(--tx);
+      }
+    }
+  }
+}
+

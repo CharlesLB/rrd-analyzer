@@ -1,0 +1,44 @@
+<header class="site-header">
+  <nav class="site-header-bar" [attr.aria-label]="texts().header.navigation">
+    <a class="site-header-home" [href]="topAnchor"><app-brand /></a>
+    <ul class="site-header-links">
+      @for (section of sections(); track section.anchor) {
+        <li>
+          <a class="site-header-link" [href]="section.anchor">{{ section.label }}</a>
+        </li>
+      }
+    </ul>
+    <a class="site-header-github" appExternalLink [href]="links.repository">
+      {{ texts().header.github }}
+      <app-external-link-icon class="site-header-github-icon" />
+    </a>
+    <button
+      class="site-header-menu-button"
+      [class.site-header-menu-button-open]="isMenuOpen()"
+      type="button"
+      [attr.aria-label]="texts().header.menu"
+      [attr.aria-expanded]="isMenuOpen()"
+      [attr.aria-controls]="menuId"
+      (click)="toggleMenu()"
+    >
+      <span class="site-header-menu-line site-header-menu-line-top"></span>
+      <span class="site-header-menu-line site-header-menu-line-middle"></span>
+      <span class="site-header-menu-line site-header-menu-line-bottom"></span>
+    </button>
+  </nav>
+  @if (isMenuOpen()) {
+    <div class="site-header-menu" [id]="menuId" (keydown.escape)="closeMenu()">
+      @for (section of sections(); track section.anchor) {
+        <a class="site-header-menu-link" [href]="section.anchor" (click)="closeMenu()">{{ section.label }}</a>
+      }
+      <a class="site-header-menu-link site-header-menu-github" appExternalLink [href]="links.repository">
+        {{ texts().header.github }}
+        <app-external-link-icon class="site-header-menu-github-icon" />
+      </a>
+      <a class="site-header-menu-download" [href]="downloadCall().href" (click)="closeMenu()">
+        <app-download-icon class="site-header-menu-download-icon" />
+        <span>{{ downloadCall().label }}</span>
+      </a>
+    </div>
+  }
+</header>

@@ -1,0 +1,38 @@
+@use 'mixins';
+
+:host {
+  display: contents;
+}
+
+.library-strip-card {
+  flex: 0 0 132px;
+  @include mixins.series-card(10px, 6px);
+
+  &-head {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    padding: 4px 4px 0 7px;
+  }
+
+  &-name {
+    font-size: 10.5px;
+    flex: 1;
+    min-width: 0;
+  }
+
+  &-toggle {
+    background: none;
+    border: none;
+    color: var(--accT);
+    font-size: 13px;
+    cursor: pointer;
+    padding: 0 3px;
+    flex: none;
+  }
+
+  &-spark {
+    height: 26px;
+    padding: 1px 5px 4px;
+  }
+}

@@ -1,0 +1,65 @@
+@use 'mixins';
+
+:host {
+  display: contents;
+}
+
+.log-color-row {
+  border: 1px solid transparent;
+  border-radius: 10px;
+  padding: 5px 7px;
+
+  &-open {
+    border-color: var(--accLine);
+  }
+
+  &-heading {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+  }
+
+  &-swatch {
+    flex: none;
+    width: 22px;
+    height: 22px;
+    border-radius: 7px;
+    border: 2px solid var(--bg2);
+    box-shadow: 0 0 0 1px var(--line2);
+    cursor: pointer;
+    padding: 0;
+  }
+
+  &-name {
+    min-width: 0;
+    font-family: var(--font-monospace);
+    font-size: 12px;
+    font-weight: 600;
+    @include mixins.text-ellipsis;
+  }
+
+  &-count {
+    font-size: 11px;
+    color: var(--mut);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+
+  &-reset {
+    background: none;
+    border: none;
+    color: var(--mut);
+    font-size: 11px;
+    cursor: pointer;
+    padding: 0 2px;
+
+    &:hover {
+      color: var(--tx);
+    }
+  }
+
+  &-palette {
+    padding: 10px 2px 4px 31px;
+    animation: om-fade 0.16s ease both;
+  }
+}

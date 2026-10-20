@@ -1,0 +1,48 @@
+@use 'mixins';
+
+:host {
+  display: block;
+}
+
+.browser-frame {
+  @include mixins.framed-surface(16px);
+
+  &-bar {
+    height: 34px;
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    padding: 0 14px;
+    border-bottom: 1px solid var(--line);
+    background: var(--surf);
+  }
+
+  &-dot {
+    width: 11px;
+    height: 11px;
+    border-radius: 50%;
+    background: var(--line2);
+    flex: none;
+  }
+
+  &-title {
+    flex: 1;
+    min-width: 0;
+    font-size: 12.5px;
+    font-weight: 700;
+    color: var(--mut);
+    text-align: left;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+
+    &-centered {
+      text-align: center;
+    }
+  }
+
+  &-balance {
+    width: 47px;
+    flex: none;
+  }
+}

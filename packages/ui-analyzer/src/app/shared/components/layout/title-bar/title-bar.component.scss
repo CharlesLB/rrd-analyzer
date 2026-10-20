@@ -1,0 +1,26 @@
+@use 'mixins';
+
+:host {
+  display: block;
+}
+
+.title-bar {
+  display: flex;
+  align-items: stretch;
+  height: 52px;
+  border-bottom: 1px solid var(--line);
+  background: var(--bg2);
+  user-select: none;
+  @include mixins.window-drag-region;
+
+  &-native-controls {
+    padding-left: 68px;
+  }
+
+  &-content {
+    position: relative;
+    display: flex;
+    flex: 1;
+    min-width: 0;
+  }
+}

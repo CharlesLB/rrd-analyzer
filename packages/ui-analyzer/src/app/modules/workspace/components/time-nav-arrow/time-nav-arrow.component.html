@@ -1,0 +1,17 @@
+<div class="time-nav-arrow" [class]="sideClass()" (mouseenter)="showTooltip()" (mouseleave)="hideTooltip()" (focusin)="showTooltip()" (focusout)="hideTooltip()">
+  <button
+    class="time-nav-arrow-button"
+    type="button"
+    [attr.aria-disabled]="!shift().isAvailable"
+    [attr.aria-label]="actionLabel()"
+    (click)="requestShift()"
+  >
+    <app-chevron-icon class="time-nav-arrow-icon" [pointsTo]="chevronDirection()" />
+  </button>
+  @if (isHovered()) {
+    <div class="time-nav-arrow-tip">
+      <span class="time-nav-arrow-tip-title">{{ shift().title }}</span>
+      <span class="time-nav-arrow-tip-detail">{{ shift().detail }}</span>
+    </div>
+  }
+</div>

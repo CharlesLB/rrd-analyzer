@@ -1,0 +1,9 @@
+@use 'mixins';
+
+:host {
+  display: block;
+}
+
+.external-link-icon {
+  @include mixins.stroked-icon(2);
+}

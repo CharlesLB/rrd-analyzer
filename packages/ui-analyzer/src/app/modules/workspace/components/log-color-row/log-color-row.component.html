@@ -1,0 +1,22 @@
+<div class="log-color-row" [class.log-color-row-open]="isOpen()">
+  <div class="log-color-row-heading">
+    <button
+      class="log-color-row-swatch"
+      type="button"
+      [title]="changeLabel()"
+      [attr.aria-label]="changeLabel()"
+      [attr.aria-expanded]="isOpen()"
+      [style.background]="color()"
+      (click)="toggled.emit()"
+    ></button>
+    <span class="log-color-row-name">{{ name() }}</span>
+    <span class="log-color-row-count">{{ count() }}</span>
+    <span class="spacer"></span>
+    @if (canReset()) {
+      <button class="log-color-row-reset" type="button" (click)="resetRequested.emit()">{{ texts().logs.setup.resetColor }}</button>
+    }
+  </div>
+  @if (isOpen()) {
+    <app-color-palette class="log-color-row-palette" [color]="color()" (colorChosen)="colorChosen.emit($event)" />
+  }
+</div>

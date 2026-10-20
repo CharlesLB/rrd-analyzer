@@ -1,0 +1,9 @@
+@use 'mixins';
+
+:host {
+  display: contents;
+}
+
+.theme-toggle {
+  @include mixins.outline-button(10px, 6px 11px, 13px, var(--mut));
+}

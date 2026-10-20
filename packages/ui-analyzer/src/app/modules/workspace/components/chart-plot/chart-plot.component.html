@@ -1,0 +1,13 @@
+<app-plot-drawing [lines]="lines()" [referenceLines]="referenceLines()" [referenceColor]="referenceColor()" [overlays]="overlays()" [logMarks]="logMarks()" />
+@for (reference of referenceLines(); track reference.key) {
+  <span class="chart-plot-reference-label" [style.top]="reference.labelTop" [style.background]="referenceColor()">{{ reference.label }}</span>
+}
+@for (row of axisRows(); track $index) {
+  @if (row.values.length > 0) {
+    <span class="chart-plot-axis-label" [style.top]="row.topPercent">
+      @for (value of row.values; track $index) {
+        <span class="chart-plot-axis-value" [class.chart-plot-axis-value-colored]="value.color !== null" [style.--axis-color]="value.color">{{ value.text }}</span>
+      }
+    </span>
+  }
+}

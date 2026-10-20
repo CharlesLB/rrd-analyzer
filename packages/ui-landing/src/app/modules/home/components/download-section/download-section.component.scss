@@ -1,0 +1,118 @@
+@use 'mixins';
+
+:host {
+  display: block;
+}
+
+.download-section {
+  @include mixins.page-section;
+
+  &-heading {
+    max-width: 720px;
+  }
+
+  &-platforms {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr));
+    gap: 16px;
+    margin: 40px 0 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  &-more {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 420px), 1fr));
+    gap: 16px;
+    margin-top: 16px;
+  }
+
+  &-card {
+    @include mixins.card;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+
+    &-top {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: baseline;
+      gap: 10px;
+    }
+
+    &-title {
+      font-size: 18px;
+      font-weight: 800;
+      margin: 0;
+    }
+  }
+
+  &-changelog {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-left: auto;
+    font-size: 14px;
+    font-weight: 700;
+
+    &-icon {
+      @include mixins.icon-size(15px);
+    }
+  }
+
+  &-notes {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin: 2px 0 0;
+    padding: 0;
+    list-style: none;
+    font-size: 15.5px;
+    line-height: 1.5;
+    color: var(--tx2);
+  }
+
+  &-note {
+    display: flex;
+    gap: 10px;
+
+    &-mark {
+      color: var(--accT);
+      font-weight: 800;
+    }
+  }
+
+  &-routes {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  &-route-item + &-route-item {
+    border-top: 1px solid var(--line);
+  }
+
+  &-route {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    min-height: 44px;
+    padding: 2px 0;
+    font-size: 15.5px;
+    font-weight: 700;
+    color: var(--tx);
+
+    &:hover {
+      color: var(--accT);
+    }
+
+    &-icon {
+      @include mixins.icon-size(18px);
+      color: var(--accT);
+    }
+  }
+}

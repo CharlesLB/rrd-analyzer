@@ -1,0 +1,179 @@
+@use 'mixins';
+
+:host {
+  display: contents;
+}
+
+.log-detail-panel {
+  --side-panel-header-padding: 0 8px 0 14px;
+
+  &-position {
+    font-size: 11px;
+    color: var(--mut);
+    font-variant-numeric: tabular-nums;
+  }
+
+  &-steps {
+    display: flex;
+    flex: none;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    overflow: hidden;
+  }
+
+  &-step {
+    width: 27px;
+    height: 24px;
+    background: none;
+    border: none;
+    color: var(--tx2);
+    font-size: 14px;
+    cursor: pointer;
+    padding: 0 0 2px;
+
+    &:first-child {
+      border-right: 1px solid var(--line);
+    }
+
+    &:not(:disabled):hover {
+      background: var(--surf2);
+    }
+
+    &:disabled {
+      color: var(--line2);
+      cursor: default;
+    }
+  }
+
+  &-summary {
+    display: flex;
+    flex-direction: column;
+    gap: 9px;
+    flex: none;
+    padding: 12px 14px;
+    border-bottom: 1px solid var(--line);
+  }
+
+  &-facts {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  &-badge {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    border: 1px solid color-mix(in srgb, var(--type-color) 55%, transparent);
+    background: color-mix(in srgb, var(--type-color) 13%, transparent);
+    border-radius: 7px;
+    padding: 2px 8px 2px 7px;
+
+    &-dot {
+      flex: none;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--type-color);
+    }
+
+    &-type {
+      font-family: var(--font-monospace);
+      font-size: 11.5px;
+      font-weight: 700;
+      color: var(--tx);
+    }
+  }
+
+  &-time {
+    font-family: var(--font-monospace);
+    font-size: 11.5px;
+    color: var(--tx2);
+    font-variant-numeric: tabular-nums;
+  }
+
+  &-center {
+    white-space: nowrap;
+    @include mixins.outline-button(7px, 2px 8px, 11px, var(--accT));
+  }
+
+  &-message {
+    max-height: 126px;
+    overflow-y: auto;
+    overflow-wrap: anywhere;
+    text-wrap: pretty;
+    font-size: 14px;
+    font-weight: 600;
+    line-height: 1.45;
+    color: var(--tx);
+  }
+
+  &-mapping {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    font-size: 10.5px;
+    color: var(--mut);
+  }
+
+  &-role {
+    white-space: nowrap;
+
+    &-path {
+      font-family: var(--font-monospace);
+      color: var(--tx2);
+    }
+  }
+
+  &-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    flex: none;
+    height: 36px;
+    padding: 0 8px 0 14px;
+    border-bottom: 1px solid var(--line);
+  }
+
+  &-caption {
+    @include mixins.caption-text;
+  }
+
+  &-lines {
+    font-size: 11px;
+    color: var(--mut);
+    font-variant-numeric: tabular-nums;
+  }
+
+  &-find,
+  &-copy {
+    white-space: nowrap;
+    @include mixins.outline-button(7px, 3px 8px, 11px, var(--tx2));
+  }
+
+  &-find {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+
+    &-open {
+      background: var(--accBg);
+      border-color: var(--accLine);
+    }
+
+    &-icon {
+      width: 12px;
+      height: 12px;
+    }
+  }
+
+  &-footer {
+    flex: none;
+    border-top: 1px solid var(--line);
+    padding: 7px 14px;
+    font-size: 10.5px;
+    color: var(--mut);
+    line-height: 1.5;
+  }
+}

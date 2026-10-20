@@ -1,0 +1,46 @@
+<div
+  #card
+  class="finding-card"
+  [class.finding-card-focused]="isFocused()"
+  [style.border-left-color]="tone().foreground"
+  [style.background]="background()"
+  (mouseenter)="hovered.emit(true)"
+  (mouseleave)="hovered.emit(false)"
+>
+  <div class="finding-card-summary" appPressable [attr.aria-expanded]="isOpen()" (click)="toggled.emit()">
+    <div class="finding-card-heading">
+      <span class="finding-card-severity" [style.color]="tone().foreground">{{ severityLabel() }}</span>
+      @if (finding().isInferred) {
+        <span class="finding-card-inferred" [title]="texts().insights.inferredTip">i</span>
+      }
+      <span class="spacer"></span>
+      <span class="finding-card-interval">{{ interval() }}</span>
+    </div>
+    <div class="finding-card-title">{{ finding().title }}</div>
+    <div class="finding-card-meta">
+      <span class="finding-card-disclosure">{{ disclosure() }}</span>
+      <span class="finding-card-match">{{ finding().match }}</span>
+    </div>
+  </div>
+  @if (isOpen()) {
+    <div class="finding-card-detail">
+      <div class="finding-card-cause">
+        @for (part of finding().cause; track $index) {
+          <span [class.finding-card-number]="part.isEmphasized">{{ part.text }}</span>
+        }
+      </div>
+      <div class="finding-card-evidence">
+        @for (row of evidenceRows(); track $index) {
+          <app-evidence-chip
+            [evidence]="row.evidence"
+            [severity]="finding().severity"
+            [plottedColor]="row.plottedColor"
+            (jumpRequested)="evidenceJumpRequested.emit(row.evidence)"
+            (plotRequested)="plotRequested.emit(row.evidence.seriesId)"
+          />
+        }
+      </div>
+      <button class="finding-card-show" type="button" (click)="showOnChartRequested.emit()">{{ texts().insights.showOnChart }}</button>
+    </div>
+  }
+</div>

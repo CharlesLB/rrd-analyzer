@@ -1,0 +1,13 @@
+:host {
+  display: contents;
+}
+
+.library-strip {
+  flex: none;
+  display: flex;
+  gap: 7px;
+  overflow-x: auto;
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--line);
+  background: var(--bg2);
+}

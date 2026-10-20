@@ -1,0 +1,102 @@
+:host {
+  display: flex;
+  flex: none;
+  align-self: stretch;
+}
+
+.window-controls {
+  display: flex;
+  align-items: stretch;
+
+  &-button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 46px;
+    padding: 0;
+    border: none;
+    border-radius: 0;
+    background: none;
+    color: var(--tx);
+    cursor: default;
+    transition-duration: 0.1s;
+
+    &:hover {
+      background: var(--surf2);
+    }
+
+    &:not(:disabled):active {
+      transform: none;
+      background: var(--line);
+    }
+
+    &:focus-visible {
+      outline-offset: -2px;
+    }
+  }
+
+  &-close {
+    &:hover,
+    &:not(:disabled):active {
+      color: var(--windowCloseInk);
+    }
+
+    &:hover {
+      background: var(--windowClose);
+    }
+
+    &:not(:disabled):active {
+      background: var(--windowClosePressed);
+    }
+  }
+
+  &-glyph {
+    width: 10px;
+    height: 10px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1;
+    shape-rendering: crispEdges;
+  }
+
+  &-close &-glyph {
+    shape-rendering: geometricPrecision;
+  }
+
+  &-linux {
+    align-items: center;
+    gap: 10px;
+    padding: 0 12px 0 2px;
+  }
+
+  &-linux &-button {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: var(--surf2);
+    color: var(--tx2);
+
+    &:hover {
+      background: var(--line);
+      color: var(--tx);
+    }
+
+    &:not(:disabled):active {
+      background: var(--line2);
+      color: var(--tx);
+    }
+
+    &:focus-visible {
+      outline-offset: 1px;
+    }
+  }
+
+  &-linux &-glyph {
+    width: 8px;
+    height: 8px;
+    stroke-width: 1.5;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    shape-rendering: geometricPrecision;
+  }
+}

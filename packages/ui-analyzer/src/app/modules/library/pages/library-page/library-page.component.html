@@ -1,0 +1,58 @@
+<app-library-top-bar />
+
+<div class="library-scroll">
+  <div class="library-column">
+    <app-new-analysis-card (startRequested)="openDialog()" (filesDropped)="startWithDropped($event)" />
+
+    <div class="library-heading">
+      <span class="library-caption">{{ texts().library.previousAnalysesCaption }}</span>
+      @if (isFilterShown()) {
+        <app-search-field
+          class="library-filter"
+          [placeholder]="texts().library.filterPlaceholder"
+          [history]="filterHistory()"
+          [(value)]="typedFilter"
+          (committed)="rememberFilter($event)"
+          (forgotten)="forgetFilter($event)"
+        />
+      }
+    </div>
+
+    @if (hasLoadFailed()) {
+      <div class="library-failure" role="alert">
+        <span class="library-failure-message">{{ texts().library.loadFailed }}</span>
+        <button class="library-failure-retry" type="button" (click)="readAgain()">{{ texts().library.retryLoad }}</button>
+      </div>
+    } @else if (isReadingFirstTime()) {
+      <div class="library-note">{{ texts().library.loading }}</div>
+    } @else if (isEmpty()) {
+      <div class="library-note">{{ texts().library.noAnalyses }}</div>
+    }
+
+    @if (matchesNothing()) {
+      <div class="library-note">{{ texts().library.noMatches }}</div>
+    }
+
+    @for (analysis of shownAnalyses(); track analysis.id) {
+      <app-analysis-row
+        [analysis]="analysis"
+        [nowMilliseconds]="nowMilliseconds()"
+        [route]="[workspaceRoute, analysis.id]"
+        [missingSources]="missingSources()[analysis.id] ?? noneMissing"
+        (removed)="remove($event)"
+      />
+    }
+  </div>
+</div>
+
+@if (version(); as version) {
+  <span class="library-version" [title]="texts().application.versionTitle">{{ version }}</span>
+}
+
+@defer (when isDialogOpen(); prefetch on idle) {
+  @if (isDialogOpen()) {
+    <app-new-analysis-dialog (created)="openCreatedAnalysis($event)" />
+  }
+} @error {
+  <div class="library-dialog-failure">{{ texts().library.dialogUnavailable }}</div>
+}

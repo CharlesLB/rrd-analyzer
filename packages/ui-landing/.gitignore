@@ -1,0 +1,7 @@
+.angular/
+dist/
+out-tsc/
+coverage/
+node_modules/
+e2e/report/
+e2e/.artifacts/

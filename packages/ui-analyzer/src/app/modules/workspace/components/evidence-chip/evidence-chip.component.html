@@ -1,0 +1,18 @@
+<div class="evidence-chip" appPressable [title]="texts().insights.jumpTip" (click)="jumpRequested.emit()">
+  <div class="evidence-chip-head">
+    <span class="evidence-chip-badge" [style.color]="badge().color" [style.background]="badge().background" [style.border-color]="badge().border">
+      {{ evidence().semantic }}
+    </span>
+    <span class="evidence-chip-glyph" [style.color]="glyphColor()">{{ glyph() }}</span>
+    <span class="spacer"></span>
+    <app-evidence-spark [points]="evidence().spark" [color]="sparkColor()" />
+  </div>
+  <div class="evidence-chip-values">
+    <span class="evidence-chip-span-values">{{ values() }}</span>
+    <span class="evidence-chip-source" [title]="evidence().source">{{ evidence().source }}</span>
+  </div>
+  <div class="evidence-chip-when">{{ span() }}</div>
+  @if (plottedColor() === null) {
+    <button class="evidence-chip-plot" type="button" (click)="plot($event)">{{ texts().insights.plotSeries }}</button>
+  }
+</div>

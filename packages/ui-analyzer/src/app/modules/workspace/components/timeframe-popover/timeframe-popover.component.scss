@@ -1,0 +1,53 @@
+@use 'mixins';
+
+:host {
+  display: contents;
+  @include mixins.window-drag-exempt;
+}
+
+.timeframe-popover {
+  position: absolute;
+  top: 48px;
+  width: 432px;
+  z-index: 60;
+  @include mixins.popover-surface;
+
+  &-compact {
+    position: fixed;
+    top: 58px;
+    left: 12px;
+    width: calc(100vw - 24px);
+  }
+
+  &-backdrop {
+    @include mixins.menu-backdrop(50);
+  }
+
+  &-tabs {
+    display: flex;
+    gap: 2px;
+    padding: 8px 10px 0;
+  }
+
+  &-tab {
+    background: transparent;
+    border: none;
+    border-bottom: 2px solid transparent;
+    color: var(--mut);
+    font-size: 13px;
+    font-weight: 600;
+    padding: 7px 12px;
+    cursor: pointer;
+    border-radius: 8px 8px 0 0;
+
+    &-active {
+      background: var(--surf2);
+      border-bottom-color: var(--acc);
+      color: var(--tx);
+    }
+  }
+
+  &-divider {
+    @include mixins.menu-divider(0);
+  }
+}

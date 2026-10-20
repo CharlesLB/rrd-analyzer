@@ -1,0 +1,100 @@
+@use 'mixins';
+
+:host {
+  transition:
+    border-color 0.25s ease,
+    background-color 0.25s ease;
+  display: flex;
+  align-items: center;
+  background: var(--surf);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+
+  &:hover,
+  &:focus-within {
+    border-color: var(--accLine);
+    background: var(--bg2);
+  }
+}
+
+.analysis-row {
+  flex: 1;
+  min-width: 0;
+  border-radius: 13px;
+  padding: 13px 14px 13px 16px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  cursor: pointer;
+
+  &-text {
+    flex: 1;
+    min-width: 0;
+  }
+
+  &-name {
+    font-size: 15px;
+    font-weight: 600;
+    @include mixins.text-ellipsis;
+  }
+
+  &-meta {
+    font-size: 13px;
+    color: var(--mut);
+    margin-top: 3px;
+    @include mixins.text-ellipsis;
+  }
+
+  &-missing {
+    flex: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12.5px;
+    font-weight: 600;
+    color: var(--danger);
+    border: 1px solid var(--danger);
+    border-radius: 999px;
+    padding: 2px 9px 2px 3px;
+    white-space: nowrap;
+
+    &-glyph {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: var(--danger);
+      color: var(--surf);
+      font-size: 11px;
+    }
+  }
+
+  &-access {
+    font-size: 12.5px;
+    color: var(--mut);
+    white-space: nowrap;
+    flex: none;
+  }
+
+  &-open {
+    font-size: 13px;
+    color: var(--accT);
+    flex: none;
+  }
+
+  &-delete {
+    flex: none;
+    min-width: 34px;
+    min-height: 34px;
+    margin-right: 12px;
+    @include mixins.outline-button(9px, 4px 9px, 15px, var(--mut));
+
+    &:hover,
+    &:focus-visible {
+      color: var(--danger);
+      border-color: var(--danger);
+    }
+  }
+}

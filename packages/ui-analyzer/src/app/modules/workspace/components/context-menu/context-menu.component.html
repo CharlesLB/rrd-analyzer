@@ -1,0 +1,38 @@
+<div class="context-menu-backdrop" (click)="closeRequested.emit()" (contextmenu)="closeFromContextMenu($event)"></div>
+<div class="context-menu" appFocusScope [style.left.px]="placement().x" [style.top.px]="placement().y">
+  <div class="context-menu-title" [title]="title()">{{ title() }}</div>
+  <div class="context-menu-section">
+    <div class="context-menu-heading">{{ texts().contextMenu.chartHeading }}</div>
+    <button class="context-menu-item" type="button" (click)="openRequested.emit()">{{ texts().contextMenu.openChart }}</button>
+    @if (!isOnCanvas()) {
+      <button class="context-menu-item" type="button" (click)="addRequested.emit()">{{ texts().contextMenu.addToCanvas }}</button>
+    }
+  </div>
+  @if (mergeTargets().length > 0) {
+    <div class="context-menu-section">
+      <div class="context-menu-heading">{{ texts().contextMenu.mergeHeading }}</div>
+      @for (item of mergeItems(); track item.target.chartId) {
+        <button
+          class="context-menu-item context-menu-item-merge"
+          type="button"
+          [title]="item.tip"
+          [attr.aria-label]="item.tip"
+          (click)="mergeRequested.emit(item.target.chartId)"
+        >
+          {{ item.target.label }}
+        </button>
+      }
+    </div>
+  }
+  <div class="context-menu-section">
+    <div class="context-menu-heading">{{ texts().contextMenu.libraryHeading }}</div>
+    <button class="context-menu-item" type="button" [disabled]="isAtTopOfLibrary()" (click)="moveToTopRequested.emit()">
+      {{ texts().contextMenu.moveToTop }}
+    </button>
+    @if (isOnCanvas()) {
+      <button class="context-menu-item context-menu-item-danger" type="button" (click)="removeRequested.emit()">
+        {{ texts().contextMenu.removeFromCanvas }}
+      </button>
+    }
+  </div>
+</div>

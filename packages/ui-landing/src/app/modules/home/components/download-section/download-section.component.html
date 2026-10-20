@@ -1,0 +1,54 @@
+@let download = texts().download;
+<section class="download-section" [id]="sectionId">
+  <app-section-heading class="download-section-heading" [eyebrow]="download.eyebrow" [title]="title()" [introduction]="download.introduction" />
+
+  <ul class="download-section-platforms">
+    @for (platform of platforms(); track platform.platform) {
+      <li class="download-section-platform"><app-platform-card [downloads]="platform" /></li>
+    }
+  </ul>
+
+  <div class="download-section-more">
+    <div class="download-section-card">
+      <div class="download-section-card-top">
+        <h3 class="download-section-card-title">{{ whatsNew() }}</h3>
+        <a class="download-section-changelog" appExternalLink [href]="links.releaseNotes">
+          {{ download.fullChangelog }}
+          <app-external-link-icon class="download-section-changelog-icon" />
+        </a>
+      </div>
+      <ul class="download-section-notes">
+        @for (note of download.releaseNotes; track note) {
+          <li class="download-section-note">
+            <span class="download-section-note-mark" aria-hidden="true">{{ addedMark }}</span>
+            <span>{{ note }}</span>
+          </li>
+        }
+      </ul>
+    </div>
+
+    <div class="download-section-card">
+      <h3 class="download-section-card-title">{{ download.otherWays }}</h3>
+      <ul class="download-section-routes">
+        <li class="download-section-route-item">
+          <a class="download-section-route" appExternalLink [href]="links.releases">
+            <span>{{ download.allReleases }}</span>
+            <app-external-link-icon class="download-section-route-icon" />
+          </a>
+        </li>
+        <li class="download-section-route-item">
+          <a class="download-section-route" appExternalLink [href]="links.repository">
+            <span>{{ download.sourceCode }}</span>
+            <app-external-link-icon class="download-section-route-icon" />
+          </a>
+        </li>
+        <li class="download-section-route-item">
+          <a class="download-section-route" [href]="demoAnchor">
+            <span>{{ download.tryInBrowser }}</span>
+            <app-arrow-right-icon class="download-section-route-icon" />
+          </a>
+        </li>
+      </ul>
+    </div>
+  </div>
+</section>

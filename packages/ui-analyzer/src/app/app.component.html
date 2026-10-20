@@ -1,0 +1,7 @@
+<div class="app-shell" [class]="themeClass()">
+  @if (edition.runsInTheBrowser) {
+    <app-browser-edition-notice [offlineDownloadUrl]="edition.offlineDownloadUrl" />
+  }
+  <router-outlet />
+  <app-toast [message]="toastMessage()" [actionLabel]="toastActionLabel()" (actionChosen)="runToastAction()" (dismissed)="dismissToast()" (held)="holdToast()" (released)="releaseToast()" />
+</div>

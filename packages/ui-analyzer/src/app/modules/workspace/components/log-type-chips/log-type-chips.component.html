@@ -1,0 +1,17 @@
+<div class="log-type-chips">
+  @for (chip of chips(); track chip.name) {
+    <button
+      class="log-type-chips-chip"
+      [class.log-type-chips-chip-hidden]="chip.isHidden"
+      type="button"
+      [title]="chip.tip"
+      [attr.aria-pressed]="!chip.isHidden"
+      [style.--type-color]="chip.color"
+      (click)="toggled.emit(chip.name)"
+    >
+      <span class="log-type-chips-chip-dot"></span>
+      <span class="log-type-chips-chip-name">{{ chip.name }}</span>
+      <span class="log-type-chips-chip-count">{{ chip.count }}</span>
+    </button>
+  }
+</div>

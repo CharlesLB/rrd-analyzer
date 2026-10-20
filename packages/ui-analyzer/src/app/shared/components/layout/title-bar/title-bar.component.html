@@ -1,0 +1,14 @@
+<div class="title-bar" [class.title-bar-native-controls]="reservesNativeControls()" (dblclick)="toggleMaximiseFromDragRegion($event)">
+  <div class="title-bar-content">
+    <ng-content />
+  </div>
+  @if (windowControlsPlatform(); as platform) {
+    <app-window-controls
+      [platform]="platform"
+      [isMaximised]="isMaximised()"
+      (minimiseRequested)="minimiseWindow()"
+      (maximiseToggled)="toggleMaximiseWindow()"
+      (closeRequested)="closeWindow()"
+    />
+  }
+</div>

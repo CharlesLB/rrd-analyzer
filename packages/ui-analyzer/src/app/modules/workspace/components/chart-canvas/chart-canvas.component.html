@@ -1,0 +1,22 @@
+<div
+  class="chart-canvas"
+  [style.grid-template-columns]="grid().columns"
+  [style.grid-template-rows]="grid().rows"
+  [style.grid-auto-rows]="grid().autoRows"
+  [style.overflow-y]="grid().overflow"
+  (dragover)="aimAtBackground($event)"
+  (dragleave)="leaveBackground($event)"
+  (drop)="dropOnBackground($event)"
+>
+  <ng-content />
+  @if (hasNoChart()) {
+    <div class="chart-canvas-empty" [class.chart-canvas-empty-aimed]="isBackgroundAimed()">
+      <span>{{ texts().canvas.emptyTitle }}</span>
+      <span class="chart-canvas-empty-hint">{{ texts().canvas.emptyHint }}</span>
+    </div>
+  } @else if (isBackgroundAimed()) {
+    <div class="chart-canvas-slot">
+      <span class="chart-canvas-slot-label">{{ texts().canvas.addHere }}</span>
+    </div>
+  }
+</div>

@@ -1,0 +1,33 @@
+<div class="window-controls" [class.window-controls-linux]="isLinux()" (mousedown)="keepPressFromWindowEdgeResize($event)">
+  <button
+    class="window-controls-button window-controls-minimise"
+    type="button"
+    [title]="texts().windowControls.minimise"
+    [attr.aria-label]="texts().windowControls.minimise"
+    (click)="minimiseRequested.emit()"
+  >
+    <app-minimise-icon class="window-controls-glyph" />
+  </button>
+  <button
+    class="window-controls-button window-controls-maximise"
+    type="button"
+    [title]="maximiseLabel()"
+    [attr.aria-label]="maximiseLabel()"
+    (click)="maximiseToggled.emit()"
+  >
+    @if (isMaximised()) {
+      <app-restore-icon class="window-controls-glyph" />
+    } @else {
+      <app-maximise-icon class="window-controls-glyph" />
+    }
+  </button>
+  <button
+    class="window-controls-button window-controls-close"
+    type="button"
+    [title]="texts().windowControls.close"
+    [attr.aria-label]="texts().windowControls.close"
+    (click)="closeRequested.emit()"
+  >
+    <app-close-icon class="window-controls-glyph" />
+  </button>
+</div>

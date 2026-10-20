@@ -1,0 +1,27 @@
+@let donate = texts().donate;
+<section class="donate-section" [id]="sectionId">
+  <div class="donate-section-panel">
+    <div class="donate-section-pitch">
+      <div class="donate-section-bars" aria-hidden="true">
+        <span class="donate-section-bar donate-section-bar-short"></span>
+        <span class="donate-section-bar donate-section-bar-medium"></span>
+        <span class="donate-section-bar donate-section-bar-peak"></span>
+        <span class="donate-section-bar donate-section-bar-low"></span>
+      </div>
+      <h2 class="donate-section-title">{{ donate.title }}</h2>
+      <p class="donate-section-body">{{ donate.body }}</p>
+    </div>
+    <div class="donate-section-card">
+      <h3 class="donate-section-card-title">{{ donate.cardTitle }}</h3>
+      <a class="donate-section-provider" appExternalLink [href]="donationLink">
+        <span class="donate-section-provider-mark" aria-hidden="true">{{ donate.providerMark }}</span>
+        <span class="donate-section-provider-text">
+          <span class="donate-section-provider-name">{{ donate.providerName }}</span>
+          <span class="donate-section-provider-description">{{ donate.providerDescription }}</span>
+        </span>
+        <app-external-link-icon class="donate-section-provider-icon" />
+      </a>
+      <p class="donate-section-note">{{ donate.paymentsNote }}</p>
+    </div>
+  </div>
+</section>

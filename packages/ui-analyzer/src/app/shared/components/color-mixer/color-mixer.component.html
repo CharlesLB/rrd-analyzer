@@ -1,0 +1,44 @@
+<div class="color-mixer">
+  <div
+    class="color-mixer-shade"
+    role="slider"
+    tabindex="0"
+    [attr.aria-label]="texts().colorPicker.shade"
+    [attr.aria-valuetext]="picked()"
+    [style.background]="shadeBackground()"
+    (pointerdown)="grabShade($event)"
+    (pointermove)="dragShade($event)"
+    (keydown)="nudgeShade($event)"
+  >
+    <span class="color-mixer-shade-thumb" [style.left]="shadeThumb().left" [style.top]="shadeThumb().top" [style.background]="picked()"></span>
+  </div>
+  <div
+    class="color-mixer-hue"
+    role="slider"
+    tabindex="0"
+    aria-valuemin="0"
+    aria-valuemax="359"
+    [attr.aria-label]="texts().colorPicker.hue"
+    [attr.aria-valuenow]="hueDegrees()"
+    [style.background]="hueTrack"
+    (pointerdown)="grabHue($event)"
+    (pointermove)="dragHue($event)"
+    (keydown)="nudgeHue($event)"
+  >
+    <span class="color-mixer-hue-thumb" [style.left]="hueThumbLeft()" [style.background]="pureHue()"></span>
+  </div>
+  <div class="color-mixer-row">
+    <span class="color-mixer-preview">
+      <span class="color-mixer-preview-half" [title]="texts().colorPicker.current" [style.background]="color()"></span>
+      <span class="color-mixer-preview-half" [title]="texts().colorPicker.picked" [style.background]="picked()"></span>
+    </span>
+    <label class="color-mixer-hex">
+      <span class="color-mixer-hex-label">{{ texts().colorPicker.hex }}</span>
+      <input class="color-mixer-hex-input" type="text" spellcheck="false" maxlength="7" [value]="picked()" (change)="typeHex($event)" (keydown.enter)="typeHex($event)" />
+    </label>
+  </div>
+  <div class="color-mixer-actions">
+    <button class="color-mixer-cancel" type="button" (click)="cancelled.emit()">{{ texts().colorPicker.cancel }}</button>
+    <button class="color-mixer-apply" type="button" (click)="apply()">{{ texts().colorPicker.apply }}</button>
+  </div>
+</div>

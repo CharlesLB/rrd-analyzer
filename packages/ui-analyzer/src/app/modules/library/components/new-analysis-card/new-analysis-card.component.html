@@ -1,0 +1,17 @@
+<div
+  class="new-analysis-card"
+  appPressable
+  [class.new-analysis-card-active]="isDropTarget()"
+  (click)="startRequested.emit()"
+  (dragenter)="markAsDropTarget()"
+  (dragover)="allowDrop($event)"
+  (dragleave)="clearDropTarget($event)"
+  (drop)="drop($event)"
+>
+  <span class="new-analysis-card-mark">{{ glyph }}</span>
+  <div class="new-analysis-card-text">
+    <div class="new-analysis-card-title">{{ texts().newAnalysisCard.title }}</div>
+    <div class="new-analysis-card-subtitle">{{ texts().newAnalysisCard.subtitle }}</div>
+  </div>
+  <span class="new-analysis-card-action">{{ texts().newAnalysisCard.action }}</span>
+</div>

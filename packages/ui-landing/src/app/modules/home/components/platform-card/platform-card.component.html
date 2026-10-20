@@ -1,0 +1,31 @@
+<article class="platform-card" [class.platform-card-visitors]="downloads().isVisitors">
+  @if (downloads().isVisitors) {
+    <span class="platform-card-badge">{{ texts().download.yourSystem }}</span>
+  }
+  <h3 class="platform-card-name">{{ platformTexts().name }}</h3>
+  <p class="platform-card-requirement">{{ platformTexts().requirement }}</p>
+  @if (isPackaged()) {
+    <ul class="platform-card-files">
+      @for (file of files(); track file.kind) {
+        <li>
+          <a class="platform-card-file" [class.platform-card-file-primary]="file.isPrimary" [href]="file.url">
+            <span class="platform-card-file-icon-frame"><app-download-icon class="platform-card-file-icon" /></span>
+            <span class="platform-card-file-text">
+              <span class="platform-card-file-label">{{ file.label }}</span>
+              <span class="platform-card-file-name">{{ file.fileName }}</span>
+            </span>
+          </a>
+        </li>
+      }
+    </ul>
+  } @else {
+    <p class="platform-card-unpackaged">{{ texts().download.unpackagedBody }}</p>
+    <a class="platform-card-file" [class.platform-card-file-primary]="downloads().isVisitors" appExternalLink [href]="buildFromSourceLink">
+      <span class="platform-card-file-icon-frame"><app-external-link-icon class="platform-card-file-icon" /></span>
+      <span class="platform-card-file-text">
+        <span class="platform-card-file-label">{{ texts().download.buildFromSource }}</span>
+        <span class="platform-card-file-name">{{ texts().download.buildFromSourceDetail }}</span>
+      </span>
+    </a>
+  }
+</article>

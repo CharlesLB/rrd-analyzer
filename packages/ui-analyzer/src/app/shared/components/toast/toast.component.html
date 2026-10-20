@@ -1,0 +1,11 @@
+<div class="toast-region" role="status" aria-live="polite">
+  @if (message(); as text) {
+    <div class="toast" (mouseenter)="held.emit()" (mouseleave)="released.emit()" (focusin)="held.emit()" (focusout)="released.emit()">
+      <button class="toast-close" type="button" [title]="texts().application.dismissToast" [attr.aria-label]="texts().application.dismissToast" (click)="dismissed.emit()">{{ closeGlyph }}</button>
+      <span class="toast-message">{{ text }}</span>
+      @if (actionLabel(); as label) {
+        <button #action class="toast-action" type="button" (click)="actionChosen.emit()">{{ label }}</button>
+      }
+    </div>
+  }
+</div>

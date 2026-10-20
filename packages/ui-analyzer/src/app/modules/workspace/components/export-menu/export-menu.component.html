@@ -1,0 +1,22 @@
+<app-anchored-menu [placement]="placement()" [width]="menuWidth" (closeRequested)="closeRequested.emit()">
+  <div class="export-menu-scope">
+    <app-color-swatch [color]="color()" />
+    <span class="export-menu-scope-label">{{ scopeLabel() }}</span>
+  </div>
+  @for (item of items(); track item.format) {
+    <button class="export-menu-item" type="button" (click)="formatChosen.emit(item.format)">
+      <span class="export-menu-tag">{{ item.tag }}</span>
+      <span class="export-menu-text">
+        <span class="export-menu-title">{{ item.title }}</span>
+        <span class="export-menu-detail">{{ item.detail }}</span>
+      </span>
+    </button>
+  }
+  @if (offersAllCharts()) {
+    <div class="export-menu-divider"></div>
+    <button class="export-menu-all" type="button" (click)="allChartsRequested.emit()">
+      <span class="export-menu-all-icon">{{ texts().export.allChartsIcon }}</span>
+      <span class="export-menu-all-label">{{ allChartsLabel() }}</span>
+    </button>
+  }
+</app-anchored-menu>
