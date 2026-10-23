@@ -5,7 +5,8 @@
   "scripts": {
     "ng": "ng",
     "start": "ng serve",
-    "build": "ng build && pnpm --filter @rrd-analyzer/ui-analyzer build:browser && pnpm embed:app",
+    "build": "pnpm build:site && pnpm --filter @rrd-analyzer/ui-analyzer build:browser && pnpm embed:app",
+    "build:site": "release_version=\"$(tools/release-version.sh)\" && ng build --define \"RELEASE_VERSION='$release_version'\"",
     "embed:app": "rm -rf dist/browser/app && cp -R ../ui-analyzer/dist/browser-edition dist/browser/app",
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
@@ -18,7 +19,7 @@
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
     "test:e2e:report": "playwright show-report e2e/report",
-    "docker:build": "docker build --file Dockerfile --tag rrd-analyzer-landing ../..",
+    "docker:build": "release_version=\"$(tools/release-version.sh)\" && docker build --file Dockerfile --build-arg RELEASE_VERSION=\"$release_version\" --build-arg VERSION=\"$(git describe --tags --always --dirty)\" --build-arg COMMIT=\"$(git rev-parse HEAD)\" --tag rrd-analyzer-landing ../..",
     "docker:run": "docker run --rm --publish 8080:8080 rrd-analyzer-landing"
   },
   "dependencies": {

@@ -1,5 +1,6 @@
+declare const RELEASE_VERSION: string;
+
 const REPOSITORY_URL = 'https://github.com/CharlesLB/rrd-analyzer';
-const RELEASE_VERSION = '0.0.13';
 
 export const LANDING_CONFIGURATION = {
   releaseVersion: RELEASE_VERSION,

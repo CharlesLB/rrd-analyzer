@@ -187,7 +187,14 @@ Both need Go: `tools/build-browser-runtime.sh` writes the module, Go's own `wasm
 from the toolchain that built the module, never kept in the repository) and the worker script to
 `packages/ui-analyzer/browser-runtime`, which the `browser` configuration copies beside the app. The
 SQLite stores are left out of the js build by a `!js` build constraint; everything else in the
-core compiles to WebAssembly unchanged. The `browser` package of `cmd/rrd-analyzer-web` is tested
+core compiles to WebAssembly unchanged.
+
+Neither build names a version by hand; both read the git tags, the way GoReleaser does for the
+desktop. The module carries the build identity the Makefile stamps into the desktop build
+(`git describe --tags --always --dirty`, the commit and its date, or `VERSION`, `COMMIT` and
+`COMMIT_DATE` when set). The landing page links its downloads to the latest stable tag, or to
+`RELEASE_VERSION`, and `pnpm build:landing` stops when there is neither, since every download button
+would point at a file that does not exist; see packages/ui-landing/README.md. The `browser` package of `cmd/rrd-analyzer-web` is tested
 natively and, compiled to WebAssembly, under Node:
 
 ```bash

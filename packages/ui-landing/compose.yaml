@@ -3,6 +3,10 @@ services:
     build:
       context: ../..
       dockerfile: packages/ui-landing/Dockerfile
+      args:
+        RELEASE_VERSION: ${RELEASE_VERSION:?set RELEASE_VERSION to the release the downloads link to, which tools/release-version.sh prints}
+        VERSION: ${VERSION:-}
+        COMMIT: ${COMMIT:-}
     image: rrd-analyzer-landing
     ports:
       - "8080:8080"

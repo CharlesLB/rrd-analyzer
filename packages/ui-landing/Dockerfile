@@ -3,9 +3,15 @@
 # application, and nothing in it receives or keeps a visitor's files.
 #
 # Built from the root of the repository, since the workspace lockfile, the web app and the Go core
-# the browser app is compiled from all live there:
+# the browser app is compiled from all live there. The context carries no .git, so what git would
+# have said comes in as build arguments: RELEASE_VERSION, the release every download button links
+# to, is required, and the build stops without it; VERSION and COMMIT name the build the app reports,
+# which says "dev" without them. `pnpm --filter @rrd-analyzer/ui-landing docker:build` passes all
+# three from the checkout:
 #
-#   docker build --file packages/ui-landing/Dockerfile --tag rrd-analyzer-landing .
+#   docker build --file packages/ui-landing/Dockerfile --build-arg RELEASE_VERSION=1.2.3 \
+#     --build-arg VERSION="$(git describe --tags --always --dirty)" --build-arg COMMIT="$(git rev-parse HEAD)" \
+#     --tag rrd-analyzer-landing .
 #
 # The image serves on 8080 as an unprivileged user and holds nothing but the built site.
 
@@ -33,6 +39,9 @@ COPY tools/build-browser-runtime.sh tools/
 COPY packages/shared packages/shared
 COPY packages/ui-analyzer packages/ui-analyzer
 COPY packages/ui-landing packages/ui-landing
+ARG RELEASE_VERSION
+ARG VERSION
+ARG COMMIT
 RUN pnpm --filter @rrd-analyzer/ui-landing build
 
 FROM nginxinc/nginx-unprivileged:stable-alpine

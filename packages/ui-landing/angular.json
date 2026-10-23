@@ -65,7 +65,10 @@
             "development": {
               "optimization": false,
               "extractLicenses": false,
-              "sourceMap": true
+              "sourceMap": true,
+              "define": {
+                "RELEASE_VERSION": "'0.0.0'"
+              }
             }
           },
           "defaultConfiguration": "production"

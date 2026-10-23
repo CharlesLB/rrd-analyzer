@@ -2,6 +2,7 @@ import { defineConfig, devices } from '@playwright/test';
 
 const LANDING_PORT = 4300;
 const SITE_PORT = 4301;
+const SITE_RELEASE_VERSION = '0.0.0';
 
 const browserUse = { ...devices['Desktop Chrome'], viewport: { width: 1440, height: 900 } };
 
@@ -33,7 +34,7 @@ export default defineConfig({
       timeout: 180_000,
     },
     {
-      command: `pnpm build && python3 -m http.server ${SITE_PORT} --bind 127.0.0.1 --directory dist/browser`,
+      command: `RELEASE_VERSION=${SITE_RELEASE_VERSION} pnpm build && python3 -m http.server ${SITE_PORT} --bind 127.0.0.1 --directory dist/browser`,
       url: `http://127.0.0.1:${SITE_PORT}/app/`,
       reuseExistingServer: !process.env['CI'],
       timeout: 300_000,

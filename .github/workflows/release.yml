@@ -33,6 +33,10 @@ jobs:
   verify:
     name: Checks
     runs-on: ubuntu-22.04
+    # The landing page links its downloads to a release, and this shallow checkout holds no earlier
+    # tag to find one by, so the tag being released names it.
+    env:
+      RELEASE_VERSION: ${{ inputs.tag }}
     steps:
       - uses: actions/checkout@v4
         with:

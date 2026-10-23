@@ -41,18 +41,21 @@ The code follows the same rules as `packages/ui-analyzer`: standalone OnPush com
 `src/app/stores/<domain>/`, the screen in `src/app/modules/home/`, and every visible word in the
 catalogue at `src/app/stores/i18n/models/english-messages/english.messages.ts`.
 
-## What to change on a release
+## The release it links to
 
-Everything that names a release lives in two files:
+Every download link points at one release's assets (`/releases/download/v<version>/...`), so a link
+never breaks when a newer release comes out. That version is not written anywhere: the build takes
+it from the latest stable tag reachable from HEAD (`tools/release-version.sh`, which skips
+pre-releases such as `v1.3.0-beta.1`), or from `RELEASE_VERSION` when it is set. With neither, the
+production build stops instead of linking every button to a file that does not exist. The dev
+server, the unit tests and the end-to-end suite use `0.0.0`.
 
-- `src/app/core/config/landing.config.ts`: `RELEASE_VERSION`. Every download link is built from
-  it, pointing at that tag's assets (`/releases/download/v<version>/...`), so a link never breaks
-  when a newer release comes out. The file names mirror the GoReleaser and NSIS templates; if
-  those change, `release-catalogue.model.ts` changes with them.
-- `english.messages.ts`: the hero pill (`hero.releaseHeadline`) and the three bullets of
-  `download.releaseNotes`.
+The file names mirror the GoReleaser and NSIS templates; if those change,
+`release-catalogue.model.ts` changes with them.
 
-The repository URL and the Ko-fi page are in the same config file, next to the version.
+What a release still changes by hand is the copy in `english.messages.ts`: the hero pill
+(`hero.releaseHeadline`) and the three bullets of `download.releaseNotes`. The repository URL and
+the Ko-fi page are in `src/app/core/config/landing.config.ts`.
 
 ## Deploying
 
@@ -61,17 +64,26 @@ serve the folder.
 
 ### With Docker
 
-The image builds the site and serves it with nginx as an unprivileged user on port 8080. Build it
-from the root of the repository, since the lockfile, the web app and the Go core live there:
+The image builds the site and serves it with nginx as an unprivileged user on port 8080. It is built
+from the root of the repository, since the lockfile, the web app and the Go core live there, from a
+context with no `.git` in it, so the versions come in as build arguments: `RELEASE_VERSION`, the
+release the downloads link to, is required, and `VERSION` and `COMMIT` name the build the app
+reports. The `docker:build` script passes all three from the checkout:
 
 ```bash
-docker build --file packages/ui-landing/Dockerfile --tag rrd-analyzer-landing .
-docker run --rm --publish 8080:8080 rrd-analyzer-landing
+pnpm --filter @rrd-analyzer/ui-landing docker:build
+pnpm --filter @rrd-analyzer/ui-landing docker:run
 ```
 
-or, on the server, `docker compose up --build -d` inside `packages/ui-landing` (the compose file runs
-the container read-only, with no capabilities). Put TLS in front of it with whatever already
-terminates HTTPS on the server.
+or, on the server, inside `packages/ui-landing` (the compose file runs the container read-only, with
+no capabilities, and refuses to build without `RELEASE_VERSION`):
+
+```bash
+RELEASE_VERSION="$(tools/release-version.sh)" VERSION="$(git describe --tags --always --dirty)" \
+  COMMIT="$(git rev-parse HEAD)" docker compose up --build -d
+```
+
+Put TLS in front of it with whatever already terminates HTTPS on the server.
 
 ### On an existing nginx
 
