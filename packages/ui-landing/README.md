@@ -16,8 +16,10 @@ across its top, the landing page says so beside its demo, and both point at the 
 anyone who wants to work offline and keep their analyses. The `site` end-to-end suite checks that
 opening a file sends no request at all.
 
-It opens on a sample analysis, the synthetic reference dataset the development server serves, so
-there is something to explore before opening a file.
+It opens on a sample analysis, so there is something to explore before opening a file: two weeks of a
+made-up HTTP API that the core generates in the tab from fixed seeds, as rrdtool dumps kept like any
+file a visitor opens, with the service's log already on the timeline. Its incidents are shaped for
+four findings, and the `site` suite checks that insights find them (see `docs/DEVELOPMENT.md`).
 
 ## Working on it
 
