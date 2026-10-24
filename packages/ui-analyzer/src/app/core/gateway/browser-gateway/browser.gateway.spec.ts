@@ -61,3 +61,39 @@ describe('BrowserGateway deleteAnalysis', () => {
     expect(fetched).toHaveBeenCalledWith(expect.stringMatching(/\/api\/analyses\/a1$/), expect.objectContaining({ method: 'DELETE', keepalive: true }));
   });
 });
+
+describe('BrowserGateway requests', () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it('createAnalysis sends what it creates as json to the development server, without asking the request to outlive the page', async () => {
+    const fetched = vi.fn().mockResolvedValue(new Response('{"id":"a1"}', { status: 201 }));
+    vi.stubGlobal('fetch', fetched);
+
+    const created = await new BrowserGateway().createAnalysis('capacity', []);
+
+    expect(created).toEqual({ id: 'a1' });
+    expect(fetched).toHaveBeenCalledWith(
+      'http://127.0.0.1:34115/api/analyses',
+      expect.objectContaining({
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: '{"name":"capacity","files":[]}',
+        keepalive: false,
+      }),
+    );
+  });
+
+  it('listAnalyses sends a read without a body or a content type', async () => {
+    const fetched = vi.fn().mockResolvedValue(new Response('[]', { status: 200 }));
+    vi.stubGlobal('fetch', fetched);
+
+    await new BrowserGateway().listAnalyses();
+
+    expect(fetched).toHaveBeenCalledWith(
+      'http://127.0.0.1:34115/api/analyses',
+      expect.objectContaining({ method: 'GET', headers: undefined, body: undefined }),
+    );
+  });
+});

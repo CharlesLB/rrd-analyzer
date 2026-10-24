@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { chartFixture } from '../plotted-chart/plotted-chart.fixture';
 import { CPU_USER_SERIES, MEMORY_USED_SERIES } from './series.fixture';
-import { haveSameLines, plottedLinesOf, seriesFor, seriesIdsOfLines, tracksOf } from './series.model';
+import { haveSameLines, plottedLinesOf, seriesFor, seriesIdsOfLines, seriesNameOf, tracksOf } from './series.model';
 
 describe('seriesFor', () => {
   it('seriesFor with identifiers in any order returns their series in that order', () => {
@@ -18,6 +18,24 @@ describe('seriesFor', () => {
     const found = seriesFor(['s9', 's3'], seriesById);
 
     expect(found).toEqual([CPU_USER_SERIES]);
+  });
+});
+
+describe('seriesNameOf', () => {
+  it('seriesNameOf a series the analysis holds is its metric name', () => {
+    const seriesById = new Map([[CPU_USER_SERIES.id, CPU_USER_SERIES]]);
+
+    const name = seriesNameOf(seriesById, CPU_USER_SERIES.id);
+
+    expect(name).toBe(CPU_USER_SERIES.name);
+  });
+
+  it('seriesNameOf a series the analysis no longer holds falls back to its identifier', () => {
+    const seriesById = new Map([[CPU_USER_SERIES.id, CPU_USER_SERIES]]);
+
+    const name = seriesNameOf(seriesById, 'gone');
+
+    expect(name).toBe('gone');
   });
 });
 

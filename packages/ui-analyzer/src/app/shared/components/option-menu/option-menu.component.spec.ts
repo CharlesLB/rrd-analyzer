@@ -11,11 +11,11 @@ const ITEMS = [
 
 const renderMenu = (size: string = OPTION_MENU_SIZES.REGULAR) => renderWithInputs(OptionMenuComponent, { items: ITEMS, selected: 'hours', size });
 
-const renderMenuOnThePage = async () => {
+const renderMenuOnThePage = async (selected = 'hours') => {
   const fixture = TestBed.createComponent(OptionMenuComponent);
   document.body.appendChild(fixture.nativeElement);
   fixture.componentRef.setInput('items', ITEMS);
-  fixture.componentRef.setInput('selected', 'hours');
+  fixture.componentRef.setInput('selected', selected);
   fixture.detectChanges();
   await fixture.whenStable();
 
@@ -79,5 +79,11 @@ describe('OptionMenuComponent', () => {
 
   it('draws the compact variant on request', () => {
     expect(elementOf(renderMenu(OPTION_MENU_SIZES.COMPACT), '.option-menu-compact')).not.toBeNull();
+  });
+
+  it('opens with the focus on its first option when none of them is the selected one', async () => {
+    const fixture = await renderMenuOnThePage('weeks');
+
+    expect(document.activeElement).toBe(elementsOf(fixture, '.option-menu-item')[0]);
   });
 });

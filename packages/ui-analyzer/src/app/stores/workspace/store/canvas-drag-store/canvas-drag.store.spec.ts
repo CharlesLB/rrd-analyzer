@@ -38,6 +38,28 @@ describe('CanvasDragStore', () => {
     expect(canvasDrag.isDragging()).toBe(true);
   });
 
+  it('trackDropTarget and leaveDropTarget before any drag has begun track no target', () => {
+    canvasDrag.trackDropTarget('s0', 0.5);
+    canvasDrag.leaveDropTarget('s0');
+
+    expect(canvasDrag.dropTarget()).toBeNull();
+    expect(canvasDrag.isDragging()).toBe(false);
+  });
+
+  it('leaveDropTarget the chart the drag is over clears the target, while leaving another chart keeps it', () => {
+    canvasDrag.beginDrag('s3');
+    vi.advanceTimersByTime(0);
+    canvasDrag.trackDropTarget('s0', 0.5);
+
+    canvasDrag.leaveDropTarget('s1');
+    const afterLeavingAnother = canvasDrag.dropTarget();
+    canvasDrag.leaveDropTarget('s0');
+
+    expect(afterLeavingAnother).toEqual({ chartId: 's0', position: 'merge' });
+    expect(canvasDrag.dropTarget()).toBeNull();
+    expect(canvasDrag.isDragging()).toBe(true);
+  });
+
   it('drops a library chart after a canvas chart and makes it active', () => {
     canvasDrag.beginDrag('s3');
     vi.advanceTimersByTime(0);

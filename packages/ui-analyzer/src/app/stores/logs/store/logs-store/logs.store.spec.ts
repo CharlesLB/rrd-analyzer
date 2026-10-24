@@ -9,6 +9,8 @@ import { TimeWindowStore } from '../../../time-window/store/time-window-store/ti
 import { ToastStore } from '../../../toast/store/toast-store/toast.store';
 import { SeriesDataStore } from '../../../workspace/store/series-data-store/series-data.store';
 import { WorkspaceStore } from '../../../workspace/store/workspace-store/workspace.store';
+import { EMPTY_MAPPING, LOG_ROLES, UNMAPPED } from '../../models/log-mapping/log-mapping';
+import { LogsMemoryStore } from '../logs-memory-store/logs-memory.store';
 import { LogsStore } from './logs.store';
 import { LOG_FIXTURE_COUNT, logFileFixture, logRecordsFixture, textFileFixture } from './logs.store.fixture';
 
@@ -37,6 +39,58 @@ describe('LogsStore', () => {
     expect(store.isTrackShown()).toBe(false);
     expect(store.panel()).toBeNull();
     expect(store.validation()).toBeNull();
+  });
+
+  it('a store with no logs lists no note, field or record, maps nothing, places no selection and has nothing to jump to', () => {
+    expect(store.notes()).toEqual([]);
+    expect(store.fields()).toEqual([]);
+    expect(store.recordCount()).toBe(0);
+    expect(store.detectedMapping()).toEqual(EMPTY_MAPPING);
+    expect(store.appliedMapping()).toEqual(EMPTY_MAPPING);
+    expect(store.selectedPosition()).toBeNull();
+    expect(store.canStepBackward()).toBe(false);
+    expect(store.jumpToLogs()).toBe(false);
+  });
+
+  it('a store with no logs has no type to place and no colour to give one', () => {
+    expect(store.types()).toEqual([]);
+    expect(store.typeColors().size).toBe(0);
+  });
+
+  it('logs loaded before any analysis is open are kept for no analysis', async () => {
+    TestBed.resetTestingModule();
+    TestBed.configureTestingModule({
+      providers: [provideGatewayStub(analyzerGatewayStub()), WorkspaceStore, SeriesDataStore, TimeWindowStore, InsightsStore, LogsStore],
+    });
+    const logs = TestBed.inject(LogsStore);
+
+    await logs.load(logFileFixture());
+    TestBed.tick();
+
+    expect(logs.status()).toBe('setup');
+    expect(TestBed.inject(LogsMemoryStore).snapshotOf('')).toBeNull();
+  });
+
+  it('status, while a first file is still being read, is loading', async () => {
+    const loaded = store.load(logFileFixture());
+
+    const statusWhileReading = store.status();
+    await loaded;
+
+    expect(statusWhileReading).toBe('loading');
+    expect(store.status()).toBe('setup');
+  });
+
+  it('load, overtaken by another file picked while it was still being read, gives way to that file', async () => {
+    const first = store.load(logFileFixture(logRecordsFixture(), 'first.json'));
+    const second = store.load(logFileFixture(logRecordsFixture().slice(0, 2), 'second.json'));
+
+    const [isFirstLoaded, isSecondLoaded] = await Promise.all([first, second]);
+
+    expect(isFirstLoaded).toBe(false);
+    expect(isSecondLoaded).toBe(true);
+    expect(store.file()?.name).toBe('second.json');
+    expect(store.recordCount()).toBe(2);
   });
 
   it('load, for a readable file, detects the fields, opens the setup and says what was found', async () => {
@@ -201,6 +255,25 @@ describe('LogsStore', () => {
     expect(store.types().map((type) => type.name)).not.toContain('debug');
   });
 
+  it('cancelSetup, before the entries were ever placed, closes the setup and keeps the fields chosen in it', async () => {
+    await store.load(logFileFixture());
+    store.chooseField(LOG_ROLES.MESSAGE, 'service');
+
+    store.cancelSetup();
+
+    expect(store.isSetupOpen()).toBe(false);
+    expect(store.draftMapping()[LOG_ROLES.MESSAGE]).toBe('service');
+  });
+
+  it('validation, with no field chosen for the type, asks for one and blocks', async () => {
+    await store.load(logFileFixture());
+
+    store.chooseField(LOG_ROLES.TYPE, UNMAPPED);
+
+    expect(store.validation()?.roles.type.state).toBe('error');
+    expect(store.validation()?.isValid).toBe(false);
+  });
+
   it('cancelSetup, after a field was remapped, restores the mapping the timeline was built from', async () => {
     await showLogs();
     store.openSetup();
@@ -224,6 +297,16 @@ describe('LogsStore', () => {
     expect(store.selectedEntry()?.message).toBe('OOMKilled: process exceeded memory limit');
     expect(store.selectedPosition()).toEqual({ position: 3, total: 6 });
     expect(closeInsights).toHaveBeenCalled();
+  });
+
+  it('closeDetail closes the details of the open entry and lets go of it', async () => {
+    await showLogs();
+    store.select(2);
+
+    store.closeDetail();
+
+    expect(store.isDetailOpen()).toBe(false);
+    expect(store.selectedEntry()).toBeNull();
   });
 
   it('select, for an index that holds no entry, opens nothing', async () => {
@@ -293,6 +376,15 @@ describe('LogsStore', () => {
     store.showAllTypes();
 
     expect(store.hiddenTypes().size).toBe(0);
+  });
+
+  it('selectedPosition, for an open entry whose type is then hidden, places it nowhere among the entries still shown', async () => {
+    await showLogs();
+    store.select(0);
+
+    store.toggleType('info');
+
+    expect(store.selectedPosition()).toEqual({ position: -1, total: 4 });
   });
 
   it('chooseColor, for a type, recolours it until it is reset, alone or with every other', async () => {
@@ -443,6 +535,17 @@ describe('LogsStore', () => {
 
     expect(store.file()?.name).toBe('second.json');
     expect(store.recordCount()).toBe(2);
+  });
+
+  it('remove, for a file that could not be read, clears it and says which file went without offering to undo', async () => {
+    await store.load(textFileFixture('{"lvl": "info" "msg"}', 'broken-export.json'));
+
+    const isRemoved = store.remove();
+
+    expect(isRemoved).toBe(true);
+    expect(store.status()).toBe('none');
+    expect(toasts.message()).toBe('broken-export.json removed');
+    expect(toasts.actionLabel()).toBeNull();
   });
 
   it('remove, with no logs loaded, removes nothing and says nothing', () => {

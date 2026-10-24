@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { STATISTIC_KEYS } from '../statistic-key/statistic-key';
 import {
   type Canvas,
   canvasSeriesIdsOf,
@@ -11,6 +12,7 @@ import {
   isOnCanvas,
   plotsSeries,
   seriesIdsOf,
+  withReferenceLineToggled,
 } from './plotted-chart';
 import { chartFixture } from './plotted-chart.fixture';
 
@@ -28,6 +30,33 @@ describe('chartIdOf', () => {
   it('chartIdOf a chart is its first series, so a merged chart keeps the identity of the chart it was dropped on', () => {
     expect(chartIdOf(MERGED)).toBe('s3');
     expect(chartIdOf(chartOf('s0'))).toBe('s0');
+  });
+
+  it('chartIdOf a chart that plots no series has an empty identity', () => {
+    const empty = chartFixture();
+
+    const identity = chartIdOf(empty);
+
+    expect(identity).toBe('');
+  });
+});
+
+describe('withReferenceLineToggled', () => {
+  it('withReferenceLineToggled shows the statistic on the chart with that identity only, and keeps every other chart as it was', () => {
+    const untouched = chartOf('s0');
+
+    const toggled = withReferenceLineToggled([MERGED, untouched], 's3', STATISTIC_KEYS.AVERAGE);
+
+    expect(toggled).toEqual([{ ...MERGED, referenceLines: [STATISTIC_KEYS.AVERAGE] }, untouched]);
+    expect(toggled[1]).toBe(untouched);
+  });
+
+  it('withReferenceLineToggled a statistic the chart already shows hides it', () => {
+    const shown = { ...chartOf('s0'), referenceLines: [STATISTIC_KEYS.MAXIMUM, STATISTIC_KEYS.CURRENT] };
+
+    const toggled = withReferenceLineToggled([shown], 's0', STATISTIC_KEYS.MAXIMUM);
+
+    expect(toggled).toEqual([{ ...shown, referenceLines: [STATISTIC_KEYS.CURRENT] }]);
   });
 });
 

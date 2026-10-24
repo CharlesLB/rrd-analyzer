@@ -20,14 +20,14 @@ const TAB_FIELD = /(?:^|\t)("(?:[^"]|"")*"|[^\t]*)/g;
 
 const COMMA_DIALECT: CsvDialect = { delimiter: ',', field: COMMA_FIELD };
 
-const DIALECTS: readonly CsvDialect[] = [COMMA_DIALECT, { delimiter: ';', field: SEMICOLON_FIELD }, { delimiter: '\t', field: TAB_FIELD }];
+const DIALECTS: readonly [CsvDialect, ...CsvDialect[]] = [COMMA_DIALECT, { delimiter: ';', field: SEMICOLON_FIELD }, { delimiter: '\t', field: TAB_FIELD }];
 
 const occurrencesIn = (text: string, character: string): number => text.split(character).length - 1;
 
 const dialectOf = (source: string): CsvDialect => {
-  const header = source.split(LINE_BREAK, 1)[0] ?? '';
+  const [header] = source.split(LINE_BREAK, 1);
 
-  return R.firstBy(DIALECTS, [(dialect) => occurrencesIn(header, dialect.delimiter), 'desc']) ?? COMMA_DIALECT;
+  return R.firstBy(DIALECTS, [(dialect) => occurrencesIn(header, dialect.delimiter), 'desc']);
 };
 
 const unquoted = (field: string): string => {
@@ -60,7 +60,7 @@ const rowsOf = (source: string): readonly string[] => {
   );
 };
 
-const fieldsOf = (row: string, dialect: CsvDialect): readonly string[] => Array.from(row.matchAll(dialect.field), (match) => unquoted(match[1] ?? ''));
+const fieldsOf = (row: string, dialect: CsvDialect): readonly string[] => Array.from(row.matchAll(dialect.field), (match) => unquoted(match[1]));
 
 const columnNamesOf = (header: readonly string[]): readonly string[] =>
   R.map(header, (name, index) => (name === '' ? `${UNNAMED_COLUMN_PREFIX}${index + 1}` : name));

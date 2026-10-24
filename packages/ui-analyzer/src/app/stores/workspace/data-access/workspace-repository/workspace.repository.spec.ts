@@ -102,6 +102,14 @@ describe('WorkspaceRepository', () => {
     ]);
   });
 
+  it('saveCanvas names a chart whose series the library no longer holds by the identifier of that series', async () => {
+    const canvas = [chartFixture({ seriesId: 's9', axis: 0 })];
+
+    await repository.saveCanvas('a1', canvas, new Map());
+
+    expect(gateway.saveCanvas).toHaveBeenCalledWith('a1', [{ seriesId: 's9', label: 's9', merged: [], referenceLines: [] }]);
+  });
+
   it('saveLibraryOrder hands the transport every series of the library, in the order it is listed', async () => {
     await repository.saveLibraryOrder('a1', [seriesFixture(2), seriesFixture(1)]);
 

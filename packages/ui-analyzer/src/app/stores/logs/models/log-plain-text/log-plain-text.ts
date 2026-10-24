@@ -21,30 +21,41 @@ const FIELD_NAMES = {
   LINE: 'line',
 } as const;
 
-const entryOf = (firstLine: string, continuation: readonly string[], lineNumber: number): PlainTextEntry => {
-  const timestamp = LEADING_TIMESTAMP.exec(firstLine);
-  const afterTimestamp = firstLine.slice(timestamp?.[0].length ?? 0).replace(LEADING_SEPARATORS, '');
+type DatedLine = {
+  readonly index: number;
+  readonly timestamp: RegExpExecArray;
+};
+
+const entryOf = (timestamp: RegExpExecArray, continuation: readonly string[], lineNumber: number): PlainTextEntry => {
+  const afterTimestamp = timestamp.input.slice(timestamp[0].length).replace(LEADING_SEPARATORS, '');
   const level = LEADING_LEVEL.exec(afterTimestamp);
   const message = [afterTimestamp.slice(level?.[0].length ?? 0), ...continuation].join(ENTRY_LINE_JOINER).trimEnd();
 
   return {
-    [FIELD_NAMES.TIMESTAMP]: timestamp?.[1] ?? '',
+    [FIELD_NAMES.TIMESTAMP]: timestamp[1],
     ...(level?.[1] === undefined ? {} : { [FIELD_NAMES.LEVEL]: level[1] }),
     [FIELD_NAMES.MESSAGE]: message,
     [FIELD_NAMES.LINE]: lineNumber,
   };
 };
 
+const datedLinesOf = (lines: readonly string[]): readonly DatedLine[] =>
+  R.pipe(
+    lines,
+    R.map((line, index) => ({ index, timestamp: LEADING_TIMESTAMP.exec(line) })),
+    R.filter((line): line is DatedLine => line.timestamp !== null),
+  );
+
 export const readPlainTextLog = (source: string): PlainTextReading => {
   const lines = source.split(LINE_BREAK);
-  const entryStarts = R.filter(R.range(0, lines.length), (index) => LEADING_TIMESTAMP.test(lines[index] ?? ''));
-  const firstStart = R.first(entryStarts) ?? lines.length;
+  const datedLines = datedLinesOf(lines);
+  const firstStart = R.first(datedLines)?.index ?? lines.length;
   const undatedLineCount = R.filter(lines.slice(0, firstStart), (line) => line.trim() !== '').length;
 
-  const entries = R.map(entryStarts, (start, position) => {
-    const end = entryStarts[position + 1] ?? lines.length;
+  const entries = R.map(datedLines, (datedLine, position) => {
+    const end = datedLines[position + 1]?.index ?? lines.length;
 
-    return entryOf(lines[start] ?? '', lines.slice(start + 1, end), start + 1);
+    return entryOf(datedLine.timestamp, lines.slice(datedLine.index + 1, end), datedLine.index + 1);
   });
 
   return { entries, undatedLineCount };

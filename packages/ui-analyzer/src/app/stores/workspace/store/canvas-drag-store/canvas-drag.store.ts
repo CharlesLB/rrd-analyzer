@@ -5,7 +5,7 @@ import { I18nStore } from '../../../i18n/store/i18n-store/i18n.store';
 import { ToastStore } from '../../../toast/store/toast-store/toast.store';
 import { DROP_RESULTS, type DropResult, mergedIntoChart } from '../../models/canvas-drop/canvas-drop';
 import { DRAG_ORIGINS, type DraggedItem, refusalMessageOf } from '../../models/canvas-operations/canvas-operations';
-import { type SeriesTraits, seriesTraitsOf } from '../../models/chart-axes/chart-axes';
+import { seriesTraitsOf, type TraitsOf } from '../../models/chart-axes/chart-axes';
 import { type DragSession, draggedOver, droppedOnCanvasBackground, droppedOnChart, leftChart, startedSession } from '../../models/drag-session/drag-session';
 import { seriesNameOf } from '../../models/series/series.model';
 import { SeriesDataStore } from '../series-data-store/series-data.store';
@@ -23,6 +23,7 @@ export class CanvasDragStore {
   private readonly _texts = inject(I18nStore).texts;
 
   private readonly _sessionState = signal<DragSession | null>(null);
+  private readonly _traitsOf: TraitsOf = (seriesId) => seriesTraitsOf(this._workspace.seriesById().get(seriesId), this._seriesData.statisticsOf(seriesId));
 
   public readonly dropTarget = computed(() => this._sessionState()?.dropTarget ?? null);
   public readonly isDragging = computed(() => this._sessionState() !== null);
@@ -48,16 +49,16 @@ export class CanvasDragStore {
   }
 
   public dropOn(chartId: string): void {
-    this._settleDrop(droppedOnChart(this._sessionState(), this._workspace.canvas(), chartId, (seriesId) => this._traitsOf(seriesId)));
+    this._settleDrop(droppedOnChart(this._sessionState(), this._workspace.canvas(), chartId, this._traitsOf));
   }
 
   public dropOnCanvasBackground(): void {
-    this._settleDrop(droppedOnCanvasBackground(this._sessionState(), this._workspace.canvas(), (seriesId) => this._traitsOf(seriesId)));
+    this._settleDrop(droppedOnCanvasBackground(this._sessionState(), this._workspace.canvas(), this._traitsOf));
   }
 
   public mergeIntoChart(seriesId: string, targetChartId: string): void {
     this._workspace.closeContextMenu();
-    this._settleDrop(mergedIntoChart(this._workspace.canvas(), seriesId, targetChartId, (mergingSeriesId) => this._traitsOf(mergingSeriesId)));
+    this._settleDrop(mergedIntoChart(this._workspace.canvas(), seriesId, targetChartId, this._traitsOf));
   }
 
   private _startOnceTheNativeDragHasBegun(dragged: DraggedItem): void {
@@ -94,9 +95,5 @@ export class CanvasDragStore {
       merged: R.map(result.mergedSeriesIds, (seriesId) => seriesNameOf(seriesById, seriesId)).join(texts.application.mergedSeparator),
       target: seriesNameOf(seriesById, result.targetChartId),
     });
-  }
-
-  private _traitsOf(seriesId: string): SeriesTraits {
-    return seriesTraitsOf(this._workspace.seriesById().get(seriesId), this._seriesData.statisticsOf(seriesId));
   }
 }

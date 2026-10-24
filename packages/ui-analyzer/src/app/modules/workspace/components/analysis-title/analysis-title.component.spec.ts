@@ -89,6 +89,19 @@ describe('AnalysisTitleComponent', () => {
     expect(textOf(fixture, '.analysis-title-name')).toBe('Atlas prod · capacity');
   });
 
+  it('analysis title field losing the focus right after Escape left the edit renames nothing', async () => {
+    const { fixture, renamed } = renderTitle();
+
+    await startEditing(fixture);
+    typeInto(fixture, '.analysis-title-input', 'Discarded');
+    const field = elementOf(fixture, '.analysis-title-input');
+    pressOn(field, 'Escape');
+    field?.dispatchEvent(new Event('blur'));
+    await fixture.whenStable();
+
+    expect(renamed).not.toHaveBeenCalled();
+  });
+
   it('analysis menu opened from the caret offers the rrd files and reports the export it was asked for', () => {
     const { fixture, exportRequested } = renderTitle(3);
 

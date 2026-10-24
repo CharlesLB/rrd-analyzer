@@ -1,4 +1,5 @@
 import { TestBed } from '@angular/core/testing';
+import { By } from '@angular/platform-browser';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { countOf, elementOf, elementsOf, renderWithInputs, textOf, typeInto } from '../../../../shared/utils/component-fixture/component-fixture.fixture';
 import { seriesFixture } from '../../../../stores/workspace/models/series/series.fixture';
@@ -100,5 +101,15 @@ describe('ChartLibraryComponent', () => {
     field?.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
 
     expect(document.activeElement).not.toBe(field);
+  });
+
+  it('ChartLibraryComponent, for an Escape that comes from no element while nothing is typed, clears nothing', () => {
+    const fixture = renderLibrary({ filter: '' });
+    const changed = vi.fn();
+    fixture.componentInstance.filterChanged.subscribe(changed);
+
+    fixture.debugElement.query(By.css('app-search-field')).triggerEventHandler('keydown.escape', new KeyboardEvent('keydown', { key: 'Escape' }));
+
+    expect(changed).not.toHaveBeenCalled();
   });
 });

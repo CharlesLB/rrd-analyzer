@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, ElementRef, inject, input, output } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, input, output } from '@angular/core';
 import { AnchoredMenuComponent } from '../../../../shared/components/anchored-menu/anchored-menu.component';
 import { GLYPHS } from '../../../../shared/constants/glyphs';
 import { currentViewport, placeUnderAnchor, popoverAnchorOf } from '../../../../shared/utils/anchored-popover/anchored-popover.util';
@@ -25,7 +25,6 @@ export class ViewSettingsComponent {
   public readonly logLanesToggled = output<void>();
 
   private readonly _menu = inject(MenuToggleDirective);
-  private readonly _host = inject<ElementRef<HTMLElement>>(ElementRef);
 
   public readonly isMenuOpen = this._menu.isOpen;
 
@@ -34,10 +33,8 @@ export class ViewSettingsComponent {
   protected readonly menuWidth = MENU_SIZE.width;
   protected readonly menuPlacement = this._menu.placement;
 
-  protected toggleMenu(): void {
-    this._menu.toggle(() =>
-      placeUnderAnchor(popoverAnchorOf(this._host.nativeElement.firstElementChild ?? this._host.nativeElement), currentViewport(), MENU_SIZE),
-    );
+  protected toggleMenu(toggle: HTMLElement): void {
+    this._menu.toggle(() => placeUnderAnchor(popoverAnchorOf(toggle), currentViewport(), MENU_SIZE));
   }
 
   public closeMenu(): void {

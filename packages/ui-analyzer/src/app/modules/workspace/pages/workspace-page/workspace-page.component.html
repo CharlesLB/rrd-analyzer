@@ -247,21 +247,19 @@
       <div class="workspace-layer-failure">{{ texts().logs.setupUnavailable }}</div>
     }
     @defer (when logs.isDetailOpen(); prefetch on idle) {
-      @if (logs.isDetailOpen()) {
-        @if (logs.selectedEntry(); as entry) {
-          <app-log-detail-panel
-            [entry]="entry"
-            [color]="selectedLogColor()"
-            [position]="logs.selectedPosition()"
-            [canStepBackward]="logs.canStepBackward()"
-            [canStepForward]="logs.canStepForward()"
-            [mapping]="logs.appliedMapping()"
-            [shortcutLabels]="logShortcutLabels"
-            (closeRequested)="logs.closeDetail()"
-            (stepRequested)="logs.step($event)"
-            (centerRequested)="logs.centerOnSelected()"
-          />
-        }
+      @if (openLogDetail(); as detail) {
+        <app-log-detail-panel
+          [entry]="detail.entry"
+          [color]="detail.color"
+          [position]="logs.selectedPosition()"
+          [canStepBackward]="logs.canStepBackward()"
+          [canStepForward]="logs.canStepForward()"
+          [mapping]="logs.appliedMapping()"
+          [shortcutLabels]="logShortcutLabels"
+          (closeRequested)="logs.closeDetail()"
+          (stepRequested)="logs.step($event)"
+          (centerRequested)="logs.centerOnSelected()"
+        />
       }
     } @error {
       <div class="workspace-layer-failure">{{ texts().logs.detailUnavailable }}</div>

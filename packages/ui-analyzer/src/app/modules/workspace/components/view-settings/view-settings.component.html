@@ -1,11 +1,12 @@
 <button
+  #toggle
   class="view-settings-toggle"
   [class.view-settings-toggle-open]="isMenuOpen()"
   type="button"
   [title]="texts().viewSettings.menu"
   [attr.aria-label]="texts().viewSettings.menu"
   [attr.aria-expanded]="isMenuOpen()"
-  (click)="toggleMenu()"
+  (click)="toggleMenu(toggle)"
 >
   {{ glyphs.SETTINGS }}
 </button>

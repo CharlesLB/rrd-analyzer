@@ -19,7 +19,6 @@ const SEVERITIES: readonly Severity[] = [
 ];
 
 const UNRANKED = SEVERITIES.length;
-const FIRST_EXTRA_COLOR = LOG_EXTRA_TYPE_COLORS[0];
 
 export const severityRankOf = (type: string): number => {
   const rank = SEVERITIES.findIndex((severity) => severity.names.test(type.trim()));
@@ -35,7 +34,7 @@ const knownColorOf = (type: string): string => SEVERITIES[severityRankOf(type)]?
 
 export const defaultTypeColorsOf = (types: readonly string[]): TypeColors => {
   const extras = R.filter(types, (type) => !isKnownType(type));
-  const extraColorOf = (type: string): string => LOG_EXTRA_TYPE_COLORS[extras.indexOf(type) % LOG_EXTRA_TYPE_COLORS.length] ?? FIRST_EXTRA_COLOR;
+  const extraColorOf = (type: string): string => LOG_EXTRA_TYPE_COLORS[extras.indexOf(type) % LOG_EXTRA_TYPE_COLORS.length];
 
   return new Map(R.map(types, (type) => [type, isKnownType(type) ? knownColorOf(type) : extraColorOf(type)]));
 };

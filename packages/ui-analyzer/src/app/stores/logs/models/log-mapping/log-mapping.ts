@@ -35,7 +35,11 @@ const LONGEST_TEXT_SCORE = 4;
 const CHARACTERS_PER_TEXT_POINT = 20;
 const NOT_A_CANDIDATE = 0;
 
-const lastSegmentOf = (field: LogField): string => R.last(field.path.split(PATH_SEPARATOR)) ?? field.path;
+const lastSegmentOf = (field: LogField): string => {
+  const [lastSegment] = R.reverse(field.path.split(PATH_SEPARATOR));
+
+  return lastSegment;
+};
 
 const namedScoreOf = (field: LogField, names: RegExp): number => (names.test(lastSegmentOf(field)) ? NAME_SCORE : 0);
 

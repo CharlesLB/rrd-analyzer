@@ -103,4 +103,26 @@ describe('AppComponent', () => {
     expect(taken.dataTransfer.dropEffect).toBe('copy');
     expect(text.defaultPrevented).toBe(false);
   });
+
+  it('takes the toast away when its close button is pressed', () => {
+    const fixture = TestBed.createComponent(AppComponent);
+    const toasts = TestBed.inject(ToastStore);
+    toasts.show('analysis deleted');
+    fixture.detectChanges();
+
+    elementOf(fixture, '.toast-close')?.click();
+
+    expect(toasts.message()).toBeNull();
+  });
+
+  it('refuses a file dragged over where nothing takes it, so the window shows it cannot be dropped there', () => {
+    TestBed.createComponent(AppComponent).detectChanges();
+    const transfer = { types: ['Files'], dropEffect: 'copy' };
+    const stray = Object.assign(new Event('dragover', { cancelable: true }), { dataTransfer: transfer });
+
+    window.dispatchEvent(stray);
+
+    expect(stray.defaultPrevented).toBe(true);
+    expect(transfer.dropEffect).toBe('none');
+  });
 });

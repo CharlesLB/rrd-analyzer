@@ -25,6 +25,19 @@ describe('copyText', () => {
     expect(document.querySelector('textarea')).toBeNull();
   });
 
+  it('copyText, when the clipboard is blocked and the copy command throws, reports the copy as failed and leaves nothing behind', async () => {
+    vi.stubGlobal('navigator', {});
+    Object.defineProperty(document, 'execCommand', {
+      configurable: true,
+      value: vi.fn().mockImplementation(() => {
+        throw new Error('copy is not supported');
+      }),
+    });
+
+    await expect(copyText('{"n": 1}', document)).resolves.toBe(false);
+    expect(document.querySelector('textarea')).toBeNull();
+  });
+
   it('copyText, when neither way works, reports the copy as failed', async () => {
     vi.stubGlobal('navigator', {});
     Object.defineProperty(document, 'execCommand', { value: vi.fn().mockReturnValue(false), configurable: true });

@@ -168,4 +168,38 @@ describe('LogSetupPanelComponent', () => {
 
     expect(removed).toHaveBeenCalledTimes(1);
   });
+
+  it('LogSetupPanelComponent, while a file it knows nothing of yet is read, shows no name for it', () => {
+    const fixture = renderPanel({ status: 'loading', file: null, fields: [], recordCount: 0, validation: null });
+
+    expect(textOf(fixture, '.log-setup-panel-loading-file')).toBe('');
+  });
+
+  it('LogSetupPanelComponent, before the file is described and checked, sums it up as empty and offers no field, colour or footer', () => {
+    const fixture = renderPanel({ file: null, validation: null });
+
+    expect(textOf(fixture, '.log-file-summary-meta')).toMatch(/^0 B · 6 entries · 5 fields$/);
+    expect(countOf(fixture, '.log-field-row')).toBe(0);
+    expect(countOf(fixture, '.log-color-row')).toBe(0);
+    expect(elementOf(fixture, '.log-setup-panel-footer')).toBeNull();
+  });
+
+  it('LogSetupPanelComponent, for a mapping that would skip or label some entries, says so beside the primary button', () => {
+    const fixture = renderPanel({ validation: { ...validationOf(DETECTED), hasWarning: true } });
+
+    expect(textOf(fixture, '.log-setup-panel-hint')).toBe('Some entries will be skipped or labelled.');
+  });
+
+  it('LogSetupPanelComponent closes a field picker that is pressed a second time', () => {
+    const fixture = renderPanel();
+    const [timestamp] = elementsOf(fixture, '.log-field-row-trigger');
+
+    timestamp?.click();
+    fixture.detectChanges();
+    timestamp?.click();
+    fixture.detectChanges();
+
+    expect(countOf(fixture, '.log-field-row-options')).toBe(0);
+    expect(fixture.componentInstance.isPickerOpen()).toBe(false);
+  });
 });

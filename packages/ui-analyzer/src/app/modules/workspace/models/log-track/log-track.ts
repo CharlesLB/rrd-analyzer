@@ -45,7 +45,7 @@ export const entriesInWindow = (entries: readonly LogEntry[], window: TimeRange)
     R.sortedIndexWith(entries, (entry) => entry.timeMilliseconds <= window.untilMilliseconds),
   );
 
-const mostSevereOf = (entries: readonly LogEntry[], first: LogEntry): LogEntry => R.firstBy(entries, (entry) => severityRankOf(entry.type)) ?? first;
+const mostSevereOf = (entries: readonly [LogEntry, ...LogEntry[]]): LogEntry => R.firstBy(entries, (entry) => severityRankOf(entry.type));
 
 const laneGroupsOf = (lane: string, entries: readonly LogEntry[], request: TrackRequest): readonly TrackGroup[] => {
   const { window, colors, isSingleLane } = request;
@@ -54,7 +54,7 @@ const laneGroupsOf = (lane: string, entries: readonly LogEntry[], request: Track
 
   return R.map(Object.entries(slotted), ([slot, sharing]) => {
     const [first] = sharing;
-    const lead = isSingleLane ? mostSevereOf(sharing, first) : first;
+    const lead = isSingleLane ? mostSevereOf(sharing) : first;
 
     return {
       key: `${lane}${KEY_SEPARATOR}${slot}`,

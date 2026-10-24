@@ -124,21 +124,22 @@ export class ChartPanelComponent {
   protected readonly ticks = computed(() => timeTicksOf(this.window()));
   protected readonly tickAlignments = TICK_ALIGNMENTS;
 
-  protected readonly showsCursor = computed(() => {
+  private readonly _shownCursorFraction = computed(() => {
     const cursor = this.cursor();
 
-    return cursor !== null && (this.isCursorSynchronized() || cursor.chartId === this.chart().id);
+    return cursor !== null && (this.isCursorSynchronized() || cursor.chartId === this.chart().id) ? cursor.fraction : null;
   });
 
-  protected readonly cursorFraction = computed(() => this.cursor()?.fraction ?? 0);
+  protected readonly cursorReading = computed<CursorReading | null>(() => {
+    const fraction = this._shownCursorFraction();
 
-  private readonly _cursorReading = computed<CursorReading | null>(() =>
-    this.showsCursor() ? { fraction: this.cursorFraction(), time: this.cursorTime() } : null,
-  );
-  private readonly _readings = computed(() => lineReadingsOf(this._lines(), this._cursorReading()));
+    return fraction === null ? null : { fraction, time: this.cursorTime() };
+  });
 
-  protected readonly crosshairReadings = computed(() => crosshairReadingsOf(this._readings(), this._cursorReading(), this._readingTexts()));
-  protected readonly legend = computed(() => legendEntriesOf(this._readings(), this._cursorReading(), this._readingTexts()));
+  private readonly _readings = computed(() => lineReadingsOf(this._lines(), this.cursorReading()));
+
+  protected readonly crosshairReadings = computed(() => crosshairReadingsOf(this._readings(), this.cursorReading(), this._readingTexts()));
+  protected readonly legend = computed(() => legendEntriesOf(this._readings(), this.cursorReading(), this._readingTexts()));
   private readonly _leadLine = computed(() => R.first(this._lines()));
   private readonly _sampleCount = computed(() => this._leadLine()?.samples.length ?? 0);
 

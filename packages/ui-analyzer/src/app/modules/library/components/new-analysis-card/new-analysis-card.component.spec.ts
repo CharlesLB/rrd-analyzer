@@ -55,4 +55,50 @@ describe('NewAnalysisCardComponent', () => {
 
     expect(started).toHaveBeenCalledTimes(1);
   });
+
+  it('NewAnalysisCardComponent stays marked while the drag only crosses into its own text, and clears once the drag leaves the card', () => {
+    const fixture = TestBed.createComponent(NewAnalysisCardComponent);
+    fixture.detectChanges();
+    const card = elementOf(fixture, '.new-analysis-card');
+
+    const leaveAt = (clientX: number): void => {
+      card?.dispatchEvent(new MouseEvent('dragleave', { clientX, clientY: 60 }));
+      fixture.detectChanges();
+    };
+
+    if (card !== null) {
+      vi.spyOn(card, 'getBoundingClientRect').mockReturnValue({
+        left: 0,
+        top: 0,
+        width: 600,
+        height: 120,
+        right: 600,
+        bottom: 120,
+        x: 0,
+        y: 0,
+        toJSON: () => '',
+      });
+    }
+
+    card?.dispatchEvent(new MouseEvent('dragenter', { bubbles: true }));
+    fixture.detectChanges();
+    leaveAt(300);
+
+    expect(card?.classList.contains('new-analysis-card-active')).toBe(true);
+
+    leaveAt(700);
+
+    expect(card?.classList.contains('new-analysis-card-active')).toBe(false);
+  });
+
+  it('NewAnalysisCardComponent hands over no file for a drop that carries none', () => {
+    const fixture = TestBed.createComponent(NewAnalysisCardComponent);
+    const dropped = vi.fn();
+    fixture.componentInstance.filesDropped.subscribe(dropped);
+    fixture.detectChanges();
+
+    elementOf(fixture, '.new-analysis-card')?.dispatchEvent(new MouseEvent('drop', { bubbles: true, cancelable: true }));
+
+    expect(dropped).toHaveBeenCalledWith([]);
+  });
 });

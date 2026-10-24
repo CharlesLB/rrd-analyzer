@@ -81,6 +81,13 @@ describe('validateMapping', () => {
     expect(validation.isValid).toBe(true);
   });
 
+  it('validateMapping, for a message field no entry has a value in, blocks', () => {
+    const validation = validateMapping(RECORDS, { ...MAPPING, message: 'absent' }, texts);
+
+    expect(validation.roles.message).toEqual({ state: 'error', note: 'No entry has a value in “absent”.' });
+    expect(validation.isValid).toBe(false);
+  });
+
   it('validateMapping, for a message mapped to a field another role holds, blocks', () => {
     expect(validateMapping(RECORDS, { ...MAPPING, message: 'level' }, texts).roles.message).toEqual({
       state: 'error',

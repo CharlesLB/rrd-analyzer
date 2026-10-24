@@ -34,8 +34,8 @@
     @if (selectionBand(); as band) {
       <div class="chart-panel-selection" [style.left]="band.left" [style.width]="band.width"></div>
     }
-    @if (showsCursor()) {
-      <app-chart-crosshair [fraction]="cursorFraction()" [time]="cursorTime()" [readings]="crosshairReadings()" />
+    @if (cursorReading(); as reading) {
+      <app-chart-crosshair [fraction]="reading.fraction" [time]="reading.time" [readings]="crosshairReadings()" />
     }
     <div
       class="chart-panel-overlay"

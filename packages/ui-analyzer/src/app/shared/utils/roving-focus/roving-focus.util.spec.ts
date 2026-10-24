@@ -53,6 +53,20 @@ describe('roveFocusWithin', () => {
     list.remove();
   });
 
+  it('roveFocusWithin, with the focus on something that is not an html element, such as a chart drawn in svg, enters at the first stop', () => {
+    const list = listOfThree();
+    const chart = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    chart.setAttribute('tabindex', '0');
+    document.body.appendChild(chart);
+    chart.focus();
+
+    roveFocusWithin(list, '.stop', pressed('ArrowDown'));
+
+    expect(document.activeElement).toBe(list.querySelector('.stop'));
+    list.remove();
+    chart.remove();
+  });
+
   it('roveFocusWithin leaves any other key alone', () => {
     const list = listOfThree();
     const typed = pressed('a');

@@ -1,5 +1,5 @@
 import { TestBed } from '@angular/core/testing';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   countOf,
   elementOf,
@@ -29,6 +29,25 @@ const renderViewer = (inputs: Readonly<Record<string, unknown>> = {}) =>
     ...inputs,
   });
 
+const boundsOf = (top: number, height: number): DOMRect => ({
+  left: 0,
+  top,
+  width: 400,
+  height,
+  right: 400,
+  bottom: top + height,
+  x: 0,
+  y: top,
+  toJSON: () => '',
+});
+
+const VIEW_BOUNDS = boundsOf(0, 300);
+
+const placeCurrentMatchAt = (top: number) =>
+  vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockImplementation(function boundsOfElement(this: HTMLElement): DOMRect {
+    return this.classList.contains('json-viewer-hit-current') ? boundsOf(top, 20) : VIEW_BOUNDS;
+  });
+
 const searching = (query: string, current = 0) => ({
   lines: searchedLinesOf(LINES, searchMatchesOf(LINES, query), current),
   isSearchOpen: true,
@@ -39,6 +58,10 @@ const searching = (query: string, current = 0) => ({
 describe('JsonViewerComponent', () => {
   beforeEach(() => {
     TestBed.configureTestingModule({});
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
   });
 
   it('numbers the lines and prints the object as it was written, indentation included', () => {
@@ -188,5 +211,33 @@ describe('JsonViewerComponent', () => {
     await fixture.whenStable();
 
     expect(scroller.scrollTop).toBe(0);
+  });
+
+  it('JsonViewerComponent leaves a current match that is already in view where it is, and brings one below the view up to its middle', async () => {
+    const placement = placeCurrentMatchAt(100);
+    const fixture = renderViewer(searching('e', 1));
+    await fixture.whenStable();
+    const scroller = elementOf(fixture, '.json-viewer-lines');
+
+    expect(scroller?.scrollTop).toBe(0);
+
+    placement.mockImplementation(function boundsBelowTheView(this: HTMLElement): DOMRect {
+      return this.classList.contains('json-viewer-hit-current') ? boundsOf(400, 20) : VIEW_BOUNDS;
+    });
+    fixture.componentRef.setInput('lines', searchedLinesOf(LINES, searchMatchesOf(LINES, 'e'), 2));
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    expect(scroller?.scrollTop).toBe(250);
+  });
+
+  it('JsonViewerComponent, compiled again from its own metadata as a TestBed override compiles it, still focuses the field and keeps the lines in view', async () => {
+    TestBed.overrideComponent(JsonViewerComponent, { set: {} });
+    await TestBed.compileComponents();
+    const fixture = renderViewer(searching('e'));
+    await fixture.whenStable();
+
+    expect(document.activeElement).toBe(elementOf(fixture, '.json-viewer-search-field input'));
+    expect(elementOf(fixture, '.json-viewer-lines')?.scrollTop).toBe(0);
   });
 });

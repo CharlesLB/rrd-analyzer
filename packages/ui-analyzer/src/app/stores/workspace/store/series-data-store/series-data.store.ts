@@ -190,14 +190,12 @@ export class SeriesDataStore {
     const key = windowKeyOf(query);
     const missing = seriesMissingFrom(this._chartMemoryState()[key] ?? EMPTY_CHART_DATA, query.seriesIds);
     const fetched = missing.length === 0 ? null : await this._repository.fetchChart({ ...query, seriesIds: missing });
+    const held = this._chartMemoryState()[key] ?? EMPTY_CHART_DATA;
+    const chart = fetched === null ? held : mergedChartData(held, fetched);
 
-    this._chartMemoryState.update((memory) => {
-      const held = memory[key] ?? EMPTY_CHART_DATA;
+    this._chartMemoryState.update((memory) => rememberedWindow(memory, key, chart));
 
-      return rememberedWindow(memory, key, fetched === null ? held : mergedChartData(held, fetched));
-    });
-
-    return this._chartMemoryState()[key] ?? EMPTY_CHART_DATA;
+    return chart;
   }
 
   private async _loadTracks(query: WindowQuery, memory: WritableSignal<WindowMemory<SampleTracks>>): Promise<SampleTracks> {

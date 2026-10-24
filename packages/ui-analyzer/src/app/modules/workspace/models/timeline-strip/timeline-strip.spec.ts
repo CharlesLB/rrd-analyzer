@@ -79,6 +79,10 @@ describe('overviewArtOf', () => {
     expect(overviewArtOf([10, null, 20]).line).toBe('M0.0 22.0 M1000.0 2.0');
     expect(overviewArtOf([null, null])).toEqual({ line: '', area: '' });
   });
+
+  it('overviewArtOf a series that never changes draws it flat along the foot of the band', () => {
+    expect(overviewArtOf([10, 10, 10]).line).toBe('M0.0 22.0 L500.0 22.0 L1000.0 22.0');
+  });
 });
 
 describe('recentredWindowOf', () => {

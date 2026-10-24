@@ -91,6 +91,14 @@ describe('droppedOnto', () => {
       refusal: null,
     });
   });
+
+  it('droppedOnto a chart the canvas no longer holds puts the dragged chart after every other one', () => {
+    const canvas = canvasOf('a', 'b');
+
+    const outcome = droppedOnto(canvas, 'x', { chartId: 'gone', position: DROP_POSITIONS.BEFORE }, traitsOf);
+
+    expect(outcome).toEqual({ canvas: canvasOf('a', 'b', 'x'), refusal: null });
+  });
 });
 
 describe('droppedOnto a merge', () => {
@@ -115,6 +123,22 @@ describe('droppedOnto a merge', () => {
     const canvas = [mergedChart(['a', 0], ['c', 0], ['m', 1], ['n', 1]), mergedChart(['b', 0], ['x', 1])];
 
     expect(droppedOnto(canvas, 'b', { chartId: 'a', position: DROP_POSITIONS.MERGE }, traitsOf)).toEqual({ canvas, refusal: 'chart-full' });
+  });
+
+  it('droppedOnto a merge with a chart the canvas no longer holds leaves the canvas as it was, without a refusal', () => {
+    const canvas = canvasOf('a', 'b');
+
+    const outcome = droppedOnto(canvas, 'b', { chartId: 'gone', position: DROP_POSITIONS.MERGE }, traitsOf);
+
+    expect(outcome).toEqual({ canvas, refusal: null });
+  });
+
+  it('droppedOnto a merge of a chart with itself leaves the canvas as it was, without a refusal', () => {
+    const canvas = canvasOf('a', 'b');
+
+    const outcome = droppedOnto(canvas, 'a', { chartId: 'a', position: DROP_POSITIONS.MERGE }, traitsOf);
+
+    expect(outcome).toEqual({ canvas, refusal: null });
   });
 });
 

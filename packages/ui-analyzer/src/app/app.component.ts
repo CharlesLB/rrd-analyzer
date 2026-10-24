@@ -31,10 +31,7 @@ export class AppComponent {
     }
 
     event.preventDefault();
-
-    if (event.dataTransfer) {
-      event.dataTransfer.dropEffect = NO_DROP_EFFECT;
-    }
+    event.dataTransfer.dropEffect = NO_DROP_EFFECT;
   }
 
   protected runToastAction(): void {

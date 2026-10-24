@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { base64Of, blobOfBase64, dataUrlOf } from './blob-encoding.util';
 
 const PNG_SIGNATURE = new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
@@ -21,5 +21,49 @@ describe('blobOfBase64', () => {
 
     expect(blob.type).toBe('application/octet-stream');
     expect(new Uint8Array(await blob.arrayBuffer())).toEqual(PNG_SIGNATURE);
+  });
+});
+
+type ReaderOutcome = {
+  readonly event: string;
+  readonly result: unknown;
+  readonly error: DOMException | null;
+};
+
+const stubFileReader = (outcome: ReaderOutcome): void => {
+  class SettlingFileReader extends EventTarget {
+    public readonly result = outcome.result;
+    public readonly error = outcome.error;
+
+    public readAsDataURL(): void {
+      queueMicrotask(() => this.dispatchEvent(new Event(outcome.event)));
+    }
+  }
+
+  vi.stubGlobal('FileReader', SettlingFileReader);
+};
+
+describe('dataUrlOf when the reader does not give a data url', () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it('dataUrlOf a blob the reader reads into something other than text rejects', async () => {
+    stubFileReader({ event: 'load', result: new ArrayBuffer(0), error: null });
+
+    await expect(dataUrlOf(new Blob(['png']))).rejects.toThrow('the blob was not read as a data url');
+  });
+
+  it('dataUrlOf a blob the reader fails to read rejects with the error the reader gives', async () => {
+    const denied = new DOMException('the file cannot be read', 'NotReadableError');
+    stubFileReader({ event: 'error', result: null, error: denied });
+
+    await expect(dataUrlOf(new Blob(['png']))).rejects.toBe(denied);
+  });
+
+  it('dataUrlOf a blob the reader fails to read without saying why rejects with an error of its own', async () => {
+    stubFileReader({ event: 'error', result: null, error: null });
+
+    await expect(dataUrlOf(new Blob(['png']))).rejects.toThrow('the blob could not be read');
   });
 });

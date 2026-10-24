@@ -5,7 +5,9 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { BundleDto, PlottedChartDto } from '../../../../core/gateway/analyzer.dto';
 import type { AnalyzerGateway } from '../../../../core/gateway/analyzer.gateway';
 import { bundleDtoFixture, chartsDtoFixture } from '../../../../core/gateway/analyzer.gateway.fixture';
+import { I18nStore } from '../../../i18n/store/i18n-store/i18n.store';
 import { TimeWindowStore } from '../../../time-window/store/time-window-store/time-window.store';
+import { ToastStore } from '../../../toast/store/toast-store/toast.store';
 import { chartIdsOf } from '../../models/plotted-chart/plotted-chart';
 import { OVERVIEW_COLUMNS, THUMBNAIL_COLUMNS } from '../../models/timeframe/timeframe';
 import type { CanvasDragStore } from '../canvas-drag-store/canvas-drag.store';
@@ -61,6 +63,46 @@ describe('SeriesDataStore', () => {
       workspace.setLibraryFilter('  METRIC_1 ');
 
       expect(seriesData.libraryEntries().map((entry) => entry.series.id)).toEqual(['s1']);
+    });
+  });
+
+  it('canvasOverview on a canvas with no chart has no overview to draw', async () => {
+    await configure(chartsDtoFixture());
+
+    const overview = seriesData.canvasOverview();
+
+    expect(overview).toBeNull();
+  });
+
+  it('canvasOverview led by a chart whose series the library no longer holds has no overview to draw', async () => {
+    await configure(chartsDtoFixture('s9'));
+
+    const overview = seriesData.canvasOverview();
+
+    expect(overview).toBeNull();
+  });
+
+  it('a canvas whose charts cannot be read says the series are unavailable', async () => {
+    ({ seriesData } = await openWorkspace(chartsDtoFixture('s0'), { fetchChart: vi.fn().mockRejectedValue(new Error('daemon away')) }));
+    const toasts = TestBed.inject(ToastStore);
+    const unavailable = TestBed.inject(I18nStore).texts().workspace.seriesUnavailable;
+
+    await vi.waitFor(() => {
+      TestBed.tick();
+      expect(toasts.message()).toBe(unavailable);
+    });
+
+    expect(seriesData.canvasCharts()[0]?.lines[0]?.samples).toEqual([]);
+  });
+
+  it('a library whose thumbnails cannot be read says the series are unavailable', async () => {
+    await openWorkspace(chartsDtoFixture(), { fetchSeries: vi.fn().mockRejectedValue(new Error('daemon away')) });
+    const toasts = TestBed.inject(ToastStore);
+    const unavailable = TestBed.inject(I18nStore).texts().workspace.seriesUnavailable;
+
+    await vi.waitFor(() => {
+      TestBed.tick();
+      expect(toasts.message()).toBe(unavailable);
     });
   });
 

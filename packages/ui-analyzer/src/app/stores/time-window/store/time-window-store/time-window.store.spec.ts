@@ -23,6 +23,12 @@ describe('TimeWindowStore', () => {
     expect(store.hasZoomHistory()).toBe(false);
   });
 
+  it('openedWindow, once the data has bounds, is the window on screen', () => {
+    const opened = store.openedWindow();
+
+    expect(opened).toEqual(store.window());
+  });
+
   it('clear leaves no window to name, so the bar shows no timeframe rather than one dated 1970', () => {
     store.clear();
 

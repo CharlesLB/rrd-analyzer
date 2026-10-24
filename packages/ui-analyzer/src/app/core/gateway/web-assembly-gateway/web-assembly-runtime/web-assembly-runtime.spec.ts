@@ -101,4 +101,59 @@ describe('WebAssemblyRuntime', () => {
     await expect(waiting).rejects.toThrow('could not be loaded');
     await expect(runtime.send({ method: 'GET', path: '/api/build' })).rejects.toThrow('could not be loaded');
   });
+
+  it('fails a call the analyzer answers with a kept file instead of a response, rather than reading it as one', async () => {
+    const worker = new FakeRuntimeWorker();
+    const runtime = runtimeOver(worker);
+
+    const responding = runtime.send({ method: 'GET', path: '/api/analyses' });
+    worker.answer({ kind: 'kept', requestId: worker.lastRequestId(), path: 'memory:/1/cpu.rrd' });
+
+    await expect(responding).rejects.toThrow('the analyzer answered a request with the wrong kind of message');
+  });
+
+  it('fails a file to keep that the analyzer answers with a response instead of the path it is kept under', async () => {
+    const worker = new FakeRuntimeWorker();
+    const runtime = runtimeOver(worker);
+
+    const keeping = runtime.keep(new File(['RRD'], 'cpu.rrd'));
+    await settled();
+    worker.answer({ kind: 'answered', requestId: worker.lastRequestId(), status: 200, body: '{}' });
+
+    await expect(keeping).rejects.toThrow('the analyzer answered a request with the wrong kind of message');
+  });
+
+  it('refuses a call the page already gave up on without starting the analyzer or sending it anything', async () => {
+    const started: FakeRuntimeWorker[] = [];
+
+    const runtime = new WebAssemblyRuntime(() => {
+      const worker = new FakeRuntimeWorker();
+      started.push(worker);
+
+      return worker;
+    });
+
+    const cancellation = new AbortController();
+    cancellation.abort();
+
+    const running = runtime.send({ method: 'POST', path: '/api/analyses/a1/insights', cancellation: cancellation.signal });
+
+    await expect(running).rejects.toThrow('AbortError');
+    expect(started).toEqual([]);
+  });
+
+  it('ignores a late answer to a call the page gave up on, and still pairs the next answers with their calls', async () => {
+    const worker = new FakeRuntimeWorker();
+    const runtime = runtimeOver(worker);
+    const cancellation = new AbortController();
+
+    const abandoned = runtime.send({ method: 'POST', path: '/api/analyses/a1/insights', cancellation: cancellation.signal });
+    const listing = runtime.send({ method: 'GET', path: '/api/analyses' });
+    cancellation.abort();
+    worker.answer({ kind: 'answered', requestId: '1', status: 200, body: '"late"' });
+    worker.answer({ kind: 'answered', requestId: '2', status: 200, body: '"analyses"' });
+
+    await expect(abandoned).rejects.toThrow('AbortError');
+    expect(await (await listing).json()).toBe('analyses');
+  });
 });

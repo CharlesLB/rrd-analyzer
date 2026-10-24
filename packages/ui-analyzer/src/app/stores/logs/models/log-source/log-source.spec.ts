@@ -1,5 +1,5 @@
 import { messagesFor } from '@rrd-analyzer/shared';
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { LOG_FORMATS } from '../log-format/log-format';
 import { parseLogText } from './log-source';
 
@@ -103,6 +103,31 @@ describe('parseLogText', () => {
   it('parseLogText, for a file that starts with a byte order mark, reads past it', () => {
     expect(parseLogText('﻿[{"n":1}]', texts, LOG_FORMATS.JSON).parsed?.records).toEqual([{ n: 1 }]);
   });
+
+  it('parseLogText, for JSON the parser rejects without naming a position, refuses it as invalid JSON with the parser message', () => {
+    const { failure } = parseLogText('not json at all', texts, LOG_FORMATS.JSON);
+
+    expect(failure?.title).toBe(texts.failures.invalidJson);
+    expect(failure?.detail).toContain('is not valid JSON');
+  });
+});
+
+describe('parseLogText when the parser throws something that is not an error', () => {
+  const throwText = (): never => {
+    throw 'unreadable';
+  };
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it('parseLogText, when the JSON parser throws a bare value, refuses the file with that value as the detail', () => {
+    vi.spyOn(JSON, 'parse').mockImplementation(throwText);
+
+    const { failure } = parseLogText('{"level":"info"}', texts, LOG_FORMATS.JSON);
+
+    expect(failure).toEqual({ title: texts.failures.invalidJson, detail: 'unreadable' });
+  });
 });
 
 describe('parseLogText for a CSV or a text log', () => {
@@ -113,6 +138,18 @@ describe('parseLogText for a CSV or a text log', () => {
     expect(parseLogText('time,level,message\n', texts, LOG_FORMATS.CSV).failure?.title).toBe(
       'No log entries found: the CSV needs a header row and at least one row below it.',
     );
+  });
+
+  it('parseLogText reads a text log holding one JSON document as that document', () => {
+    const { parsed } = parseLogText('[{"level":"info"},{"level":"warn"}]', texts, LOG_FORMATS.TEXT);
+
+    expect(parsed).toEqual({ records: [{ level: 'info' }, { level: 'warn' }], notes: [] });
+  });
+
+  it('parseLogText reads a plain text log whose every line is dated without a note', () => {
+    const { parsed } = parseLogText('2026-10-14T10:00:00Z INFO up\n', texts, LOG_FORMATS.TEXT);
+
+    expect(parsed).toEqual({ records: [{ timestamp: '2026-10-14T10:00:00Z', level: 'INFO', message: 'up', line: 1 }], notes: [] });
   });
 
   it('parseLogText reads a text log holding newline-delimited JSON as JSON', () => {

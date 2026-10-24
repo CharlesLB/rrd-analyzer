@@ -136,7 +136,14 @@ export class LibraryStore {
     }
 
     const [supported, unsupported] = R.partition(files, (file) => isSupportedSource(file.name));
-    const described = supported.length === 0 ? [] : await this._readSources(this._repository.describeFiles(supported));
+
+    if (supported.length === 0) {
+      this._takeIn(pendingSourcesOf(unsupported));
+
+      return;
+    }
+
+    const described = await this._readSources(this._repository.describeFiles(supported));
 
     if (described !== null) {
       this._takeIn([...described, ...pendingSourcesOf(unsupported)]);

@@ -67,6 +67,16 @@ describe('ExportRenderer', () => {
     expect(fetchFont).toHaveBeenCalledTimes(2);
   });
 
+  it('documentOf a series the tracks hold nothing for draws it as a line with no samples', async () => {
+    const { renderer } = configure();
+    vi.spyOn(Date, 'now').mockReturnValue(86_400_000);
+
+    const withoutTrack = await renderer.documentOf(renderRequest(async () => ({})));
+    const withEmptyTrack = await renderer.documentOf(renderRequest(async () => ({ s3: [] })));
+
+    expect(withoutTrack.markup).toBe(withEmptyTrack.markup);
+  });
+
   it('documentOf fetches the embedded font once however many documents it renders', async () => {
     const { fetchFont, renderer } = configure();
 

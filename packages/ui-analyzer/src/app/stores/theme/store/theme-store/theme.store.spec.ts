@@ -81,6 +81,22 @@ describe('ThemeStore', () => {
     expect(TestBed.inject(ThemeStore).theme()).toBe('dark');
   });
 
+  it('toggles all the same when the browser refuses to store the choice', () => {
+    vi.stubGlobal('localStorage', {
+      getItem: () => null,
+      setItem: () => {
+        throw new Error('denied');
+      },
+    });
+    TestBed.resetTestingModule();
+    TestBed.configureTestingModule({});
+    const store = TestBed.inject(ThemeStore);
+
+    store.toggle();
+
+    expect(store.theme()).toBe('dark');
+  });
+
   it('falls back to the system theme when storage cannot be read at all', () => {
     vi.stubGlobal('localStorage', undefined);
     stubSystemTheme(true);

@@ -39,11 +39,17 @@ type Container = {
   readonly closing: string;
 };
 
+type TokenPlacement = {
+  readonly offset: number;
+  readonly tokens: readonly JsonToken[];
+};
+
 const INDENT = '  ';
 const NULL_TEXT = 'null';
 const KEY_SEPARATOR = ': ';
 const MEMBER_SEPARATOR = ',';
 const NO_PIECES: readonly Piece[] = [];
+const NOTHING_PLACED: TokenPlacement = { offset: 0, tokens: [] };
 
 const punctuation = (text: string): Piece => ({ text, kind: JSON_TOKEN_KINDS.PUNCTUATION });
 
@@ -96,17 +102,15 @@ const pieceLinesOf = (value: unknown, depth: number, lead: readonly Piece[], tra
   ];
 };
 
-const lineOf = (pieces: readonly Piece[]): JsonLine => {
-  const starts = R.reduce(pieces, (offsets, piece) => [...offsets, (R.last(offsets) ?? 0) + piece.text.length], [0]);
+const tokensAfter = (placed: TokenPlacement, piece: Piece): TokenPlacement => {
+  const end = placed.offset + piece.text.length;
 
-  return {
-    text: R.map(pieces, (piece) => piece.text).join(''),
-    tokens: R.pipe(
-      pieces,
-      R.map((piece, index) => (piece.kind === null ? null : { start: starts[index] ?? 0, end: (starts[index] ?? 0) + piece.text.length, kind: piece.kind })),
-      R.filter(R.isNonNullish),
-    ),
-  };
+  return { offset: end, tokens: piece.kind === null ? placed.tokens : [...placed.tokens, { start: placed.offset, end, kind: piece.kind }] };
 };
+
+const lineOf = (pieces: readonly Piece[]): JsonLine => ({
+  text: R.map(pieces, (piece) => piece.text).join(''),
+  tokens: R.reduce(pieces, tokensAfter, NOTHING_PLACED).tokens,
+});
 
 export const jsonLinesOf = (value: unknown): readonly JsonLine[] => R.map(pieceLinesOf(value, 0, NO_PIECES, NO_PIECES), lineOf);

@@ -1,4 +1,5 @@
 import { TestBed } from '@angular/core/testing';
+import { By } from '@angular/platform-browser';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { elementOf, elementsOf, renderWithInputs, textOf, textsOf, typeInto } from '../../../../shared/utils/component-fixture/component-fixture.fixture';
 import { QuickSelectComponent } from './quick-select.component';
@@ -41,6 +42,14 @@ describe('QuickSelectComponent', () => {
 
     expect(fixture.componentInstance.unit()).toBe('days');
     expect(elementOf(fixture, 'app-option-menu')).toBeNull();
+  });
+
+  it('QuickSelectComponent, given a choice from the unit menu that is not a unit, keeps the unit it had', () => {
+    const fixture = renderQuickSelect();
+
+    fixture.debugElement.query(By.css('app-option-select')).triggerEventHandler('chosen', 'fortnights');
+
+    expect(fixture.componentInstance.unit()).toBe('hours');
   });
 
   it('reports the typed count, the apply and a preset choice', () => {

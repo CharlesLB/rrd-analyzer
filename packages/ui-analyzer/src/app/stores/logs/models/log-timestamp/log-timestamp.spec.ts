@@ -34,6 +34,14 @@ describe('parseLogTimestamp', () => {
     expect(parseLogTimestamp({})).toBeNull();
   });
 
+  it('parseLogTimestamp, for an endless or undefined number, finds no time', () => {
+    const endless = parseLogTimestamp(Number.POSITIVE_INFINITY);
+    const undefinedNumber = parseLogTimestamp(Number.NaN);
+
+    expect(endless).toBeNull();
+    expect(undefinedNumber).toBeNull();
+  });
+
   it('isWrittenDate, for a date written out, says yes, and for an epoch, as a number or as text, says no', () => {
     expect(isWrittenDate('2026-08-29T10:24:00.000Z')).toBe(true);
     expect(isWrittenDate(INSTANT)).toBe(false);

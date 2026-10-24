@@ -34,6 +34,14 @@ describe('rasterizeSvg', () => {
     await expect(rasterizeSvg(PICTURE)).rejects.toThrow('the svg could not be loaded as an image');
   });
 
+  it('rasterizeSvg on a canvas that has no 2d context rejects', async () => {
+    stubImageLoading('load');
+    const { canvas } = stubCanvasEncoding(new Blob(['png']));
+    canvas.getContext.mockReturnValue(null);
+
+    await expect(rasterizeSvg(PICTURE)).rejects.toThrow('the canvas has no 2d context to draw the svg on');
+  });
+
   it('rasterizeSvg on a canvas that cannot encode rejects', async () => {
     stubImageLoading('load');
     stubCanvasEncoding(null);

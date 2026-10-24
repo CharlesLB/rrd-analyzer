@@ -54,6 +54,73 @@ describe('InsightsStore', () => {
     return (report) => held.answer(report);
   };
 
+  const holdFailingRun = (): ((error: Error) => void) => {
+    const held: { fail: (error: Error) => void } = { fail: () => undefined };
+
+    vi.mocked(gateway.runInsights).mockImplementationOnce(
+      async () =>
+        await new Promise<InsightsReportDto>((_resolve, reject) => {
+          held.fail = reject;
+        }),
+    );
+
+    return (error) => held.fail(error);
+  };
+
+  it('a store that has never run lists no analyzed run, and the focused finding has nothing to expand, collapse or show', () => {
+    const workspace = TestBed.inject(WorkspaceStore);
+    const canvas = workspace.canvas();
+
+    store.toggleFocused();
+    store.collapseFocused();
+    store.showFocusedOnChart();
+    store.toggleFinding(0);
+
+    expect(store.analyzedRun()).toBeNull();
+    expect(store.latestReportFindings()).toEqual([]);
+    expect(store.staleReason()).toBeNull();
+    expect(store.expanded()).toEqual({});
+    expect(store.flashingFindingId()).toBeNull();
+    expect(workspace.canvas()).toBe(canvas);
+  });
+
+  it('run or rerun while a run is under way leaves that run alone and asks the engine nothing more', async () => {
+    const answer = holdRuns();
+    const running = store.run();
+    await vi.advanceTimersByTimeAsync(400);
+
+    await store.run();
+    await store.rerun();
+    answer(insightsReportDtoFixture());
+    await running;
+
+    expect(gateway.runInsights).toHaveBeenCalledTimes(1);
+    expect(store.status()).toBe('done');
+  });
+
+  it('a run that fails after it was cancelled says nothing and stays where the cancel left it', async () => {
+    const fail = holdFailingRun();
+    const running = store.run();
+    await vi.advanceTimersByTimeAsync(400);
+
+    store.cancel();
+    fail(new Error('aborted'));
+    await running;
+
+    expect(store.status()).toBe('idle');
+    expect(TestBed.inject(ToastStore).message()).toBeNull();
+  });
+
+  it('a run that finds nothing opens the panel with no finding expanded', async () => {
+    vi.mocked(gateway.runInsights).mockResolvedValueOnce(insightsReportDtoFixture({ findings: [] }));
+
+    await settle(store.run());
+
+    expect(store.status()).toBe('done');
+    expect(store.findings()).toEqual([]);
+    expect(store.expanded()).toEqual({});
+  });
+
   it('a run that takes a while shows its stages as it goes, then opens the panel on the first finding expanded the moment the answer arrives', async () => {
     const answer = holdRuns();
     const running = store.run();
@@ -269,6 +336,27 @@ describe('InsightsStore', () => {
 
     expect(store.focusIndex()).toBe(0);
     expect(store.isFocusedExpanded()).toBe(true);
+  });
+
+  it('toggleFinding for an index past the findings changes neither the focus nor what is expanded', async () => {
+    await settle(store.run());
+    const expanded = store.expanded();
+
+    store.toggleFinding(5);
+
+    expect(store.focusIndex()).toBe(0);
+    expect(store.expanded()).toBe(expanded);
+  });
+
+  it('showFocusedOnChart frames the focused finding on the chart and flashes its band', async () => {
+    await settle(store.run());
+    store.focusNext();
+    const [, focused] = store.findings();
+
+    store.showFocusedOnChart();
+
+    expect(store.flashingFindingId()).toBe(focused.id);
+    expect(timeWindow.window().fromMilliseconds).toBeLessThan(focused.fromMilliseconds);
   });
 
   it('frames a finding on the chart with padding and flashes its band for 1.1 seconds', async () => {

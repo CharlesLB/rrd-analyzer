@@ -57,6 +57,15 @@ describe('AbsoluteRangeComponent', () => {
     expect(inputs[1]?.classList.contains('absolute-range-input-focused')).toBe(true);
   });
 
+  it('AbsoluteRangeComponent, asked for the previous month, shows the month before the one on screen', () => {
+    const fixture = renderRange();
+
+    elementsOf(fixture, '.month-calendar-step')[0]?.click();
+    fixture.detectChanges();
+
+    expect(textOf(fixture, '.month-calendar-title')).toBe('July 2026');
+  });
+
   it('reports the apply to the page', () => {
     const fixture = renderRange();
     const applied = vi.fn();

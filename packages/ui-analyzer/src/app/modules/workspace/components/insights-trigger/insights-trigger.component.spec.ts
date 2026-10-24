@@ -47,6 +47,12 @@ describe('InsightsTriggerComponent', () => {
     expect(elementOf(fixture, '.insights-trigger-idle')).toBeNull();
   });
 
+  it('InsightsTriggerComponent, at a stage past the ones it has names for, shows the stage label without a name', () => {
+    const fixture = renderTrigger('running', { stageIndex: 3 });
+
+    expect(textOf(fixture, '.insights-trigger-stage-label')).toBe('…');
+  });
+
   it('offers to cancel a run under way, named for a screen reader as for the mouse', () => {
     const fixture = renderTrigger('running');
     const cancelled = vi.fn();

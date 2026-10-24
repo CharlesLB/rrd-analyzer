@@ -109,7 +109,7 @@ export class InsightsStore {
       return null;
     }
 
-    if (completed.report.configurationStamp !== (this._currentConfigurationState() ?? completed.report.configurationStamp)) {
+    if (completed.report.configurationStamp !== this._currentConfigurationState()) {
       return STALE_REASONS.CONFIGURATION;
     }
 

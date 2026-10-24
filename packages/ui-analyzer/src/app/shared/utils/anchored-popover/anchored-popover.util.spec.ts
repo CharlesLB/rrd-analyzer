@@ -1,5 +1,5 @@
-import { describe, expect, it } from 'vitest';
-import { placeUnderAnchor, placeUnderLeftEdge } from './anchored-popover.util';
+import { describe, expect, it, vi } from 'vitest';
+import { offsetRightOf, placeUnderAnchor, placeUnderLeftEdge } from './anchored-popover.util';
 
 const MENU_SIZE = { width: 254, heightAllowance: 290 };
 
@@ -54,5 +54,29 @@ describe('placeUnderLeftEdge', () => {
 
   it('placeUnderLeftEdge keeps ten pixels from the right edge of a viewport narrower than the menu needs', () => {
     expect(placeUnderLeftEdge({ left: 300, bottom: 40 }, { width: 500, height: 900 }, 240)).toEqual({ top: 46, bottom: null, right: 10 });
+  });
+});
+
+const boxedAt = (left: number, right: number): HTMLElement => {
+  const element = document.createElement('div');
+
+  vi.spyOn(element, 'getBoundingClientRect').mockReturnValue({ left, right } as DOMRect);
+
+  return element;
+};
+
+describe('offsetRightOf', () => {
+  it('offsetRightOf measures the right edge of an element from the left edge of the container it is positioned in', () => {
+    const element = boxedAt(300, 420);
+    Object.defineProperty(element, 'offsetParent', { value: boxedAt(120, 900) });
+
+    expect(offsetRightOf(element)).toBe(300);
+  });
+
+  it('offsetRightOf of an element positioned in no container measures it from the left edge of the page', () => {
+    const element = boxedAt(300, 420);
+    Object.defineProperty(element, 'offsetParent', { value: null });
+
+    expect(offsetRightOf(element)).toBe(420);
   });
 });

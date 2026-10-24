@@ -47,6 +47,12 @@ describe('formatValue', () => {
     expect(formatValue(null, '%', units)).toBe('n/a');
     expect(formatValue(Number.NaN, 'B', units)).toBe('n/a');
   });
+
+  it('shows n/a in the compact form too for a hole or a non-finite value', () => {
+    expect(formatCompactValue(null, units)).toBe('n/a');
+    expect(formatCompactValue(undefined, units)).toBe('n/a');
+    expect(formatCompactValue(Number.POSITIVE_INFINITY, units)).toBe('n/a');
+  });
 });
 
 describe('isPercentUnit', () => {

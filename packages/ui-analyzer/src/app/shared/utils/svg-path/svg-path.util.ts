@@ -57,19 +57,18 @@ export const presentRunsOf = (values: readonly (number | null)[]): readonly Pres
 
 type PointAt = (value: number, index: number) => PlotPoint;
 
-const areaUnderRun = (values: readonly (number | null)[], run: PresentRun, baseline: number, pointAt: PointAt): string => {
-  const edge = R.pipe(
+type RunEdge = readonly [PlotPoint, ...PlotPoint[]];
+
+const edgeOfRun = (values: readonly (number | null)[], run: PresentRun, pointAt: PointAt): readonly PlotPoint[] =>
+  R.pipe(
     values.slice(run.from, run.until + 1),
     R.filter(R.isNonNullish),
     R.map((value, offset) => pointAt(value, run.from + offset)),
   );
 
+const areaUnderEdge = (edge: RunEdge, baseline: number): string => {
   const first = R.first(edge);
   const last = R.last(edge);
-
-  if (first === undefined || last === undefined) {
-    return '';
-  }
 
   return [
     `${SVG_COMMANDS.MOVE}${coordinateOf(first.x)} ${baseline}`,
@@ -82,6 +81,8 @@ const areaUnderRun = (values: readonly (number | null)[], run: PresentRun, basel
 export const areaUnderPolylineOf = (values: readonly (number | null)[], baseline: number, pointAt: PointAt): string =>
   R.pipe(
     presentRunsOf(values),
-    R.map((run) => areaUnderRun(values, run, baseline, pointAt)),
+    R.map((run) => edgeOfRun(values, run, pointAt)),
+    R.filter(R.hasAtLeast(1)),
+    R.map((edge) => areaUnderEdge(edge, baseline)),
     R.join(' '),
   );

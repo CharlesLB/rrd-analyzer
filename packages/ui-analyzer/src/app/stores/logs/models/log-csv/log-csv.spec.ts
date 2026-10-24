@@ -17,6 +17,14 @@ describe('parseCsvRows', () => {
     expect(parseCsvRows(source)).toEqual([{ time: '2026-10-14 10:00:00', message: 'retry, then "fail"\nat line 2' }]);
   });
 
+  it('parseCsvRows a quote that never closes carries every line after it into that one cell', () => {
+    const source = 'time,message\n2026-10-14,"opened\nnever closed\n';
+
+    const rows = parseCsvRows(source);
+
+    expect(rows).toEqual([{ time: '2026-10-14', message: '"opened\nnever closed' }]);
+  });
+
   it('takes semicolons or tabs as the delimiter when the header holds more of them than commas', () => {
     expect(parseCsvRows('time;message\n2026-10-14;a, b\n')).toEqual([{ time: '2026-10-14', message: 'a, b' }]);
     expect(parseCsvRows('time\tmessage\n2026-10-14\thello\n')).toEqual([{ time: '2026-10-14', message: 'hello' }]);

@@ -166,6 +166,13 @@ describe('shortcutKeyOf', () => {
     expect(shortcutActionOf(pressed('ArrowRight'), state({ isPanelOpen: false }))).toBe('none');
   });
 
+  it('shortcutActionOf, with a log entry open, leaves the keys the entry does not use to the rest of the workspace', () => {
+    const detail = state({ logPanel: 'detail' });
+
+    expect(shortcutActionOf(pressed('i'), detail)).toBe('toggle-panel');
+    expect(shortcutActionOf(pressed('ArrowDown'), detail)).toBe('focus-next');
+  });
+
   it('shortcutActionOf escape, with a log entry open, closes the search first and the panel next', () => {
     expect(shortcutActionOf(pressed('Escape'), state({ logPanel: 'detail', isLogSearchOpen: true, isPanelOpen: false }))).toBe('close-log-search');
     expect(shortcutActionOf(pressed('Escape'), state({ logPanel: 'detail', isPanelOpen: false }))).toBe('close-log-detail');

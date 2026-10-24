@@ -1,12 +1,12 @@
 import { messagesFor } from '@rrd-analyzer/shared';
 import { describe, expect, it } from 'vitest';
 import { SERIES_COLORS } from '../../../../shared/constants/colors';
+import type { ValueRange } from '../../../../shared/utils/plot-scale/plot-scale.util';
 import { CPU_USER_SERIES, MEMORY_USED_SERIES, seriesFixture } from '../../../../stores/workspace/models/series/series.fixture';
 import type { SampledLine } from '../../../../stores/workspace/models/series/series.model';
-import { valueAxesOf } from '../../../../stores/workspace/models/value-axis/value-axis';
+import { type ValueAxis, valueAxesOf } from '../../../../stores/workspace/models/value-axis/value-axis';
 import {
   axisLabelRowsOf,
-  axisLabelsOf,
   columnFractionOf,
   HORIZONTAL_GRID_LINES,
   lastPresentOf,
@@ -18,6 +18,11 @@ import {
 } from './plot-geometry';
 
 const units = messagesFor().units;
+
+const axisOf = (range: ValueRange, unit: string): ValueAxis => ({ axis: 0, unit, color: SERIES_COLORS[0], range });
+
+const labelsDownTheAxis = (range: ValueRange, unit: string): readonly (string | undefined)[] =>
+  axisLabelRowsOf([axisOf(range, unit)], units).map((row) => row.values[0]?.text);
 
 describe('plotPathOf', () => {
   it('draws across a thousand units and down from four to ninety-six, lifting the pen over holes', () => {
@@ -40,9 +45,9 @@ describe('grid and labels', () => {
   });
 
   it('labels the axis from the maximum down to zero', () => {
-    expect(axisLabelsOf({ lowest: 0, highest: 100 }, '%', units).map((label) => label.label)).toEqual(['100.0%', '66.7%', '33.3%', '0.0%']);
-    expect(axisLabelsOf({ lowest: 0, highest: 100 }, '%', units)[0].topPercent).toBe('4%');
-    expect(axisLabelsOf({ lowest: -60, highest: 0 }, '', units).map((label) => label.label)).toEqual(['0.000', '-20.00', '-40.00', '-60.00']);
+    expect(labelsDownTheAxis({ lowest: 0, highest: 100 }, '%')).toEqual(['100.0%', '66.7%', '33.3%', '0.0%']);
+    expect(axisLabelRowsOf([axisOf({ lowest: 0, highest: 100 }, '%')], units)[0].topPercent).toBe('4%');
+    expect(labelsDownTheAxis({ lowest: -60, highest: 0 }, '')).toEqual(['0.000', '-20.00', '-40.00', '-60.00']);
   });
 });
 

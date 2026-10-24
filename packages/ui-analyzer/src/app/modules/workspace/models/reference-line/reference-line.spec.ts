@@ -49,6 +49,12 @@ describe('referenceLinesOf', () => {
     expect(linesOf([])).toEqual([]);
   });
 
+  it('referenceLinesOf a statistic with no finite reading draws no line for it and still draws the others', () => {
+    const lines = linesOf([STATISTIC_KEYS.MINIMUM, STATISTIC_KEYS.MAXIMUM], statisticsOf({ minimum: Number.NaN }));
+
+    expect(lines.map((line) => line.key)).toEqual([STATISTIC_KEYS.MAXIMUM]);
+  });
+
   it('keeps a reading beyond the axis inside the plot', () => {
     const [line] = linesOf([STATISTIC_KEYS.MAXIMUM], statisticsOf({ maximum: 400 }));
 

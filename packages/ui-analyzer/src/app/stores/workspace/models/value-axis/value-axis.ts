@@ -33,14 +33,8 @@ export const plotRangeOf = (samples: readonly SeriesSample[], unit: string): Val
   return { lowest: widenedLowest, highest: widenedLowest < 0 && highest === 0 ? 0 : usable * HEADROOM };
 };
 
-const valueAxisOf = (axis: number, lines: readonly SampledLine[]): ValueAxis | null => {
-  const members = R.filter(lines, (line) => line.axis === axis);
-  const first = R.first(members);
-
-  if (first === undefined) {
-    return null;
-  }
-
+const valueAxisOf = (first: SampledLine, lines: readonly SampledLine[]): ValueAxis => {
+  const { axis } = first;
   const { unit, color } = first.series;
 
   return {
@@ -48,19 +42,20 @@ const valueAxisOf = (axis: number, lines: readonly SampledLine[]): ValueAxis | n
     unit,
     color,
     range: plotRangeOf(
-      R.flatMap(members, (member) => member.samples),
+      R.pipe(
+        lines,
+        R.filter((line) => line.axis === axis),
+        R.flatMap((member) => member.samples),
+      ),
       unit,
     ),
   };
 };
 
 export const valueAxesOf = (lines: readonly SampledLine[]): readonly ValueAxis[] =>
-  R.pipe(
-    lines,
-    R.map((line) => line.axis),
-    R.unique(),
-    R.map((axis) => valueAxisOf(axis, lines)),
-    R.filter(R.isNonNullish),
+  R.map(
+    R.uniqueBy(lines, (line) => line.axis),
+    (first) => valueAxisOf(first, lines),
   );
 
 export const rangedLinesOf = <TLine extends SampledLine>(lines: readonly TLine[], axes: readonly ValueAxis[]): readonly (TLine & { range: ValueRange })[] =>

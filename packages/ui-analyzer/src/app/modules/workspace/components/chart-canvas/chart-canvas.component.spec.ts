@@ -133,4 +133,38 @@ describe('ChartCanvasComponent', () => {
 
     expect(elementOf(fixture, '.chart-canvas-empty')?.classList.contains('chart-canvas-empty-aimed')).toBe(true);
   });
+
+  it('ChartCanvasComponent keeps showing where the chart will go while the drag only crosses into a chart, and stops once it leaves the canvas', () => {
+    const fixture = renderShortenedCharts();
+    const canvas = elementOf(fixture, '.chart-canvas');
+
+    const leaveAt = (clientX: number): void => {
+      canvas?.dispatchEvent(new MouseEvent('dragleave', { clientX, clientY: 100 }));
+      fixture.detectChanges();
+    };
+
+    if (canvas !== null) {
+      vi.spyOn(canvas, 'getBoundingClientRect').mockReturnValue({
+        left: 0,
+        top: 0,
+        width: 800,
+        height: 600,
+        right: 800,
+        bottom: 600,
+        x: 0,
+        y: 0,
+        toJSON: () => '',
+      });
+    }
+
+    dragOver(canvas);
+    fixture.detectChanges();
+    leaveAt(400);
+
+    expect(elementOf(fixture, '.chart-canvas-slot')).not.toBeNull();
+
+    leaveAt(900);
+
+    expect(elementOf(fixture, '.chart-canvas-slot')).toBeNull();
+  });
 });

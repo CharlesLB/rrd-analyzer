@@ -1,4 +1,4 @@
-import { Component, signal } from '@angular/core';
+import { Component, Directive, ElementRef, inject, type OnInit, signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { elementOf, renderWithInputs } from '../../utils/component-fixture/component-fixture.fixture';
@@ -52,6 +52,28 @@ describe('AnchoredMenuComponent', () => {
 })
 class AnchoredMenuHostComponent {
   public readonly isOpen = signal(false);
+  public readonly placement = { top: 10, bottom: null, right: 10 };
+}
+
+@Directive({ selector: '[appFocusOnInit]' })
+class FocusOnInitDirective implements OnInit {
+  private readonly _element = inject<ElementRef<HTMLElement>>(ElementRef);
+
+  public ngOnInit(): void {
+    this._element.nativeElement.focus();
+  }
+}
+
+@Component({
+  selector: 'app-anchored-menu-with-field-host',
+  imports: [AnchoredMenuComponent, FocusOnInitDirective],
+  template: `
+    <app-anchored-menu [placement]="placement" [width]="200">
+      <input class="field" appFocusOnInit />
+    </app-anchored-menu>
+  `,
+})
+class AnchoredMenuWithFieldHostComponent {
   public readonly placement = { top: 10, bottom: null, right: 10 };
 }
 
@@ -132,5 +154,28 @@ describe('AnchoredMenuComponent opened from a trigger', () => {
     fixture.detectChanges();
 
     expect(elementOf(fixture, '.anchored-menu')).toBeNull();
+  });
+
+  it('leaves the focus on the content that took it as the menu opened, such as a field to type in', async () => {
+    const fixture = TestBed.createComponent(AnchoredMenuWithFieldHostComponent);
+    document.body.appendChild(fixture.nativeElement);
+
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    expect(document.activeElement).toBe(elementOf(fixture, '.field'));
+  });
+
+  it('keeps taking the focus when it opens after a test overrides it, since it needs nothing that only an ahead-of-time build provides', async () => {
+    TestBed.overrideComponent(AnchoredMenuComponent, { set: {} });
+    const fixture = TestBed.createComponent(AnchoredMenuComponent);
+    document.body.appendChild(fixture.nativeElement);
+    fixture.componentRef.setInput('placement', { top: 10, bottom: null, right: 10 });
+    fixture.componentRef.setInput('width', 200);
+
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    expect(document.activeElement).toBe(elementOf(fixture, '.anchored-menu'));
   });
 });

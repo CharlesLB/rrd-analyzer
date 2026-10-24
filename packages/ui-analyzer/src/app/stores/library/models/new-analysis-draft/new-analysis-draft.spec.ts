@@ -1,8 +1,25 @@
+import { signal } from '@angular/core';
+import { TestBed } from '@angular/core/testing';
+import { form } from '@angular/forms/signals';
 import { describe, expect, it } from 'vitest';
-import { analysisNameOf, EMPTY_NEW_ANALYSIS_DRAFT, withoutSourceAt, withoutSources, withSourcesAdded } from './new-analysis-draft';
+import type { NewAnalysisDraft } from '../analysis/analysis.model';
+import { analysisNameOf, EMPTY_NEW_ANALYSIS_DRAFT, newAnalysisDraftSchema, withoutSourceAt, withoutSources, withSourcesAdded } from './new-analysis-draft';
 
 const sourceOf = (name: string, size = 1) => ({ name, path: '', size });
 const UNTITLED = 'Untitled analysis';
+
+describe('newAnalysisDraftSchema', () => {
+  it('newAnalysisDraftSchema refuses a draft with no source and accepts it once a source is listed', () => {
+    const draft = signal<NewAnalysisDraft>(EMPTY_NEW_ANALYSIS_DRAFT);
+    const draftForm = TestBed.runInInjectionContext(() => form(draft, newAnalysisDraftSchema));
+
+    const isValidWithoutSource = draftForm().valid();
+    draft.set(withSourcesAdded(EMPTY_NEW_ANALYSIS_DRAFT, [sourceOf('a.rrd')]));
+
+    expect(isValidWithoutSource).toBe(false);
+    expect(draftForm().valid()).toBe(true);
+  });
+});
 
 describe('withSourcesAdded', () => {
   it('withSourcesAdded keeps the sources already listed and adds each new name once, as it was picked first', () => {

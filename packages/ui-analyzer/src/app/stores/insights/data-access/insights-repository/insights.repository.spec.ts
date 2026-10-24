@@ -1,7 +1,7 @@
 import { TestBed } from '@angular/core/testing';
-import { beforeEach, describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { AnalyzerGateway } from '../../../../core/gateway/analyzer.gateway';
-import { analyzerGatewayStub, provideGatewayStub } from '../../../../core/gateway/analyzer.gateway.fixture';
+import { analyzerGatewayStub, insightsReportDtoFixture, provideGatewayStub } from '../../../../core/gateway/analyzer.gateway.fixture';
 import { InsightsRepository } from './insights.repository';
 
 describe('InsightsRepository', () => {
@@ -40,6 +40,27 @@ describe('InsightsRepository', () => {
     expect(finding.cause[1]).toEqual({ text: '3.1 h', isEmphasized: true });
     expect(finding.evidence[0]).toMatchObject({ semantic: 'heap.objects', direction: 'rising', fromValue: 1_080_000, spark: [1, null, 3] });
     expect(finding.evidence[1]).toMatchObject({ direction: 'gap', fromValue: null, spark: [] });
+  });
+
+  it('maps a severity, a direction or a scope the app does not know onto information, a trend and every series', async () => {
+    const known = insightsReportDtoFixture();
+    const [finding] = known.findings;
+    const [evidence] = finding.evidence;
+    vi.mocked(gateway.runInsights).mockResolvedValueOnce(
+      insightsReportDtoFixture({
+        analyzed: { ...known.analyzed, scope: 'everything' },
+        findings: [{ ...finding, severity: 'catastrophic', evidence: [{ ...evidence, direction: 'sideways' }] }],
+      }),
+    );
+
+    const report = await repository.run(
+      { analysisId: 'a1', scope: 'all', window: { fromMilliseconds: 0, untilMilliseconds: 1 } },
+      new AbortController().signal,
+    );
+
+    expect(report.scope).toBe('all');
+    expect(report.findings[0]?.severity).toBe('info');
+    expect(report.findings[0]?.evidence[0]?.direction).toBe('trend');
   });
 
   it('names the rules a report was made under the same way it names the rules in force now', async () => {

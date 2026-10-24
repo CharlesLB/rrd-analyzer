@@ -44,6 +44,18 @@ const renderPanel = (overrides: Readonly<Record<string, unknown>> = {}) =>
 
 const percentOf = (value: string | undefined): number => Number.parseFloat(value ?? '');
 
+const rectOf = (left: number, top: number, width: number, height: number): DOMRect => ({
+  left,
+  top,
+  width,
+  height,
+  right: left + width,
+  bottom: top + height,
+  x: left,
+  y: top,
+  toJSON: () => '',
+});
+
 describe('ChartPanelComponent', () => {
   beforeEach(() => {
     TestBed.configureTestingModule({});
@@ -379,5 +391,75 @@ describe('ChartPanelComponent', () => {
     overlay?.dispatchEvent(new PointerEvent('pointermove', { clientX: 380 }));
 
     expect(moved.mock.calls).toEqual([[1 / 3], [1 / 3]]);
+  });
+
+  it('ChartPanelComponent, dragged by its header, puts its own id in the drag as a move and reports the drag', () => {
+    const fixture = renderPanel();
+    const started = vi.fn();
+    fixture.componentInstance.dragStarted.subscribe(started);
+    const transfer = { setData: vi.fn(), effectAllowed: '' };
+    const drag = Object.assign(new Event('dragstart', { bubbles: true, cancelable: true }), { dataTransfer: transfer });
+
+    elementOf(fixture, '.chart-panel-header-title')?.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true }));
+    elementOf(fixture, '.chart-panel-header')?.dispatchEvent(drag);
+
+    expect(transfer.setData).toHaveBeenCalledWith('text/plain', CPU_USER_SERIES.id);
+    expect(transfer.effectAllowed).toBe('move');
+    expect(started).toHaveBeenCalledWith(CPU_USER_SERIES.id);
+  });
+
+  it('ChartPanelComponent, while something is dragged over it, reports how far down the drag is and takes the drop', () => {
+    const fixture = renderPanel({ isDragging: true });
+    const targeted = vi.fn();
+    const dropped = vi.fn();
+    fixture.componentInstance.dropTargetChanged.subscribe(targeted);
+    fixture.componentInstance.dropped.subscribe(dropped);
+    const panel = elementOf(fixture, '.chart-panel');
+    const over = new MouseEvent('dragover', { cancelable: true, clientY: 150 });
+    const drop = new MouseEvent('drop', { cancelable: true });
+
+    if (panel !== null) {
+      vi.spyOn(panel, 'getBoundingClientRect').mockReturnValue(rectOf(0, 100, 800, 200));
+    }
+
+    panel?.dispatchEvent(over);
+    panel?.dispatchEvent(drop);
+
+    expect(over.defaultPrevented).toBe(true);
+    expect(targeted).toHaveBeenCalledWith({ chartId: CPU_USER_SERIES.id, verticalFraction: 0.25 });
+    expect(drop.defaultPrevented).toBe(true);
+    expect(dropped).toHaveBeenCalledWith(CPU_USER_SERIES.id);
+  });
+
+  it('ChartPanelComponent, pressed on the grip with another button than the primary one, starts no resize', () => {
+    const fixture = renderPanel();
+    const resized = vi.fn();
+    fixture.componentInstance.resized.subscribe(resized);
+    const grip = Object.assign(elementOf(fixture, '.chart-panel-resize') ?? document.createElement('div'), { setPointerCapture: vi.fn() });
+
+    grip.dispatchEvent(new PointerEvent('pointerdown', { button: 2, pointerId: 1, clientY: 100 }));
+    grip.dispatchEvent(new PointerEvent('pointermove', { pointerId: 1, clientY: 480 }));
+
+    expect(fixture.componentInstance.isResizing()).toBe(false);
+    expect(grip.setPointerCapture).not.toHaveBeenCalled();
+    expect(resized).not.toHaveBeenCalled();
+  });
+
+  it('ChartPanelComponent, for a chart left with no line, reads no statistic, draws no line and reports the pointer where it is', () => {
+    const fixture = renderPanel({ chart: { id: CPU_USER_SERIES.id, lines: [], referenceLines: [STATISTIC_KEYS.AVERAGE] } });
+    const moved = vi.fn();
+    fixture.componentInstance.pointerMoved.subscribe(moved);
+    const overlay = elementOf(fixture, '.chart-panel-overlay');
+
+    if (overlay !== null) {
+      vi.spyOn(overlay, 'getBoundingClientRect').mockReturnValue(rectOf(0, 0, 1000, 100));
+    }
+
+    overlay?.dispatchEvent(new PointerEvent('pointermove', { clientX: 400 }));
+
+    expect(moved).toHaveBeenCalledWith(0.4);
+    expect(countOf(fixture, '.chart-panel-header-stat')).toBe(0);
+    expect(countOf(fixture, '.plot-drawing-line')).toBe(0);
+    expect(countOf(fixture, '.plot-drawing-reference')).toBe(0);
   });
 });

@@ -1,18 +1,20 @@
 <div class="color-mixer">
   <div
+    #shadeArea
     class="color-mixer-shade"
     role="slider"
     tabindex="0"
     [attr.aria-label]="texts().colorPicker.shade"
     [attr.aria-valuetext]="picked()"
     [style.background]="shadeBackground()"
-    (pointerdown)="grabShade($event)"
-    (pointermove)="dragShade($event)"
+    (pointerdown)="grabShade($event, shadeArea)"
+    (pointermove)="dragShade($event, shadeArea)"
     (keydown)="nudgeShade($event)"
   >
     <span class="color-mixer-shade-thumb" [style.left]="shadeThumb().left" [style.top]="shadeThumb().top" [style.background]="picked()"></span>
   </div>
   <div
+    #hueArea
     class="color-mixer-hue"
     role="slider"
     tabindex="0"
@@ -21,8 +23,8 @@
     [attr.aria-label]="texts().colorPicker.hue"
     [attr.aria-valuenow]="hueDegrees()"
     [style.background]="hueTrack"
-    (pointerdown)="grabHue($event)"
-    (pointermove)="dragHue($event)"
+    (pointerdown)="grabHue($event, hueArea)"
+    (pointermove)="dragHue($event, hueArea)"
     (keydown)="nudgeHue($event)"
   >
     <span class="color-mixer-hue-thumb" [style.left]="hueThumbLeft()" [style.background]="pureHue()"></span>

@@ -1,7 +1,9 @@
+import { Component, input, output } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
+import { By } from '@angular/platform-browser';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { elementOf, elementsOf, renderWithInputs, textOf } from '../../utils/component-fixture/component-fixture.fixture';
-import { OPTION_MENU_SIZES } from '../option-menu/option-menu.component';
+import { OPTION_MENU_SIZES, type OptionMenuItem, type OptionMenuSize } from '../option-menu/option-menu.component';
 import { OptionSelectComponent } from './option-select.component';
 
 const ITEMS = [
@@ -10,7 +12,20 @@ const ITEMS = [
   { value: 'days', label: 'days' },
 ];
 
-const renderSelect = (size: string = OPTION_MENU_SIZES.REGULAR) => renderWithInputs(OptionSelectComponent, { items: ITEMS, selected: 'hours', size });
+@Component({
+  selector: 'app-option-menu',
+  template: `<button class="stub-option-menu-choice" type="button" (click)="chosen.emit('days')">days</button>`,
+})
+class StubOptionMenuComponent {
+  public readonly items = input.required<readonly OptionMenuItem[]>();
+  public readonly selected = input.required<string>();
+  public readonly size = input.required<OptionMenuSize>();
+
+  public readonly chosen = output<string>();
+}
+
+const renderSelect = (size: string = OPTION_MENU_SIZES.REGULAR, selected = 'hours') =>
+  renderWithInputs(OptionSelectComponent, { items: ITEMS, selected, size });
 
 describe('OptionSelectComponent', () => {
   beforeEach(() => {
@@ -113,5 +128,52 @@ describe('OptionSelectComponent', () => {
 
     expect(elementOf(fixture, '.option-select-trigger-compact')).not.toBeNull();
     expect(elementOf(fixture, '.option-menu-compact')).not.toBeNull();
+  });
+
+  it('shows no label while the selected value is none of its options', () => {
+    const fixture = renderSelect(OPTION_MENU_SIZES.REGULAR, 'weeks');
+
+    expect(textOf(fixture, '.option-select-trigger span')).toBe('');
+  });
+
+  it('stays open on ArrowDown once open, leaving the key to the menu', () => {
+    const fixture = renderSelect();
+    const trigger = elementOf(fixture, '.option-select-trigger');
+    trigger?.click();
+    fixture.detectChanges();
+    const down = new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true, cancelable: true });
+
+    trigger?.dispatchEvent(down);
+    fixture.detectChanges();
+
+    expect(down.defaultPrevented).toBe(false);
+    expect(elementOf(fixture, 'app-option-menu')).not.toBeNull();
+  });
+
+  it('stays open when a press lands inside it', () => {
+    const fixture = renderSelect();
+    document.body.appendChild(fixture.nativeElement);
+    elementOf(fixture, '.option-select-trigger')?.click();
+    fixture.detectChanges();
+
+    elementsOf(fixture, '.option-menu-item')[0]?.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true }));
+    fixture.detectChanges();
+
+    expect(elementOf(fixture, 'app-option-menu')).not.toBeNull();
+  });
+
+  it('hands the menu it opens its options, the selected value and its size, and reports what that menu chose', () => {
+    TestBed.overrideComponent(OptionSelectComponent, { set: { imports: [StubOptionMenuComponent] } });
+    const fixture = renderSelect(OPTION_MENU_SIZES.COMPACT);
+    const chosen = vi.fn();
+    fixture.componentInstance.chosen.subscribe(chosen);
+    elementOf(fixture, '.option-select-trigger')?.click();
+    fixture.detectChanges();
+
+    const menu: StubOptionMenuComponent = fixture.debugElement.query(By.directive(StubOptionMenuComponent)).componentInstance;
+    elementOf(fixture, '.stub-option-menu-choice')?.click();
+
+    expect([menu.items(), menu.selected(), menu.size()]).toEqual([ITEMS, 'hours', OPTION_MENU_SIZES.COMPACT]);
+    expect(chosen).toHaveBeenCalledWith('days');
   });
 });

@@ -63,7 +63,7 @@ const readLines = (source: string, texts: LogsMessages): ReadValues | null => {
   );
 
   const readings = R.map(lines, (line) => ({ ...readJson(line.text), number: line.number }));
-  const firstBadLine = readings.find((reading) => reading.error !== null)?.number;
+  const firstBadReading = readings.find((reading) => reading.error !== null);
 
   const values = R.pipe(
     readings,
@@ -77,7 +77,7 @@ const readLines = (source: string, texts: LogsMessages): ReadValues | null => {
     return null;
   }
 
-  return { values, notes: badCount === 0 ? [] : [formatPlural(texts.notes.skippedLines, badCount, { line: firstBadLine ?? 0 })] };
+  return { values, notes: firstBadReading === undefined ? [] : [formatPlural(texts.notes.skippedLines, badCount, { line: firstBadReading.number })] };
 };
 
 const invalidJson = (source: string, error: Error, texts: LogsMessages): LogParsing => {
@@ -93,6 +93,8 @@ const invalidJson = (source: string, error: Error, texts: LogsMessages): LogPars
   return failed(formatMessage(texts.failures.invalidJsonNearLine, { line }), detail);
 };
 
+const listOf = (value: unknown): readonly unknown[] => (Array.isArray(value) ? value : []);
+
 const valuesOf = (document: unknown, texts: LogsMessages): ReadValues | null => {
   if (Array.isArray(document)) {
     return { values: document, notes: [] };
@@ -104,7 +106,11 @@ const valuesOf = (document: unknown, texts: LogsMessages): ReadValues | null => 
 
   const holder = R.pipe(
     Object.entries(document),
-    R.map(([name, held]) => ({ name, held: Array.isArray(held) ? R.filter(held, isLogRecord) : [], values: held })),
+    R.map(([name, value]) => {
+      const values = listOf(value);
+
+      return { name, values, held: R.filter(values, isLogRecord) };
+    }),
     R.find((candidate) => candidate.held.length > 0),
   );
 
@@ -112,7 +118,7 @@ const valuesOf = (document: unknown, texts: LogsMessages): ReadValues | null => 
     return { values: [document], notes: [] };
   }
 
-  return { values: Array.isArray(holder.values) ? holder.values : [], notes: [formatMessage(texts.notes.arrayProperty, { name: holder.name })] };
+  return { values: holder.values, notes: [formatMessage(texts.notes.arrayProperty, { name: holder.name })] };
 };
 
 const recordsOf = (read: ReadValues, texts: LogsMessages): LogParsing => {

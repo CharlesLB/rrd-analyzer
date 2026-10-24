@@ -77,6 +77,16 @@ describe('SettingsStore', () => {
     expect(freshStore().synchronizedCrosshair()).toBe(true);
   });
 
+  it('falls back to the defaults when what is stored is valid JSON but not a set of settings', () => {
+    localStorage.setItem(SETTINGS_STORAGE_KEY, '42');
+
+    const store = freshStore();
+
+    expect(store.thumbnailFill()).toBe(true);
+    expect(store.synchronizedCrosshair()).toBe(true);
+    expect(store.logLanes()).toBe(true);
+  });
+
   it('keeps working when the browser refuses to store anything', () => {
     vi.stubGlobal('localStorage', {
       getItem: () => {

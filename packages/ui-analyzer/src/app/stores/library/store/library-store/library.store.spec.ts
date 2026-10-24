@@ -1,5 +1,5 @@
 import { TestBed } from '@angular/core/testing';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { AnalysisDto } from '../../../../core/gateway/analyzer.dto';
 import type { AnalyzerGateway } from '../../../../core/gateway/analyzer.gateway';
 import { analysisDtoFixture, analyzerGatewayStub, provideGatewayStub } from '../../../../core/gateway/analyzer.gateway.fixture';
@@ -16,6 +16,10 @@ describe('LibraryStore', () => {
     TestBed.configureTestingModule({ providers: [provideGatewayStub(gateway)] });
     store = TestBed.inject(LibraryStore);
     toasts = TestBed.inject(ToastStore);
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
   });
 
   it('reads the library again on every refresh, since a workspace may have changed it', async () => {
@@ -317,6 +321,30 @@ describe('LibraryStore', () => {
     expect(store.analyses().map((analysis) => analysis.id)).toEqual(['a1', 'a0']);
   });
 
+  it('remove of the same analysis twice deletes it for good once, and the Undo of the second toast cannot bring it back', async () => {
+    await store.refresh();
+
+    store.remove('a1');
+    store.remove('a1');
+    toasts.runAction();
+    await vi.waitFor(() => expect(gateway.deleteAnalysis).toHaveBeenCalledWith('a1'));
+
+    await vi.waitFor(() => expect(store.analyses()).toEqual([]));
+    expect(gateway.deleteAnalysis).toHaveBeenCalledTimes(1);
+  });
+
+  it('remove of the same analysis twice, its second toast going without Undo, asks the daemon to delete it only once', async () => {
+    await store.refresh();
+
+    store.remove('a1');
+    store.remove('a1');
+    toasts.dismiss();
+    await store.settleRemovals();
+
+    expect(gateway.deleteAnalysis).toHaveBeenCalledTimes(1);
+    expect(store.analyses()).toEqual([]);
+  });
+
   it('remove refused by the daemon puts the analysis back on the list and says it could not be deleted', async () => {
     vi.mocked(gateway.deleteAnalysis).mockRejectedValue(new Error('locked'));
     await store.refresh();
@@ -401,6 +429,57 @@ describe('LibraryStore', () => {
     await vi.waitFor(() => expect(store.draft().sources).toEqual([{ name: 'dropped.rrd', path: '/dropped.rrd', size: 1024 }]));
     expect(gateway.describeSources).toHaveBeenCalledWith(['/dropped.rrd']);
     expect(store.isDialogOpen()).toBe(true);
+  });
+
+  it('a native drop whose files the host cannot describe says so and adds nothing', async () => {
+    const native: { drop: (paths: readonly string[]) => void } = { drop: () => undefined };
+    vi.mocked(gateway.watchFileDrop).mockImplementation((handler) => {
+      native.drop = handler;
+
+      return () => undefined;
+    });
+    vi.mocked(gateway.describeSources).mockRejectedValue(new Error('unreadable'));
+    store.watchNativeFileDrop();
+    await vi.waitFor(() => expect(gateway.watchFileDrop).toHaveBeenCalled());
+
+    native.drop(['/dropped.rrd']);
+
+    await vi.waitFor(() => expect(toasts.message()).toBe('the picked files could not be read'));
+    expect(store.draft().sources).toEqual([]);
+    expect(store.isDialogOpen()).toBe(false);
+  });
+
+  it('addDroppedFiles inside the desktop runtime leaves the drop to the native handler and reads nothing', async () => {
+    TestBed.resetTestingModule();
+    TestBed.configureTestingModule({ providers: [provideGatewayStub(gateway)] });
+    vi.stubGlobal('go', { desktop: { API: {} } });
+    const desktopStore = TestBed.inject(LibraryStore);
+    vi.unstubAllGlobals();
+
+    await desktopStore.addDroppedFiles([new File(['RRD'], 'a.rrd')]);
+
+    expect(desktopStore.usesNativeFileDrop).toBe(true);
+    expect(gateway.describeFiles).not.toHaveBeenCalled();
+    expect(desktopStore.draft().sources).toEqual([]);
+    expect(desktopStore.isDialogOpen()).toBe(false);
+  });
+
+  it('browseForSources adds the files picked to the draft', async () => {
+    store.openDialog();
+
+    await store.browseForSources();
+
+    expect(store.draft().sources).toEqual([{ name: 'picked.rrd', path: '', size: 512 }]);
+  });
+
+  it('setDropActive marks a drag held over the drop zone, and opening the dialog clears the mark', () => {
+    store.setDropActive(true);
+    const isActiveWhileDragging = store.isDropActive();
+
+    store.openDialog();
+
+    expect(isActiveWhileDragging).toBe(true);
+    expect(store.isDropActive()).toBe(false);
   });
 
   it('browseForSources whose picker is cancelled adds nothing and says nothing', async () => {

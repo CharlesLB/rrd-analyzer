@@ -1,5 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { analyzerGatewayStub, provideGatewayStub } from '../../../../core/gateway/analyzer.gateway.fixture';
 import { LOG_TYPE_COLORS } from '../../../../shared/constants/colors';
 import {
   countOf,
@@ -250,5 +251,24 @@ describe('LogDetailPanelComponent', () => {
     fixture.detectChanges();
 
     expect(countOf(fixture, '.json-viewer-hit')).toBeGreaterThan(0);
+  });
+
+  it('LogDetailPanelComponent remembers the query committed in its search, and forgets it once asked to from the recent searches', async () => {
+    const gateway = analyzerGatewayStub();
+    TestBed.configureTestingModule({ providers: [provideGatewayStub(gateway)] });
+    const fixture = renderPanel();
+
+    search(fixture, 'atlas');
+    elementOf(fixture, '.json-viewer-search-field input')?.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true }));
+
+    await vi.waitFor(() => expect(gateway.rememberSearch).toHaveBeenCalledWith('log-detail', 'atlas'));
+
+    typeInto(fixture, '.json-viewer-search-field input', '');
+    fixture.detectChanges();
+    elementOf(fixture, '.json-viewer-search-field input')?.dispatchEvent(new Event('focus'));
+    fixture.detectChanges();
+    elementOf(fixture, '.search-field-history-forget')?.click();
+
+    await vi.waitFor(() => expect(gateway.forgetSearch).toHaveBeenCalledWith('log-detail', 'atlas'));
   });
 });

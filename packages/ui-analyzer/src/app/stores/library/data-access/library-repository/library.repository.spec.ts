@@ -69,6 +69,17 @@ describe('LibraryRepository', () => {
     expect(gateway.watchFileDrop).toHaveBeenCalledTimes(1);
   });
 
+  it('watchFileDrop, once the host is watching, stops the host from watching when the watch ends', async () => {
+    const stopHost = vi.fn();
+    vi.mocked(gateway.watchFileDrop).mockReturnValue(stopHost);
+
+    const stopWatching = repository.watchFileDrop(vi.fn());
+    await vi.waitFor(() => expect(gateway.watchFileDrop).toHaveBeenCalled());
+    stopWatching();
+
+    await vi.waitFor(() => expect(stopHost).toHaveBeenCalledTimes(1));
+  });
+
   it('reports whether the host can deliver dropped file paths', () => {
     expect(repository.usesNativeFileDrop).toBe(false);
   });

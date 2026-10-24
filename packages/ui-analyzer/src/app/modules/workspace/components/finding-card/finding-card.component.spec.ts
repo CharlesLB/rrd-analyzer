@@ -110,4 +110,14 @@ describe('FindingCardComponent', () => {
 
     expect(reachedPage).toHaveBeenCalledTimes(3);
   });
+
+  it('FindingCardComponent, compiled again from its own metadata as a TestBed override compiles it, still scrolls the focused card into view', async () => {
+    TestBed.overrideComponent(FindingCardComponent, { set: {} });
+    await TestBed.compileComponents();
+
+    renderCard(false, true);
+    TestBed.tick();
+
+    expect(scrolledIntoView).toHaveBeenCalledWith({ block: 'nearest' });
+  });
 });

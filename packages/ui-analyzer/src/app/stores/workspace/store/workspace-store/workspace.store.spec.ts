@@ -15,6 +15,8 @@ import { TimeWindowStore } from '../../../time-window/store/time-window-store/ti
 import type { ToastStore } from '../../../toast/store/toast-store/toast.store';
 import { chartIdsOf } from '../../models/plotted-chart/plotted-chart';
 import { chartFixture } from '../../models/plotted-chart/plotted-chart.fixture';
+import { STATISTIC_KEYS } from '../../models/statistic-key/statistic-key';
+import { UNKNOWN_STEP_MILLISECONDS } from '../../models/timeframe/timeframe';
 import type { CanvasDragStore } from '../canvas-drag-store/canvas-drag.store';
 import type { WorkspaceStore } from './workspace.store';
 import { openWorkspace, referenceTo } from './workspace.store.fixture';
@@ -51,6 +53,38 @@ describe('WorkspaceStore', () => {
     });
   });
 
+  describe('the open canvas', () => {
+    beforeEach(async () => {
+      await configure(chartsDtoFixture('s2', 's0'));
+    });
+
+    it('canvasSeries lists the series the canvas draws in its order, and canvasColors the color each is drawn in', () => {
+      const series = store.canvasSeries();
+
+      expect(series.map((drawn) => drawn.id)).toEqual(['s2', 's0']);
+      expect(store.canvasColors()).toEqual(new Map(series.map((drawn) => [drawn.id, drawn.color] as const)));
+    });
+
+    it('toggleLibrary collapses the library and opens it again', () => {
+      store.toggleLibrary();
+      const isCollapsedAfterOneToggle = store.isLibraryCollapsed();
+
+      store.toggleLibrary();
+
+      expect(isCollapsedAfterOneToggle).toBe(true);
+      expect(store.isLibraryCollapsed()).toBe(false);
+    });
+
+    it('contextMenuDetails names no menu until one is opened, then names the series and whether it is on the canvas', () => {
+      const beforeOpening = store.contextMenuDetails();
+
+      store.openContextMenu({ seriesId: 's2', x: 10, y: 20 });
+
+      expect(beforeOpening).toBeNull();
+      expect(store.contextMenuDetails()).toMatchObject({ seriesId: 's2', x: 10, y: 20, title: 'atlas_metric_2', isOnCanvas: true });
+    });
+  });
+
   describe('renaming', () => {
     beforeEach(async () => {
       await configure(chartsDtoFixture('s2', 's0'));
@@ -72,6 +106,25 @@ describe('WorkspaceStore', () => {
       await store.rename('Atlas prod · p99');
 
       expect(library.analyses().map((analysis) => analysis.name)).toEqual(['Atlas prod · p99']);
+    });
+
+    it('renaming answered after another analysis was opened leaves the name on screen to the analysis now open', async () => {
+      const renaming: { finish: () => void } = { finish: () => undefined };
+      vi.mocked(gateway.renameAnalysis).mockImplementationOnce(
+        async () =>
+          await new Promise((resolve) => {
+            renaming.finish = () => resolve(analysisDtoFixture({ name: 'Renamed late' }));
+          }),
+      );
+
+      const renamed = store.rename('Renamed late');
+      await vi.waitFor(() => expect(gateway.renameAnalysis).toHaveBeenCalled());
+      await store.open('a2');
+      renaming.finish();
+
+      expect(await renamed).toBe(true);
+      expect(store.analysisId()).toBe('a2');
+      expect(store.analysisName()).toBe('Atlas prod · capacity');
     });
 
     it('renaming that the daemon refuses keeps the old name and says so', async () => {
@@ -169,6 +222,25 @@ describe('WorkspaceStore', () => {
       expect(toasts.message()).toBeNull();
     });
 
+    it('says nothing when another analysis was opened while the analysis was being read again with its new files', async () => {
+      const reading: { finish: () => void } = { finish: () => undefined };
+      vi.mocked(gateway.openAnalysis).mockImplementationOnce(
+        async () =>
+          await new Promise<BundleDto>((resolve) => {
+            reading.finish = () => resolve(bundleDtoFixture(7, { canvas: chartsDtoFixture('s2', 's0') }));
+          }),
+      );
+
+      const added = store.addSources();
+      await vi.waitFor(() => expect(gateway.openAnalysis).toHaveBeenCalledTimes(2));
+      await store.open('a2');
+      reading.finish();
+
+      expect(await added).toBe(false);
+      expect(store.analysisId()).toBe('a2');
+      expect(toasts.message()).toBeNull();
+    });
+
     it('does nothing when the dialog is dismissed', async () => {
       vi.mocked(gateway.pickSources).mockResolvedValueOnce([]);
 
@@ -201,6 +273,29 @@ describe('WorkspaceStore', () => {
     });
 
     expect(store.sourceFileCount()).toBe(2);
+  });
+
+  it('opening an analysis that holds no series leaves the step of the time window unknown', async () => {
+    await configure(chartsDtoFixture(), { openAnalysis: vi.fn().mockResolvedValue(bundleDtoFixture(0)) });
+
+    const step = TestBed.inject(TimeWindowStore).step();
+
+    expect(step).toBe(UNKNOWN_STEP_MILLISECONDS);
+  });
+
+  it('opening a saved chart that merges a series the analysis no longer lists reads that series as one without a unit', async () => {
+    await configure([
+      {
+        series: [
+          { seriesId: 's1', axis: 0 },
+          { seriesId: 's9', axis: 0 },
+        ],
+      },
+    ]);
+
+    const [chart] = store.canvas();
+
+    expect(chart).toEqual(chartFixture({ seriesId: 's1', axis: 0 }, { seriesId: 's9', axis: 1 }));
   });
 
   describe('an analysis that cannot be opened', () => {
@@ -497,6 +592,30 @@ describe('WorkspaceStore', () => {
       expect(toasts.message()).toBe('atlas_metric_0 removed from the canvas');
     });
 
+    it('removeChart of a chart the canvas does not hold changes nothing and offers no undo', () => {
+      const before = store.canvas();
+
+      store.removeChart('s6');
+
+      expect(store.canvas()).toBe(before);
+      expect(toasts.message()).toBeNull();
+      expect(store.canUndo()).toBe(false);
+    });
+
+    it('toggleReferenceLine draws a statistic on one chart and saves it, and a second toggle takes it away', async () => {
+      store.toggleReferenceLine('s0', STATISTIC_KEYS.AVERAGE);
+      const shown = store.canvas()[0]?.referenceLines;
+      await vi.waitFor(() =>
+        expect(gateway.saveCanvas).toHaveBeenLastCalledWith('a1', [{ ...referenceTo(0), referenceLines: [STATISTIC_KEYS.AVERAGE] }, referenceTo(1)]),
+      );
+
+      store.toggleReferenceLine('s0', STATISTIC_KEYS.AVERAGE);
+
+      expect(shown).toEqual([STATISTIC_KEYS.AVERAGE]);
+      expect(store.canvas()[0]?.referenceLines).toEqual([]);
+      expect(store.canvas()[1]?.referenceLines).toEqual([]);
+    });
+
     it('undoCanvasIfStillShowing does nothing once the canvas has changed since the removal', () => {
       store.removeChart('s0');
       const afterRemoval = store.canvas();
@@ -629,6 +748,24 @@ describe('WorkspaceStore', () => {
       store.toggleSeriesMenu(placement);
 
       expect(store.seriesMenuDetails()).toBeNull();
+    });
+
+    it('closeSeriesMenu closes the series menu that is open', () => {
+      store.toggleSeriesMenu({ chartId: 's0', top: 100, bottom: null, right: 40 });
+
+      store.closeSeriesMenu();
+
+      expect(store.seriesMenuChartId()).toBeNull();
+      expect(store.seriesMenuDetails()).toBeNull();
+    });
+
+    it('moveSeriesToAxis onto the axis the series is already read against changes nothing and leaves nothing to undo', () => {
+      const before = store.canvas();
+
+      store.moveSeriesToAxis('s0', 0);
+
+      expect(store.canvas()).toBe(before);
+      expect(store.canUndo()).toBe(false);
     });
 
     it('seriesMenuDetails names no menu for a chart of one series', () => {
@@ -774,6 +911,14 @@ describe('WorkspaceStore', () => {
 
       store.toggleColorMenu({ seriesId: 's2', top: 10, bottom: null, right: 20 });
       store.recolorSeries('s2', '#c8402f');
+
+      expect(store.colorMenuDetails()).toBeNull();
+    });
+
+    it('closeColorMenu closes the palette that is open', () => {
+      store.toggleColorMenu({ seriesId: 's2', top: 10, bottom: null, right: 20 });
+
+      store.closeColorMenu();
 
       expect(store.colorMenuDetails()).toBeNull();
     });

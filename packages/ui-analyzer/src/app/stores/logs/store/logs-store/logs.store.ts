@@ -22,7 +22,7 @@ import {
   withRoleMapped,
 } from '../../models/log-mapping/log-mapping';
 import { type EntryReading, readMessageOf, readTimeOf, readTypeOf } from '../../models/log-reading/log-reading';
-import { type TypeColors, typeColorsOf, UNKNOWN_LOG_TYPE } from '../../models/log-severity/log-severity';
+import { type TypeColors, typeColorsOf } from '../../models/log-severity/log-severity';
 import { type LogFailure, type LogRecord, MAXIMUM_LOG_FILE_BYTES, MAXIMUM_LOG_FILE_MEGABYTES, parseLogText } from '../../models/log-source/log-source';
 import {
   LOG_PANELS,
@@ -131,7 +131,7 @@ export class LogsStore {
   public readonly isReplacing = computed(() => this._incomingFileState() !== null && this._loaded() !== null);
   public readonly notes = computed(() => this._loaded()?.notes ?? []);
   public readonly fields = computed(() => this._loaded()?.fields ?? []);
-  public readonly recordCount = computed(() => this._loaded()?.records.length ?? 0);
+  public readonly recordCount = computed(() => this._records().length);
   public readonly detectedMapping = computed(() => this._loaded()?.detectedMapping ?? EMPTY_MAPPING);
   public readonly draftMapping = this._draftMappingState.asReadonly();
   public readonly appliedMapping = computed(() => this._placementState()?.mapping ?? EMPTY_MAPPING);
@@ -180,7 +180,7 @@ export class LogsStore {
 
     return R.map(this._readTimes(), (timeMilliseconds, position) => ({
       timeMilliseconds,
-      type: types[position] ?? UNKNOWN_LOG_TYPE,
+      type: types[position],
       message: messages[position],
     }));
   });

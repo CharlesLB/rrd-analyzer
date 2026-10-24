@@ -116,8 +116,8 @@ export class WorkspacePageComponent {
   public readonly analysisId = input.required<string>();
 
   private readonly _router = inject(Router);
-  private readonly _title = viewChild(AnalysisTitleComponent);
-  private readonly _viewSettings = viewChild(ViewSettingsComponent);
+  private readonly _title = viewChild.required(AnalysisTitleComponent);
+  private readonly _viewSettings = viewChild.required(ViewSettingsComponent);
   private readonly _logSetup = viewChild(LogSetupPanelComponent);
   private readonly _logDetail = viewChild(LogDetailPanelComponent);
   private readonly _strip = viewChild(TimelineStripComponent);
@@ -198,7 +198,12 @@ export class WorkspacePageComponent {
 
   protected readonly logEntryCount = computed(() => (this.logs.status() === LOG_STATUSES.READY ? this.logs.entries().length : null));
   protected readonly logCursorFraction = computed(() => this.timeWindow.cursor()?.fraction ?? null);
-  protected readonly selectedLogColor = computed(() => colorOfType(this.logs.typeColors(), this.logs.selectedEntry()?.type ?? ''));
+
+  protected readonly openLogDetail = computed(() => {
+    const entry = this.logs.selectedEntry();
+
+    return entry !== null && this.logs.isDetailOpen() ? { entry, color: colorOfType(this.logs.typeColors(), entry.type) } : null;
+  });
 
   protected readonly logMarks = computed(() =>
     logMarksOf(
@@ -217,8 +222,8 @@ export class WorkspacePageComponent {
     isContextMenuOpen: this.workspace.contextMenuDetails() !== null,
     isExportMenuOpen: this.canvasExport.menuDetails() !== null,
     isSeriesMenuOpen: this.workspace.seriesMenuDetails() !== null,
-    isTitleMenuOpen: this._title()?.isMenuOpen() ?? false,
-    isSettingsMenuOpen: this._viewSettings()?.isMenuOpen() ?? false,
+    isTitleMenuOpen: this._title().isMenuOpen(),
+    isSettingsMenuOpen: this._viewSettings().isMenuOpen(),
     logPanel: this.logs.panel(),
     isLogSearchOpen: this._logDetail()?.isSearchOpen() ?? false,
     isLogPickerOpen: this._logSetup()?.isPickerOpen() ?? false,
@@ -237,8 +242,8 @@ export class WorkspacePageComponent {
     [SHORTCUT_ACTIONS.CLOSE_PANEL]: () => this.insights.closePanel(),
     [SHORTCUT_ACTIONS.CANCEL_RUN]: () => this.insights.cancel(),
     [SHORTCUT_ACTIONS.CLOSE_TIMEFRAME]: () => this.closeTimeframe(),
-    [SHORTCUT_ACTIONS.CLOSE_TITLE_MENU]: () => this._title()?.closeMenu(),
-    [SHORTCUT_ACTIONS.CLOSE_SETTINGS_MENU]: () => this._viewSettings()?.closeMenu(),
+    [SHORTCUT_ACTIONS.CLOSE_TITLE_MENU]: () => this._title().closeMenu(),
+    [SHORTCUT_ACTIONS.CLOSE_SETTINGS_MENU]: () => this._viewSettings().closeMenu(),
     [SHORTCUT_ACTIONS.CLOSE_CONTEXT_MENU]: () => this.workspace.closeContextMenu(),
     [SHORTCUT_ACTIONS.CLOSE_EXPORT_MENU]: () => this.canvasExport.closeMenu(),
     [SHORTCUT_ACTIONS.CLOSE_SERIES_MENU]: () => this.workspace.closeSeriesMenu(),

@@ -1,6 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import { beforeEach, describe, expect, it } from 'vitest';
-import { elementOf, renderWithInputs, textsOf, typeInto } from '../../utils/component-fixture/component-fixture.fixture';
+import { elementOf, elementsOf, renderWithInputs, textsOf, typeInto } from '../../utils/component-fixture/component-fixture.fixture';
 import { SearchFieldComponent } from './search-field.component';
 
 const HISTORY = ['memory', 'cpu user', 'cpu system'];
@@ -131,5 +131,39 @@ describe('SearchFieldComponent', () => {
     expect(emitted.forgotten).toEqual(['memory']);
     expect(emitted.committed).toEqual([]);
     expect(fixture.componentInstance.value()).toBe('');
+  });
+
+  it('highlights the last recent search on ArrowUp while the list is open, and leaves ArrowUp to the page while it is closed', () => {
+    const { fixture } = renderField();
+
+    expect(press(fixture, 'ArrowUp').defaultPrevented).toBe(false);
+
+    focus(fixture);
+    const up = press(fixture, 'ArrowUp');
+
+    expect(up.defaultPrevented).toBe(true);
+    expect(fieldOf(fixture).getAttribute('aria-activedescendant')).toBe(elementsOf(fixture, '.search-field-history-item').at(-1)?.id);
+  });
+
+  it('leaves ArrowDown to the page when no recent search holds what is typed', () => {
+    const { fixture } = renderField('', []);
+
+    focus(fixture);
+
+    expect(press(fixture, 'ArrowDown').defaultPrevented).toBe(false);
+    expect(elementOf(fixture, '.search-field-history')).toBeNull();
+  });
+
+  it('keeps the focus in the field when the clear button or a recent search is pressed', () => {
+    const { fixture } = renderField('cpu');
+    focus(fixture);
+    const onClear = new MouseEvent('mousedown', { cancelable: true });
+    const onRecent = new MouseEvent('mousedown', { cancelable: true });
+
+    elementOf(fixture, '.search-field-clear')?.dispatchEvent(onClear);
+    elementOf(fixture, '.search-field-history-item')?.dispatchEvent(onRecent);
+
+    expect(onClear.defaultPrevented).toBe(true);
+    expect(onRecent.defaultPrevented).toBe(true);
   });
 });

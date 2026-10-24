@@ -27,6 +27,8 @@ export const hasLeftTarget = (event: DragEvent): boolean => {
   return event.clientX < bounds.left || event.clientX >= bounds.right || event.clientY < bounds.top || event.clientY >= bounds.bottom;
 };
 
-export const carriesFiles = (event: DragEvent): boolean => event.dataTransfer?.types.includes(FILES_TRANSFER_TYPE) ?? false;
+export type FileCarryingDragEvent = DragEvent & { readonly dataTransfer: DataTransfer };
+
+export const carriesFiles = (event: DragEvent): event is FileCarryingDragEvent => event.dataTransfer?.types.includes(FILES_TRANSFER_TYPE) ?? false;
 
 export const firstDroppedFileOf = (event: DragEvent): File | null => event.dataTransfer?.files[0] ?? null;

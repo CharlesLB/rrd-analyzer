@@ -72,6 +72,20 @@ describe('SearchHistoryStore', () => {
     expect(store.histories()[SEARCH_FIELDS.LIBRARY]).toEqual(['second', 'first']);
   });
 
+  it('load keeps the history a write answered with when the write lands while the history is still being read', async () => {
+    const answers: { resolveLoad: (history: readonly string[]) => void } = { resolveLoad: () => undefined };
+    vi.mocked(gateway.fetchSearchHistory).mockImplementationOnce(() => new Promise((resolve) => (answers.resolveLoad = resolve)));
+    vi.mocked(gateway.rememberSearch).mockResolvedValueOnce(['disk', 'memory']);
+
+    const loading = store.load(SEARCH_FIELDS.LIBRARY);
+    await store.remember(SEARCH_FIELDS.LIBRARY, 'disk');
+    answers.resolveLoad(['memory']);
+    const isLoaded = await loading;
+
+    expect(isLoaded).toBe(true);
+    expect(store.histories()[SEARCH_FIELDS.LIBRARY]).toEqual(['disk', 'memory']);
+  });
+
   it('forget keeps what the field still holds', async () => {
     await store.load(SEARCH_FIELDS.CHART_LIBRARY);
     vi.mocked(gateway.forgetSearch).mockResolvedValue(['cpu']);

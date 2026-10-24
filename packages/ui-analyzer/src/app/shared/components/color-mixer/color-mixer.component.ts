@@ -3,6 +3,7 @@ import * as R from 'remeda';
 import { I18nStore } from '../../../stores/i18n/store/i18n-store/i18n.store';
 import { type HsvColor, hexColorOf, hexOf, hsvOf, pureHueOf } from '../../utils/color-space/color-space.util';
 import { inputValueOf } from '../../utils/input-value/input-value.util';
+import { capturePointerOn } from '../../utils/pointer-fraction/pointer-fraction.util';
 
 const DEGREES_PER_TURN = 360;
 const HUE_STOP_DEGREES = 60;
@@ -35,15 +36,17 @@ type PointerPosition = {
   readonly y: number;
 };
 
-const positionWithin = (event: PointerEvent): PointerPosition => {
-  const area = event.currentTarget instanceof Element ? event.currentTarget.getBoundingClientRect() : null;
+const positionWithin = (area: HTMLElement, event: PointerEvent): PointerPosition => {
+  const bounds = area.getBoundingClientRect();
 
-  if (area === null || area.width === 0 || area.height === 0) {
+  if (bounds.width === 0 || bounds.height === 0) {
     return { x: 0, y: 0 };
   }
 
-  return { x: clampedFraction((event.clientX - area.left) / area.width), y: clampedFraction((event.clientY - area.top) / area.height) };
+  return { x: clampedFraction((event.clientX - bounds.left) / bounds.width), y: clampedFraction((event.clientY - bounds.top) / bounds.height) };
 };
+
+const isHeldOn = (area: HTMLElement, event: PointerEvent): boolean => event.type === POINTER_DOWN || area.hasPointerCapture(event.pointerId);
 
 @Component({
   selector: 'app-color-mixer',
@@ -71,32 +74,32 @@ export class ColorMixerComponent {
   protected readonly hueDegrees = computed(() => Math.round(this._mixedState().hue));
   protected readonly pureHue = computed(() => pureHueOf(this._mixedState().hue));
 
-  protected grabShade(event: PointerEvent): void {
-    this._capture(event);
-    this.dragShade(event);
+  protected grabShade(event: PointerEvent, area: HTMLElement): void {
+    capturePointerOn(area, event);
+    this.dragShade(event, area);
   }
 
-  protected dragShade(event: PointerEvent): void {
-    if (!this._isHeld(event)) {
+  protected dragShade(event: PointerEvent, area: HTMLElement): void {
+    if (!isHeldOn(area, event)) {
       return;
     }
 
-    const { x, y } = positionWithin(event);
+    const { x, y } = positionWithin(area, event);
 
     this._mixedState.update((mixed) => ({ ...mixed, saturation: x, value: 1 - y }));
   }
 
-  protected grabHue(event: PointerEvent): void {
-    this._capture(event);
-    this.dragHue(event);
+  protected grabHue(event: PointerEvent, area: HTMLElement): void {
+    capturePointerOn(area, event);
+    this.dragHue(event, area);
   }
 
-  protected dragHue(event: PointerEvent): void {
-    if (!this._isHeld(event)) {
+  protected dragHue(event: PointerEvent, area: HTMLElement): void {
+    if (!isHeldOn(area, event)) {
       return;
     }
 
-    const { x } = positionWithin(event);
+    const { x } = positionWithin(area, event);
 
     this._mixedState.update((mixed) => ({ ...mixed, hue: Math.min(x * DEGREES_PER_TURN, DEGREES_PER_TURN - 1) }));
   }
@@ -137,15 +140,5 @@ export class ColorMixerComponent {
 
   protected apply(): void {
     this.colorChosen.emit(this.picked());
-  }
-
-  private _capture(event: PointerEvent): void {
-    if (event.currentTarget instanceof Element) {
-      event.currentTarget.setPointerCapture(event.pointerId);
-    }
-  }
-
-  private _isHeld(event: PointerEvent): boolean {
-    return event.type === POINTER_DOWN || (event.currentTarget instanceof Element && event.currentTarget.hasPointerCapture(event.pointerId));
   }
 }

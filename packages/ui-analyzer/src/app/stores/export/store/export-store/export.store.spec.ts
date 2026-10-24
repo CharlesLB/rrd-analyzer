@@ -95,6 +95,27 @@ describe('ExportStore', () => {
       expect(store.menu()).toBeNull();
     });
 
+    it('menuChartId and menuDetails name nothing until a menu is opened, and menuChartId then names its chart', async () => {
+      await configure();
+      const chartIdBeforeOpening = store.menuChartId();
+      const detailsBeforeOpening = store.menuDetails();
+
+      store.toggleMenu(PLACEMENT);
+
+      expect(chartIdBeforeOpening).toBeNull();
+      expect(detailsBeforeOpening).toBeNull();
+      expect(store.menuChartId()).toBe('s3');
+    });
+
+    it('menuDetails for a chart the canvas does not hold has nothing to describe', async () => {
+      await configure();
+
+      store.toggleMenu({ ...PLACEMENT, chartId: 's9' });
+
+      expect(store.menuChartId()).toBe('s9');
+      expect(store.menuDetails()).toBeNull();
+    });
+
     it('menuDetails once insights have found something says the findings will be shaded in the export', async () => {
       await configure();
       await runInsights();
@@ -181,6 +202,18 @@ describe('ExportStore', () => {
     });
   });
 
+  describe('an empty canvas', () => {
+    it('exportAllCharts on a canvas with no chart says there is nothing to export and renders nothing', async () => {
+      await configure({}, undefined, []);
+
+      const isExported = await store.exportAllCharts();
+
+      expect(isExported).toBe(false);
+      expect(gateway.exportImage).not.toHaveBeenCalled();
+      expect(toasts.message()).toBe('nothing on the canvas to export');
+    });
+  });
+
   describe('svg', () => {
     it('exportChart SVG saves the markup itself, in the current theme and with the bundled font embedded', async () => {
       await configure();
@@ -219,6 +252,16 @@ describe('ExportStore', () => {
       expect(toasts.message()).toBe('SVG exported · 1920×1080 vector');
     });
 
+    it('exportChart SVG whose series cannot be read says the series are unavailable and saves nothing', async () => {
+      await configure({ fetchSeries: vi.fn().mockRejectedValue(new Error('daemon away')) });
+
+      const isExported = await exportFromMenu('svg');
+
+      expect(isExported).toBe(false);
+      expect(gateway.exportImage).not.toHaveBeenCalled();
+      expect(toasts.message()).toBe('Could not read the series for this window');
+    });
+
     it('exportChart SVG without the bundled font still exports, on the font stack alone', async () => {
       await configure({}, async () => await Promise.reject(new Error('offline')));
 
@@ -252,6 +295,15 @@ describe('ExportStore', () => {
       await expect(exportFromMenu('csv')).resolves.toBe(false);
 
       expect(toasts.message()).toBe('no samples in this window to export');
+    });
+
+    it('exportChart CSV the transport cannot write says the export could not be saved', async () => {
+      await configure({ exportCsv: vi.fn().mockRejectedValue(new Error('disk full')) });
+
+      const isExported = await exportFromMenu('csv');
+
+      expect(isExported).toBe(false);
+      expect(toasts.message()).toBe('the export could not be saved');
     });
 
     it('exportChart CSV whose save dialog was cancelled says nothing', async () => {

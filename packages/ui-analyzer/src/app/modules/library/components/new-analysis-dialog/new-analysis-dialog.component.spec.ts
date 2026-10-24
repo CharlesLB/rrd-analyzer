@@ -260,4 +260,66 @@ describe('NewAnalysisDialogComponent', () => {
 
     expect(store.isDropActive()).toBe(false);
   });
+
+  it('NewAnalysisDialogComponent takes the files dropped on the drop zone in as sources', async () => {
+    const { fixture, store } = renderDialog();
+    const drop = Object.assign(dragEventOf('drop'), { dataTransfer: { files: [new File(['RRD'], 'atlas.rrd')] } });
+
+    elementOf(fixture, '.source-drop-zone')?.dispatchEvent(drop);
+
+    await vi.waitFor(() => expect(store.draft().sources.map((source) => source.name)).toEqual(['atlas.rrd']));
+  });
+
+  it('NewAnalysisDialogComponent keeps the dialog and what it holds when Cancel is pressed while a Create is on its way', async () => {
+    const { fixture, store } = renderDialog();
+    const answer: { release: () => void } = { release: () => undefined };
+    vi.mocked(gateway.createAnalysis).mockImplementationOnce(
+      async (name) =>
+        await new Promise((resolve) => {
+          answer.release = () => resolve({ id: 'a1', name, canvas: [], lastAccessedMilliseconds: 0 });
+        }),
+    );
+    store.addSources([{ name: 'a.rrd', path: '', size: 1 }]);
+    fixture.detectChanges();
+
+    elementOf(fixture, '.new-analysis-dialog-create')?.click();
+    await vi.waitFor(() => expect(gateway.createAnalysis).toHaveBeenCalled());
+    elementOf(fixture, '.new-analysis-dialog-cancel')?.click();
+
+    expect(store.isDialogOpen()).toBe(true);
+    expect(store.draft().sources.map((source) => source.name)).toEqual(['a.rrd']);
+
+    answer.release();
+    await vi.waitFor(() => expect(store.isCreating()).toBe(false));
+  });
+
+  it('NewAnalysisDialogComponent hands nothing to the page when the analysis could not be created', async () => {
+    const { fixture, store } = renderDialog();
+    const created = vi.fn();
+    fixture.componentInstance.created.subscribe(created);
+    vi.mocked(gateway.createAnalysis).mockRejectedValueOnce(new Error('disk full'));
+    store.addSources([{ name: 'a.rrd', path: '', size: 1 }]);
+    fixture.detectChanges();
+
+    elementOf(fixture, '.new-analysis-dialog-create')?.click();
+
+    await vi.waitFor(() => expect(gateway.createAnalysis).toHaveBeenCalled());
+    await vi.waitFor(() => expect(store.isCreating()).toBe(false));
+    expect(created).not.toHaveBeenCalled();
+    expect(store.isDialogOpen()).toBe(true);
+  });
+
+  it('NewAnalysisDialogComponent, compiled again from its own metadata as a TestBed override compiles it, still focuses its name field and sends a Create with no source to the drop zone', async () => {
+    TestBed.overrideComponent(NewAnalysisDialogComponent, { set: {} });
+    await TestBed.compileComponents();
+    const { fixture } = renderDialog();
+    await fixture.whenStable();
+
+    expect(document.activeElement).toBe(elementOf(fixture, '.new-analysis-dialog-input'));
+
+    elementOf(fixture, '.new-analysis-dialog-create')?.click();
+    await fixture.whenStable();
+
+    expect(document.activeElement).toBe(elementOf(fixture, '.source-drop-zone'));
+  });
 });

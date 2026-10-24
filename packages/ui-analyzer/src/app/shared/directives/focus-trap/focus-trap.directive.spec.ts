@@ -22,6 +22,17 @@ class FocusTrapHostComponent {
   public readonly isOpen = signal(false);
 }
 
+@Component({
+  selector: 'app-empty-focus-trap-host',
+  imports: [FocusTrapDirective],
+  template: `
+    <div class="layer" appFocusTrap>
+      <p>nothing to focus</p>
+    </div>
+  `,
+})
+class EmptyFocusTrapHostComponent {}
+
 const pressTab = (shiftKey = false): KeyboardEvent => {
   const event = new KeyboardEvent('keydown', { key: 'Tab', shiftKey, bubbles: true, cancelable: true });
 
@@ -84,5 +95,28 @@ describe('FocusTrapDirective', () => {
     fixture.detectChanges();
 
     expect(document.activeElement).toBe(elementOf(fixture, '.opener'));
+  });
+
+  it('Tab in a layer holding nothing to focus is left to the browser', () => {
+    const fixture = TestBed.createComponent(EmptyFocusTrapHostComponent);
+    document.body.appendChild(fixture.nativeElement);
+    fixture.detectChanges();
+
+    expect(pressTab().defaultPrevented).toBe(false);
+  });
+
+  it('leaves the focus alone once the layer is gone if what opened it has left the page', () => {
+    const opener = document.body.appendChild(document.createElement('button'));
+    opener.focus();
+    const fixture = TestBed.createComponent(FocusTrapHostComponent);
+    document.body.appendChild(fixture.nativeElement);
+    fixture.componentInstance.isOpen.set(true);
+    fixture.detectChanges();
+    opener.remove();
+
+    fixture.componentInstance.isOpen.set(false);
+    fixture.detectChanges();
+
+    expect(document.activeElement).toBe(document.body);
   });
 });

@@ -68,4 +68,17 @@ describe('trackNoticeOf', () => {
 
     expect(trackNoticeOf(situationOf({ inViewCount: 0, span }), texts)).toMatchObject({ text: 'These logs fall outside the RRD data range.', action: null });
   });
+
+  it('trackNoticeOf, before any file is placed, has nothing to say', () => {
+    expect(trackNoticeOf(situationOf({ status: 'none' }), texts)).toBeNull();
+  });
+
+  it('trackNoticeOf, with no entry in the window and no span known, says the logs are outside the data without saying where', () => {
+    expect(trackNoticeOf(situationOf({ inViewCount: 0, span: null }), texts)).toEqual({
+      text: 'These logs fall outside the RRD data range.',
+      detail: '',
+      action: null,
+      isFailure: false,
+    });
+  });
 });

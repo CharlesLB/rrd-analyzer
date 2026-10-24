@@ -40,6 +40,16 @@ describe('pickFiles', () => {
     expect(pickerOf()).toBeNull();
   });
 
+  it('pickFiles answers with nothing when the picker reports a change but holds no file list', async () => {
+    const picking = pickFiles(document, { accept: '.json', allowsMany: false });
+    const picker = pickerOf();
+    Object.defineProperty(picker, 'files', { value: null });
+
+    picker?.dispatchEvent(new Event('change'));
+
+    expect(await picking).toEqual([]);
+  });
+
   it('pickFiles on a webview that never says the dialog was cancelled answers with nothing once the window is back and nothing was picked', async () => {
     const picking = pickFiles(document, { accept: '.json', allowsMany: false });
 

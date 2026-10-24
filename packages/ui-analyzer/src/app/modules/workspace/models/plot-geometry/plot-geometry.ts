@@ -21,11 +21,6 @@ const PLOT_DRAWABLE_HEIGHT = 92;
 const HORIZONTAL_DIVISIONS = 3;
 const PERCENT_SIGN = '%';
 
-export type AxisLabel = {
-  readonly topPercent: string;
-  readonly label: string;
-};
-
 export type PlotLine = {
   readonly seriesId: string;
   readonly color: string;
@@ -90,11 +85,8 @@ export const timeTicksOf = (visibleWindow: TimeRange): readonly TimeTick[] =>
     alignment: tickAlignmentOf(index),
   }));
 
-export const axisLabelsOf = (range: ValueRange, unit: string, units: UnitMessages): readonly AxisLabel[] =>
-  R.map(horizontalPositions, (position, index) => ({
-    topPercent: `${position}${PERCENT_SIGN}`,
-    label: formatValue(valueAtFraction(range, 1 - index / HORIZONTAL_DIVISIONS), unit, units),
-  }));
+const gridValueLabelOf = (range: ValueRange, unit: string, units: UnitMessages, index: number): string =>
+  formatValue(valueAtFraction(range, 1 - index / HORIZONTAL_DIVISIONS), unit, units);
 
 export const sampleAtFraction = (samples: readonly SeriesSample[], fraction: number): SeriesSample =>
   samples[Math.round(fraction * (samples.length - 1))] ?? null;
@@ -109,21 +101,9 @@ export const plotXOf = (instantMilliseconds: number, visibleWindow: TimeRange): 
 
 export const axisLabelRowsOf = (axes: readonly ValueAxis[], units: UnitMessages): readonly AxisLabelRow[] => {
   const isColored = axes.length > 1;
-  const labelled = R.map(axes, (axis) => ({ color: isColored ? axis.color : null, labels: axisLabelsOf(axis.range, axis.unit, units) }));
-
-  const valuesAt = (index: number): readonly AxisValueLabel[] =>
-    R.pipe(
-      labelled,
-      R.map((entry) => {
-        const label = entry.labels[index];
-
-        return label === undefined ? null : { text: label.label, color: entry.color };
-      }),
-      R.filter(R.isNonNullish),
-    );
 
   return R.map(horizontalPositions, (position, index) => ({
     topPercent: `${position}${PERCENT_SIGN}`,
-    values: valuesAt(index),
+    values: R.map(axes, (axis) => ({ text: gridValueLabelOf(axis.range, axis.unit, units, index), color: isColored ? axis.color : null })),
   }));
 };

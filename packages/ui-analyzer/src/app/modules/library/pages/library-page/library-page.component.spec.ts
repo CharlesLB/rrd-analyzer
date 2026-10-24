@@ -244,4 +244,52 @@ describe('LibraryPageComponent', () => {
 
     expect(textOf(fixture, '.library-version')).toBe('1.4.0 (abcdef0)');
   });
+
+  it('LibraryPageComponent remembers the filter committed over a long list, and forgets it once asked to from the recent filters', async () => {
+    const gateway = TestBed.inject(BrowserGateway);
+    vi.mocked(gateway.listAnalyses).mockResolvedValue(
+      Array.from({ length: 8 }, (_unused, index) => analysisDtoFixture({ id: `a${index}`, name: `Atlas ${index}` })),
+    );
+    const fixture = await renderPage();
+
+    typeInto(fixture, '.library-filter input', 'atlas');
+    fixture.detectChanges();
+    elementOf(fixture, '.library-filter input')?.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true }));
+
+    await vi.waitFor(() => expect(gateway.rememberSearch).toHaveBeenCalledWith('library', 'atlas'));
+    await fixture.whenStable();
+
+    typeInto(fixture, '.library-filter input', '');
+    fixture.detectChanges();
+    elementOf(fixture, '.library-filter input')?.dispatchEvent(new Event('focus'));
+    fixture.detectChanges();
+    elementOf(fixture, '.search-field-history-forget')?.click();
+
+    await vi.waitFor(() => expect(gateway.forgetSearch).toHaveBeenCalledWith('library', 'atlas'));
+  });
+
+  it('LibraryPageComponent checks the sources again once the window is back in focus, and marks the analyses whose files went missing', async () => {
+    const fixture = await renderPage();
+    vi.mocked(TestBed.inject(BrowserGateway).missingSources).mockResolvedValue([{ name: 'cpu.rrd', path: '/data/cpu.rrd', size: 1 }]);
+
+    window.dispatchEvent(new Event('focus'));
+
+    await vi.waitFor(() => {
+      fixture.detectChanges();
+      expect(countOf(fixture, '.analysis-row-missing')).toBe(2);
+    });
+  });
+
+  it('LibraryPageComponent, compiled again from its own metadata as a TestBed override compiles it, still opens the dialog its card asks for', async () => {
+    TestBed.overrideComponent(LibraryPageComponent, { set: {} });
+    await TestBed.compileComponents();
+    const fixture = await renderPage();
+
+    elementOf(fixture, '.new-analysis-card')?.click();
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(elementOf(fixture, 'app-new-analysis-dialog')).not.toBeNull();
+  });
 });

@@ -28,6 +28,15 @@ describe('plotRangeOf', () => {
     expect(plotRangeOf([null, null], 'B')).toEqual({ lowest: 0, highest: 1.08 });
     expect(plotRangeOf([0, 0], '').highest).toBeCloseTo(1.08);
   });
+
+  it('plotRangeOf a reading of minus infinity keeps the floor at zero rather than reaching down forever', () => {
+    const samples = [Number.NEGATIVE_INFINITY, 50];
+
+    const range = plotRangeOf(samples, 'ms');
+
+    expect(range.lowest).toBe(0);
+    expect(range.highest).toBeCloseTo(54);
+  });
 });
 
 describe('value axes', () => {
@@ -50,5 +59,24 @@ describe('value axes', () => {
     const axes = valueAxesOf(MERGED_LINES);
 
     expect(rangedLinesOf(MERGED_LINES, axes).map((line) => line.range)).toEqual([axes[0]?.range, axes[1]?.range, axes[0]?.range]);
+  });
+
+  it('valueAxesOf lists the axes in the order their first series appears, not in axis order', () => {
+    const lines: readonly SampledLine[] = [
+      { series: MEMORY_USED_SERIES, samples: [2, 4], axis: 1 },
+      { series: CPU_USER_SERIES, samples: [20], axis: 0 },
+    ];
+
+    const axes = valueAxesOf(lines);
+
+    expect(axes.map((axis) => axis.axis)).toEqual([1, 0]);
+  });
+
+  it('rangedLinesOf a line whose axis is not among the axes draws it against a range of its own samples', () => {
+    const lines: readonly SampledLine[] = [{ series: CPU_USER_SERIES, samples: [20, 140], axis: 3 }];
+
+    const ranged = rangedLinesOf(lines, []);
+
+    expect(ranged.map((rangedLine) => rangedLine.range)).toEqual([plotRangeOf([20, 140], '%')]);
   });
 });
