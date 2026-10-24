@@ -36,7 +36,7 @@ const addSourcesFromMenu = async (page: Page, sources: PickedSources): Promise<v
   const choosing = page.waitForEvent('filechooser');
 
   await page.locator('.analysis-title-menu-toggle').click();
-  await page.locator('.analysis-title-menu-item').filter({ hasText: 'Add RRD files' }).click();
+  await page.locator('app-analysis-title .menu-option').filter({ hasText: 'Add RRD files' }).click();
   await (await choosing).setFiles(sources);
 };
 

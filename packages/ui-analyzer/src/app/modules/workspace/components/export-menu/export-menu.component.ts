@@ -3,6 +3,7 @@ import { formatMessage } from '@rrd-analyzer/shared';
 import * as R from 'remeda';
 import { AnchoredMenuComponent } from '../../../../shared/components/anchored-menu/anchored-menu.component';
 import { ColorSwatchComponent } from '../../../../shared/components/color-swatch/color-swatch.component';
+import { MenuOptionComponent } from '../../../../shared/components/menu-option/menu-option.component';
 import type { PopoverPlacement } from '../../../../shared/utils/anchored-popover/anchored-popover.util';
 import { EXPORT_FRAME } from '../../../../stores/export/models/export-layout/export-layout';
 import { EXPORT_FORMATS, EXPORT_MENU_FORMATS, EXPORT_MENU_SIZE, type ExportFormat } from '../../../../stores/export/models/export-menu/export-menu';
@@ -20,7 +21,7 @@ const SINGLE_SERIES = 1;
 
 @Component({
   selector: 'app-export-menu',
-  imports: [AnchoredMenuComponent, ColorSwatchComponent],
+  imports: [AnchoredMenuComponent, ColorSwatchComponent, MenuOptionComponent],
   templateUrl: './export-menu.component.html',
   styleUrl: './export-menu.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,

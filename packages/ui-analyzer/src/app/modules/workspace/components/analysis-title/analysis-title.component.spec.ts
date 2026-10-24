@@ -3,8 +3,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { elementOf, renderWithInputs, textOf, typeInto } from '../../../../shared/utils/component-fixture/component-fixture.fixture';
 import { AnalysisTitleComponent } from './analysis-title.component';
 
-const ADD_ITEM = '.analysis-title-menu-item:first-of-type';
-const EXPORT_ITEM = '.analysis-title-menu-item:last-of-type';
+const ADD_ITEM = 'app-menu-option:first-of-type .menu-option';
+const EXPORT_ITEM = 'app-menu-option:last-of-type .menu-option';
 
 const renderTitle = (sourceFileCount = 2) => {
   const fixture = renderWithInputs(AnalysisTitleComponent, { name: 'Atlas prod · capacity', sourceFileCount, isCompact: false });
@@ -109,14 +109,14 @@ describe('AnalysisTitleComponent', () => {
     fixture.detectChanges();
 
     expect(elementOf(fixture, '.analysis-title-menu-toggle')?.getAttribute('aria-expanded')).toBe('true');
-    expect(textOf(fixture, `${EXPORT_ITEM} .analysis-title-menu-title`)).toBe('Export RRD files');
-    expect(textOf(fixture, `${EXPORT_ITEM} .analysis-title-menu-detail`)).toBe('a zip of the 3 source files');
+    expect(textOf(fixture, `${EXPORT_ITEM} .menu-option-heading`)).toBe('Export RRD files');
+    expect(textOf(fixture, `${EXPORT_ITEM} .menu-option-detail`)).toBe('a zip of the 3 source files');
 
     elementOf(fixture, EXPORT_ITEM)?.click();
     fixture.detectChanges();
 
     expect(exportRequested).toHaveBeenCalledTimes(1);
-    expect(elementOf(fixture, '.analysis-title-menu-item')).toBeNull();
+    expect(elementOf(fixture, '.menu-option')).toBeNull();
   });
 
   it('analysis menu offers to read more rrd files into the analysis first, and reports the request', () => {
@@ -127,15 +127,15 @@ describe('AnalysisTitleComponent', () => {
     elementOf(fixture, '.analysis-title-menu-toggle')?.click();
     fixture.detectChanges();
 
-    expect(textOf(fixture, `${ADD_ITEM} .analysis-title-menu-title`)).toBe('Add RRD files');
-    expect(textOf(fixture, `${ADD_ITEM} .analysis-title-menu-detail`)).toBe('read more files into this analysis');
+    expect(textOf(fixture, `${ADD_ITEM} .menu-option-heading`)).toBe('Add RRD files');
+    expect(textOf(fixture, `${ADD_ITEM} .menu-option-detail`)).toBe('read more files into this analysis');
 
     elementOf(fixture, ADD_ITEM)?.click();
     fixture.detectChanges();
 
     expect(addRequested).toHaveBeenCalledTimes(1);
     expect(exportRequested).not.toHaveBeenCalled();
-    expect(elementOf(fixture, '.analysis-title-menu-item')).toBeNull();
+    expect(elementOf(fixture, '.menu-option')).toBeNull();
   });
 
   it('analysis menu of a single source offers a copy of that file', () => {
@@ -144,7 +144,7 @@ describe('AnalysisTitleComponent', () => {
     elementOf(fixture, '.analysis-title-menu-toggle')?.click();
     fixture.detectChanges();
 
-    expect(textOf(fixture, `${EXPORT_ITEM} .analysis-title-menu-detail`)).toBe('a copy of the source file');
+    expect(textOf(fixture, `${EXPORT_ITEM} .menu-option-detail`)).toBe('a copy of the source file');
   });
 
   it('analysis menu closes on its backdrop and when its owner closes it, without exporting', () => {
@@ -155,7 +155,7 @@ describe('AnalysisTitleComponent', () => {
     fixture.detectChanges();
     elementOf(fixture, '.anchored-menu-backdrop')?.click();
     fixture.detectChanges();
-    expect(elementOf(fixture, '.analysis-title-menu-item')).toBeNull();
+    expect(elementOf(fixture, '.menu-option')).toBeNull();
 
     toggle?.click();
     fixture.detectChanges();
@@ -163,7 +163,7 @@ describe('AnalysisTitleComponent', () => {
     fixture.componentInstance.closeMenu();
     fixture.detectChanges();
 
-    expect(elementOf(fixture, '.analysis-title-menu-item')).toBeNull();
+    expect(elementOf(fixture, '.menu-option')).toBeNull();
     expect(exportRequested).not.toHaveBeenCalled();
   });
 });
