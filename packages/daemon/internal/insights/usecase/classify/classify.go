@@ -52,6 +52,8 @@ func (result Result) SeriesOfType(semanticType string) []domain.SeriesInfo {
 	return series
 }
 
+// Classify gives each series the type of the first entry that matches it. First match wins so an
+// operator can put a narrow entry above a broad one and know it takes precedence.
 func Classify(entries []domain.ClassifierEntry, series []domain.SeriesInfo) Result {
 	result := Result{Classified: []Classified{}, Unclassified: []domain.SeriesInfo{}}
 	matchers := matchersOf(entries)
@@ -68,12 +70,6 @@ func Classify(entries []domain.ClassifierEntry, series []domain.SeriesInfo) Resu
 	}
 
 	return result
-}
-
-// TypeOf returns the type of the first entry that matches. First match wins so an operator can put
-// a narrow entry above a broad one and know it takes precedence.
-func TypeOf(entries []domain.ClassifierEntry, info domain.SeriesInfo) (string, bool) {
-	return typeOf(matchersOf(entries), info)
 }
 
 // matcher is a classifier entry with its phrases already split into words, so classifying a catalog
