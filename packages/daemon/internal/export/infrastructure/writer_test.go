@@ -38,3 +38,13 @@ func TestFileWriterWritesNothingOnceTheCallerHasGone(t *testing.T) {
 		t.Fatalf("stat = %v, want no file", statErr)
 	}
 }
+
+func TestFileWriterReportsAFolderThatIsNotThere(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "removed", "export.csv")
+
+	err := exportInfra.NewFileWriter().Write(context.Background(), path, []byte("time,value\n"))
+
+	if !errors.Is(err, os.ErrNotExist) {
+		t.Fatalf("err = %v, want %v", err, os.ErrNotExist)
+	}
+}

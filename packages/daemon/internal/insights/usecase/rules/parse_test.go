@@ -1,6 +1,9 @@
 package rules_test
 
 import (
+	"encoding/json"
+	"errors"
+	"math"
 	"slices"
 	"strings"
 	"testing"
@@ -413,5 +416,59 @@ func TestParse_PercentOfWithSeveralUnknownKeys_ReportsThemInKeyOrderEveryTime(t 
 		if positions[0] < 0 || !slices.IsSorted(positions) {
 			t.Fatalf("diagnostics = %q, want alpha, mid, zeta in that order", joined)
 		}
+	}
+}
+
+const severalPathsDocument = header + plainCause + `
+[[rule.condition]]
+as = "cpu"
+type = "cpu.user"
+when = "rising"
+
+[[rule.condition]]
+as = "load"
+type = "load.avg"
+when = "rising"
+after = "cpu"
+within = "10m"
+
+[[rule.condition]]
+as = "requests"
+type = "http.requests"
+when = "rising"
+after = "cpu"
+within = "10m"
+overlaps = "load"
+
+[[rule.condition]]
+as = "memory"
+type = "memory.used"
+when = "rising"
+after = "requests"
+within = "10m"
+`
+
+func TestParse_ConditionReachingAnotherAlongTwoPaths_IsNoCycle(t *testing.T) {
+	parsed, diagnostics := rules.Parse([]byte(severalPathsDocument), origin, knownTypes)
+	if len(diagnostics) != 0 || len(parsed) != 1 {
+		t.Errorf("Parse = %d rules, diagnostics %+v; want the rule, whose references all point back to the anchor", len(parsed), diagnostics)
+	}
+}
+
+func TestDefaults_TaxonomyWithoutTheTypesTheRulesName_FailsNamingTheRules(t *testing.T) {
+	parsed, err := rules.Defaults(nil)
+	if !errors.Is(err, domain.ErrDefaultConfiguration) || parsed != nil {
+		t.Errorf("Defaults = %d rules, %v; want none and ErrDefaultConfiguration", len(parsed), err)
+	}
+}
+
+func TestHash_RuleWithANonFiniteLevel_FailsToEncode(t *testing.T) {
+	ruleset := []domain.Rule{{ID: "unhashable", Conditions: []domain.Condition{{When: domain.When{Level: math.Inf(1)}}}}}
+
+	_, err := rules.Hash(ruleset)
+
+	var unsupported *json.UnsupportedValueError
+	if !errors.As(err, &unsupported) {
+		t.Errorf("Hash error = %v, want the encoding failure of the infinite level", err)
 	}
 }

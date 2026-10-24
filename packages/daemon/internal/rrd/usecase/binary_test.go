@@ -2,9 +2,11 @@ package usecase_test
 
 import (
 	"encoding/binary"
+	"errors"
 	"math"
 	"testing"
 
+	rrdDomain "github.com/CharlesLB/rrd-analyzer/packages/daemon/internal/rrd/domain"
 	rrdUsecase "github.com/CharlesLB/rrd-analyzer/packages/daemon/internal/rrd/usecase"
 	seriesDomain "github.com/CharlesLB/rrd-analyzer/packages/daemon/internal/series/domain"
 )
@@ -20,6 +22,16 @@ const (
 	wordSize               = 8
 	nameSize               = 20
 	realFloatCookie        = 8.642135e130
+
+	versionOffset             = 4
+	dataSourceCountOffset     = 24
+	archiveCountOffset        = 32
+	archivePointsPerRowOffset = 32
+
+	// pastAnyCount and pastAnyInstant are each one past the largest count and instant the decoder
+	// will trust out of a header.
+	pastAnyCount   = 1<<20 + 1
+	pastAnyInstant = 1<<40 + 1
 )
 
 type archiveFixture struct {
@@ -263,5 +275,46 @@ func TestParseDumpReadsAnInfiniteBinaryReadingAsUnknown(t *testing.T) {
 	samples := archiveOf(t, parsed[0], seriesDomain.ConsolidationAverage, 60*1000).Samples
 	if !samples[0].Present || samples[0].Value != 1 || samples[1].Present || samples[2].Present {
 		t.Errorf("samples = %+v, want 1 then two unknown readings", samples)
+	}
+}
+
+func TestDecodeBinaryRefusesALayoutItCannotTrust(t *testing.T) {
+	oneArchive := []archiveFixture{{function: "AVERAGE", pointsPerRow: 1, rows: [][]float64{{1}, {2}}}}
+	sound := databaseOf(300, 3000, []string{"value"}, []string{"GAUGE"}, oneArchive)
+	firstArchive := headerSize + dataSourceSize
+	lastUpdate := firstArchive + archiveSize
+
+	corrupted := func(corrupt func(content []byte)) []byte {
+		content := append([]byte(nil), sound...)
+		corrupt(content)
+
+		return content
+	}
+
+	withoutRows := databaseOf(300, 3000, []string{"value"}, []string{"GAUGE"}, []archiveFixture{{function: "AVERAGE", pointsPerRow: 1}})
+
+	tests := []struct {
+		name string
+		give []byte
+	}{
+		{name: "not a database at all", give: []byte("plain text")},
+		{name: "a byte past what the header describes", give: append(append([]byte(nil), sound...), 0)},
+		{name: "more data sources than the file holds", give: corrupted(func(content []byte) { putWord(content, dataSourceCountOffset, 1000) })},
+		{name: "more archives than the file holds", give: corrupted(func(content []byte) { putWord(content, archiveCountOffset, 1000) })},
+		{name: "a data source count past any database", give: corrupted(func(content []byte) { putWord(content, dataSourceCountOffset, pastAnyCount) })},
+		{name: "a last update past any instant", give: corrupted(func(content []byte) { putWord(content, lastUpdate, pastAnyInstant) })},
+		{name: "an archive consolidating no points per row", give: corrupted(func(content []byte) { putWord(content, firstArchive+archivePointsPerRowOffset, 0) })},
+		{name: "a version spelled with a letter", give: corrupted(func(content []byte) { copy(content[versionOffset:], "00a3\x00") })},
+		{name: "row pointers cut short", give: withoutRows[:len(withoutRows)-1]},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			_, err := rrdUsecase.DecodeBinary(tt.give, "/sources/hostile.rrd")
+
+			if !errors.Is(err, rrdDomain.ErrUnreadableLayout) {
+				t.Fatalf("err = %v, want %v", err, rrdDomain.ErrUnreadableLayout)
+			}
+		})
 	}
 }

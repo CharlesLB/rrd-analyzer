@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"net/http"
 	"slices"
 	"testing"
@@ -192,5 +193,14 @@ func TestEditionAnswersARequestItCannotRouteWithTheStatusTheRoutesGive(t *testin
 
 	if answer.Status != http.StatusNotFound {
 		t.Fatalf("want %d, got %d: %s", http.StatusNotFound, answer.Status, answer.Body)
+	}
+}
+
+func TestNew_ACallerThatGaveUp_FailsOpeningTheSample(t *testing.T) {
+	callerContext, cancel := context.WithCancel(context.Background())
+	cancel()
+
+	if _, err := browser.New(callerContext, openedAt); !errors.Is(err, context.Canceled) {
+		t.Fatalf("err = %v, want %v", err, context.Canceled)
 	}
 }

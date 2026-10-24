@@ -101,6 +101,94 @@ func (store *memoryStore) Delete(_ context.Context, analysisID string) error {
 	return nil
 }
 
+var errStoreUnavailable = errors.New("store unavailable")
+
+// storeOperation names the one operation of a failingStore that fails.
+type storeOperation int
+
+const (
+	listOperation storeOperation = iota + 1
+	saveOperation
+	touchOperation
+	saveCanvasOperation
+	saveSeriesColorsOperation
+	addSourcesOperation
+	deleteOperation
+)
+
+// failingStore is a memoryStore whose one operation fails, the way a database that stopped answering
+// between two requests does. The zero value of failing fails nothing, so a test can build the state
+// it starts from before the failure is switched on.
+type failingStore struct {
+	*memoryStore
+
+	failing storeOperation
+}
+
+func (store *failingStore) refusal(operation storeOperation) error {
+	if store.failing == operation {
+		return errStoreUnavailable
+	}
+
+	return nil
+}
+
+func (store *failingStore) List(callerContext context.Context) ([]analysisDomain.Analysis, error) {
+	if err := store.refusal(listOperation); err != nil {
+		return nil, err
+	}
+
+	return store.memoryStore.List(callerContext)
+}
+
+func (store *failingStore) Save(callerContext context.Context, analysis analysisDomain.Analysis) error {
+	if err := store.refusal(saveOperation); err != nil {
+		return err
+	}
+
+	return store.memoryStore.Save(callerContext, analysis)
+}
+
+func (store *failingStore) Touch(callerContext context.Context, analysisID string, accessed time.Time) error {
+	if err := store.refusal(touchOperation); err != nil {
+		return err
+	}
+
+	return store.memoryStore.Touch(callerContext, analysisID, accessed)
+}
+
+func (store *failingStore) SaveCanvas(callerContext context.Context, analysisID string, canvas []analysisDomain.CanvasChart) error {
+	if err := store.refusal(saveCanvasOperation); err != nil {
+		return err
+	}
+
+	return store.memoryStore.SaveCanvas(callerContext, analysisID, canvas)
+}
+
+func (store *failingStore) SaveSeriesColors(callerContext context.Context, analysisID string, colors []analysisDomain.SeriesColor) error {
+	if err := store.refusal(saveSeriesColorsOperation); err != nil {
+		return err
+	}
+
+	return store.memoryStore.SaveSeriesColors(callerContext, analysisID, colors)
+}
+
+func (store *failingStore) AddSources(callerContext context.Context, analysisID string, files []analysisDomain.SourceFile) ([]analysisDomain.SourceFile, error) {
+	if err := store.refusal(addSourcesOperation); err != nil {
+		return nil, err
+	}
+
+	return store.memoryStore.AddSources(callerContext, analysisID, files)
+}
+
+func (store *failingStore) Delete(callerContext context.Context, analysisID string) error {
+	if err := store.refusal(deleteOperation); err != nil {
+		return err
+	}
+
+	return store.memoryStore.Delete(callerContext, analysisID)
+}
+
 type twoPointLoader struct{ calls int }
 
 func (loader *twoPointLoader) Load(context.Context, []analysisDomain.SourceFile) ([]seriesDomain.Series, error) {
@@ -663,5 +751,258 @@ func TestOpen_SourcesThatCannotBeRead_RecordNoOpening(t *testing.T) {
 
 	if stored, _ := store.Get(context.Background(), created.ID); !stored.LastAccessed.Equal(time.UnixMilli(1)) {
 		t.Errorf("last accessed = %v, want the failed opening left out of the library's order", stored.LastAccessed)
+	}
+}
+
+func TestConstructors_ADependencyLeftUnwired_PanicAtConstruction(t *testing.T) {
+	tests := []struct {
+		name          string
+		giveConstruct func()
+	}{
+		{name: "a service without a store", giveConstruct: func() { analysisUsecase.NewService(nil, &twoPointLoader{}, fixedClock{}) }},
+		{name: "a service without a loader", giveConstruct: func() { analysisUsecase.NewService(&memoryStore{}, nil, fixedClock{}) }},
+		{name: "a service without a clock", giveConstruct: func() { analysisUsecase.NewService(&memoryStore{}, &twoPointLoader{}, nil) }},
+		{name: "an export source without the service", giveConstruct: func() { analysisUsecase.NewExportSource(nil) }},
+		{name: "an insights source without the service", giveConstruct: func() { analysisUsecase.NewInsightsSource(nil) }},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			defer func() {
+				if recover() == nil {
+					t.Error("construction went through, want a panic naming the missing wire")
+				}
+			}()
+
+			tt.giveConstruct()
+		})
+	}
+}
+
+func TestService_AStoreThatFails_FailsTheOperationWithTheStoresError(t *testing.T) {
+	seeded := analysisUsecase.SeededAnalysis{Name: "Seeded", Files: sourcesNamed("seeded.rrd"), LastAccessed: time.UnixMilli(1)}
+
+	tests := []struct {
+		name        string
+		giveFailing storeOperation
+		giveAct     func(callerContext context.Context, service *analysisUsecase.Service, analysisID string) error
+	}{
+		{
+			name:        "listing the library",
+			giveFailing: listOperation,
+			giveAct: func(callerContext context.Context, service *analysisUsecase.Service, _ string) error {
+				_, err := service.List(callerContext)
+
+				return err
+			},
+		},
+		{
+			name:        "creating an analysis",
+			giveFailing: saveOperation,
+			giveAct: func(callerContext context.Context, service *analysisUsecase.Service, _ string) error {
+				_, err := service.Create(callerContext, "Capacity", sourcesNamed("memory.rrd"))
+
+				return err
+			},
+		},
+		{
+			name:        "recording an opening",
+			giveFailing: touchOperation,
+			giveAct: func(callerContext context.Context, service *analysisUsecase.Service, analysisID string) error {
+				_, err := service.Open(callerContext, analysisID)
+
+				return err
+			},
+		},
+		{
+			name:        "saving the canvas",
+			giveFailing: saveCanvasOperation,
+			giveAct: func(callerContext context.Context, service *analysisUsecase.Service, analysisID string) error {
+				return service.SaveCanvas(callerContext, analysisID, []analysisDomain.CanvasChart{{SeriesID: "s0", Label: "cpu.rrd"}})
+			},
+		},
+		{
+			name:        "saving a series color",
+			giveFailing: saveSeriesColorsOperation,
+			giveAct: func(callerContext context.Context, service *analysisUsecase.Service, analysisID string) error {
+				return service.SaveSeriesColor(callerContext, analysisID, analysisDomain.SeriesColor{SeriesID: "s0", Label: "cpu.rrd", Color: "#00ff00"})
+			},
+		},
+		{
+			name:        "adding sources",
+			giveFailing: addSourcesOperation,
+			giveAct: func(callerContext context.Context, service *analysisUsecase.Service, analysisID string) error {
+				_, err := service.AddSources(callerContext, analysisID, sourcesNamed("memory.rrd"))
+
+				return err
+			},
+		},
+		{
+			name:        "deleting an analysis",
+			giveFailing: deleteOperation,
+			giveAct: func(callerContext context.Context, service *analysisUsecase.Service, analysisID string) error {
+				return service.Delete(callerContext, analysisID)
+			},
+		},
+		{
+			name:        "listing the library to empty it",
+			giveFailing: listOperation,
+			giveAct: func(callerContext context.Context, service *analysisUsecase.Service, _ string) error {
+				return service.DeleteAll(callerContext)
+			},
+		},
+		{
+			name:        "deleting while emptying the library",
+			giveFailing: deleteOperation,
+			giveAct: func(callerContext context.Context, service *analysisUsecase.Service, _ string) error {
+				return service.DeleteAll(callerContext)
+			},
+		},
+		{
+			name:        "backdating a seeded analysis",
+			giveFailing: touchOperation,
+			giveAct: func(callerContext context.Context, service *analysisUsecase.Service, _ string) error {
+				_, err := service.CreateSeeded(callerContext, seeded)
+
+				return err
+			},
+		},
+		{
+			name:        "laying out the canvas of a seeded analysis",
+			giveFailing: saveCanvasOperation,
+			giveAct: func(callerContext context.Context, service *analysisUsecase.Service, _ string) error {
+				_, err := service.CreateSeeded(callerContext, seeded)
+
+				return err
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			store := &failingStore{memoryStore: &memoryStore{}}
+			service := analysisUsecase.NewService(store, fileLoader{}, fixedClock{})
+			created, err := service.Create(context.Background(), "Capacity", sourcesNamed("cpu.rrd"))
+			if err != nil {
+				t.Fatalf("create: %v", err)
+			}
+
+			store.failing = tt.giveFailing
+
+			if err := tt.giveAct(context.Background(), service, created.ID); !errors.Is(err, errStoreUnavailable) {
+				t.Errorf("err = %v, want %v", err, errStoreUnavailable)
+			}
+		})
+	}
+}
+
+func TestSaveCanvas_ReferenceLines_AreKeptOnlyAtAStatisticAWindowHolds(t *testing.T) {
+	tests := []struct {
+		name               string
+		giveReferenceLines []string
+		wantErr            error
+	}{
+		{name: "statistics a window holds", giveReferenceLines: []string{"average", "percentile95"}},
+		{name: "a statistic no window holds", giveReferenceLines: []string{"average", "median"}, wantErr: analysisDomain.ErrStatisticUnknown},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			service, _ := newService(&twoPointLoader{})
+			created, _ := service.Create(context.Background(), "Capacity", []analysisDomain.SourceFile{{Name: "a.rrd"}})
+
+			canvas := []analysisDomain.CanvasChart{{SeriesID: "s0", Label: "cpu", ReferenceLines: tt.giveReferenceLines}}
+			if err := service.SaveCanvas(context.Background(), created.ID, canvas); !errors.Is(err, tt.wantErr) {
+				t.Errorf("err = %v, want %v", err, tt.wantErr)
+			}
+		})
+	}
+}
+
+func TestSaveCanvas_AnAnalysisTheLibraryDoesNotHold_IsReportedAsNotFound(t *testing.T) {
+	service, _ := newService(&twoPointLoader{})
+
+	if err := service.SaveCanvas(context.Background(), "missing", nil); !errors.Is(err, analysisDomain.ErrAnalysisNotFound) {
+		t.Fatalf("err = %v, want %v", err, analysisDomain.ErrAnalysisNotFound)
+	}
+}
+
+func TestBundleAndWindows_AnAnalysisTheLibraryDoesNotHold_IsReportedAsNotFound(t *testing.T) {
+	service, _ := newService(&twoPointLoader{})
+
+	if _, err := service.Bundle(context.Background(), "missing"); !errors.Is(err, analysisDomain.ErrAnalysisNotFound) {
+		t.Errorf("bundle err = %v, want %v", err, analysisDomain.ErrAnalysisNotFound)
+	}
+
+	if _, err := service.Windows(context.Background(), analysisUsecase.WindowRequest{AnalysisID: "missing"}); !errors.Is(err, analysisDomain.ErrAnalysisNotFound) {
+		t.Errorf("windows err = %v, want %v", err, analysisDomain.ErrAnalysisNotFound)
+	}
+}
+
+// emptyLoader reads sources that hold no series at all, as a file with no data source would.
+type emptyLoader struct{}
+
+func (emptyLoader) Load(context.Context, []analysisDomain.SourceFile) ([]seriesDomain.Series, error) {
+	return []seriesDomain.Series{}, nil
+}
+
+func TestBundle_SourcesHoldingNoSeries_SpanNothing(t *testing.T) {
+	service, _ := newService(emptyLoader{})
+	created, _ := service.Create(context.Background(), "Empty", []analysisDomain.SourceFile{{Name: "empty.rrd"}})
+
+	bundle, err := service.Bundle(context.Background(), created.ID)
+	if err != nil {
+		t.Fatalf("bundle: %v", err)
+	}
+
+	if len(bundle.Series) != 0 || bundle.FromMilliseconds != 0 || bundle.UntilMilliseconds != 0 {
+		t.Errorf("bundle = %d series over %d..%d, want no series over 0..0", len(bundle.Series), bundle.FromMilliseconds, bundle.UntilMilliseconds)
+	}
+}
+
+func TestDeleteAll_ALibraryOfSeveralAnalyses_IsLeftEmpty(t *testing.T) {
+	service, _ := newService(&twoPointLoader{})
+	for _, name := range []string{"Capacity", "Latency"} {
+		if _, err := service.Create(context.Background(), name, []analysisDomain.SourceFile{{Name: "a.rrd"}}); err != nil {
+			t.Fatalf("create %q: %v", name, err)
+		}
+	}
+
+	if err := service.DeleteAll(context.Background()); err != nil {
+		t.Fatalf("delete all: %v", err)
+	}
+
+	if listed, _ := service.List(context.Background()); len(listed) != 0 {
+		t.Errorf("library = %+v, want it empty", listed)
+	}
+}
+
+func TestCreateSeeded_APastAccessAndALaidOutCanvas_AreStoredAndHandedBack(t *testing.T) {
+	service, store := newService(&twoPointLoader{})
+	seeded := analysisUsecase.SeededAnalysis{
+		Name:         "Seeded",
+		Files:        []analysisDomain.SourceFile{{Name: "a.rrd"}},
+		LastAccessed: time.Date(2026, time.March, 1, 9, 0, 0, 0, time.UTC),
+		Canvas:       []analysisDomain.CanvasChart{{SeriesID: "s0", Label: "cpu", Merged: []analysisDomain.MergedSeries{}}},
+	}
+
+	created, err := service.CreateSeeded(context.Background(), seeded)
+	if err != nil {
+		t.Fatalf("create seeded: %v", err)
+	}
+
+	stored, _ := store.Get(context.Background(), created.ID)
+	for _, analysis := range []analysisDomain.Analysis{created, stored} {
+		if !analysis.LastAccessed.Equal(seeded.LastAccessed) || !reflect.DeepEqual(analysis.Canvas, seeded.Canvas) {
+			t.Errorf("analysis = last accessed %v with canvas %+v, want %v with %+v", analysis.LastAccessed, analysis.Canvas, seeded.LastAccessed, seeded.Canvas)
+		}
+	}
+}
+
+func TestCreateSeeded_WithoutSources_IsRefused(t *testing.T) {
+	service, _ := newService(&twoPointLoader{})
+
+	if _, err := service.CreateSeeded(context.Background(), analysisUsecase.SeededAnalysis{Name: "Seeded"}); !errors.Is(err, analysisDomain.ErrNoSources) {
+		t.Fatalf("err = %v, want %v", err, analysisDomain.ErrNoSources)
 	}
 }

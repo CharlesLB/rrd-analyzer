@@ -167,6 +167,31 @@ func TestServiceRun_PortFailure_IsWrappedWithWhatWasBeingDone(t *testing.T) {
 	}
 }
 
+func TestServiceConfigurationStamp_LoadedConfiguration_IsItsTwoHashes(t *testing.T) {
+	const (
+		rulesetHash    = "ruleset-hash"
+		classifierHash = "classifier-hash"
+	)
+
+	configuration := &staticConfiguration{configuration: domain.Configuration{RulesetHash: rulesetHash, ClassifierHash: classifierHash}}
+
+	stamp, err := usecase.NewService(newMemorySource(nil), configuration).ConfigurationStamp(context.Background())
+
+	want := domain.ConfigurationStamp{RulesetHash: rulesetHash, ClassifierHash: classifierHash}
+	if err != nil || stamp != want {
+		t.Errorf("ConfigurationStamp = %+v, %v; want %+v", stamp, err, want)
+	}
+}
+
+func TestServiceConfigurationStamp_ConfigurationThatDoesNotLoad_IsWrappedWithWhatWasBeingDone(t *testing.T) {
+	configuration := &staticConfiguration{err: errInducedFailure}
+
+	_, err := usecase.NewService(newMemorySource(nil), configuration).ConfigurationStamp(context.Background())
+	if !errors.Is(err, errInducedFailure) || !strings.Contains(err.Error(), "load insights configuration") {
+		t.Errorf("ConfigurationStamp error = %v, want the load failure wrapped with what was being done", err)
+	}
+}
+
 func TestServiceRun_FullPipelineTwice_IsByteForByteIdentical(t *testing.T) {
 	for _, request := range []domain.Request{allRequest(), last24hRequest()} {
 		first := run(t, usecase.NewService(prototypeSource(t), infrastructure.NewConfigurationLoader("")), request)

@@ -198,3 +198,47 @@ func TestMemoryStoreReadsAnAbsentListAsAnEmptyOneTheWayTheSQLiteStoreDoes(t *tes
 		t.Fatalf("want empty lists rather than absent ones, got %+v", got)
 	}
 }
+
+func TestMemoryStore_ACallerThatHasGone_IsRefusedByEveryCall(t *testing.T) {
+	store := savedIn(t, keptAnalysis("a", 1))
+	gone, leave := context.WithCancel(context.Background())
+	leave()
+
+	tests := []struct {
+		name     string
+		giveCall func(callerContext context.Context) error
+	}{
+		{name: "list", giveCall: func(callerContext context.Context) error {
+			_, err := store.List(callerContext)
+
+			return err
+		}},
+		{name: "get", giveCall: func(callerContext context.Context) error {
+			_, err := store.Get(callerContext, "a")
+
+			return err
+		}},
+		{name: "save", giveCall: func(callerContext context.Context) error {
+			return store.Save(callerContext, keptAnalysis("b", 2))
+		}},
+		{name: "touch", giveCall: func(callerContext context.Context) error {
+			return store.Touch(callerContext, "a", memoryEpoch)
+		}},
+		{name: "add sources", giveCall: func(callerContext context.Context) error {
+			_, err := store.AddSources(callerContext, "a", nil)
+
+			return err
+		}},
+		{name: "delete", giveCall: func(callerContext context.Context) error {
+			return store.Delete(callerContext, "a")
+		}},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if err := tt.giveCall(gone); !errors.Is(err, context.Canceled) {
+				t.Fatalf("err = %v, want %v", err, context.Canceled)
+			}
+		})
+	}
+}

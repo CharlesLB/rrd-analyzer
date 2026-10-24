@@ -52,15 +52,10 @@ func (source *InsightsSource) Catalog(callerContext context.Context, analysisID 
 		})
 	}
 
-	fingerprint, err := fingerprintOf(bundle)
-	if err != nil {
-		return insightsDomain.Catalog{}, err
-	}
-
 	return insightsDomain.Catalog{
 		FromMilliseconds:  bundle.FromMilliseconds,
 		UntilMilliseconds: bundle.UntilMilliseconds,
-		Fingerprint:       fingerprint,
+		Fingerprint:       fingerprintOf(bundle),
 		Series:            series,
 	}, nil
 }
@@ -129,7 +124,10 @@ type bundleIdentity struct {
 // the analysis is, so which files they came from, the span they cover and the rows they hold
 // identify what the engine read, and an analysis re-created over changed files gets a new one. It
 // is hashed the way the ruleset and the classifier are, since a cached report is keyed by all three.
-func fingerprintOf(bundle seriesDomain.Bundle) (string, error) {
+//
+// The identity holds only strings and integers, which encode to JSON without fail, so the error
+// digest.OfJSON can return is never one this value produces.
+func fingerprintOf(bundle seriesDomain.Bundle) string {
 	identity := bundleIdentity{AnalysisID: bundle.AnalysisID, Series: make([]seriesIdentity, 0, len(bundle.Series))}
 
 	for _, series := range bundle.Series {
@@ -148,10 +146,7 @@ func fingerprintOf(bundle seriesDomain.Bundle) (string, error) {
 		})
 	}
 
-	fingerprint, err := digest.OfJSON(identity)
-	if err != nil {
-		return "", fmt.Errorf("fingerprint the series of %q: %w", bundle.AnalysisName, err)
-	}
+	fingerprint, _ := digest.OfJSON(identity)
 
-	return fingerprint, nil
+	return fingerprint
 }

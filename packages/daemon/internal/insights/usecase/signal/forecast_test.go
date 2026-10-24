@@ -21,6 +21,7 @@ func TestSamplesToLevel_EpisodePace_ProjectsFromItsLastReadingOrFindsNothing(t *
 		{name: "heading away from the level", give: []float64{10, 9, 8}, giveLevel: 20},
 		{name: "not moving", give: []float64{5, 5, 5}, giveLevel: 9},
 		{name: "a single reading has no pace", give: []float64{hole, 4, hole}, giveLevel: 9},
+		{name: "only holes have no last reading", give: holes(3), giveLevel: 9},
 	}
 
 	for _, tt := range tests {
@@ -32,5 +33,13 @@ func TestSamplesToLevel_EpisodePace_ProjectsFromItsLastReadingOrFindsNothing(t *
 				t.Errorf("SamplesToLevel = %v, %v; want %v, %v", got, reaches, tt.want, tt.wantReaches)
 			}
 		})
+	}
+}
+
+func TestSamplesToLevel_EpisodeOutsideTheSlice_FindsNothing(t *testing.T) {
+	values := []float64{10, 11, 12, 13}
+
+	if got, reaches := signal.SamplesToLevel(values, signal.Episode{From: 10, Until: 12}, 20); reaches {
+		t.Errorf("SamplesToLevel = %v, want nothing: the episode lies past the readings", got)
 	}
 }

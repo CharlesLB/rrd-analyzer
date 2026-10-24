@@ -248,3 +248,37 @@ func TestReadRange_OverBudgetNotDividingIntoWholeBuckets_LastBucketStopsAtTheRan
 
 	assertReadings(t, read.Samples, []float64{1.5, 4.5})
 }
+
+func TestReadRange_SeriesWithoutRows_ReturnsNoSamplesUnderTheRequestedConsolidation(t *testing.T) {
+	series := seriesDomain.Series{ID: "s4", Archives: []seriesDomain.Archive{{Function: seriesDomain.ConsolidationMaximum, StepMilliseconds: rangeStep}}}
+
+	read := seriesDomain.ReadRange(series, seriesDomain.RangeRequest{
+		UntilMilliseconds: 4 * rangeStep,
+		Function:          seriesDomain.ConsolidationMaximum,
+	})
+
+	if len(read.Samples) != 0 || read.Function != seriesDomain.ConsolidationMaximum {
+		t.Fatalf("read = %+v, want no samples under %q", read, seriesDomain.ConsolidationMaximum)
+	}
+}
+
+func TestReadRange_AverageArchiveHoldingNoRows_ReadsTheRequestedConsolidation(t *testing.T) {
+	series := seriesDomain.Series{
+		ID: "s5",
+		Archives: []seriesDomain.Archive{
+			{Function: seriesDomain.ConsolidationAverage, StepMilliseconds: rangeStep},
+			{Function: seriesDomain.ConsolidationMaximum, StepMilliseconds: rangeStep, Samples: known(20, 21, 22)},
+		},
+	}
+
+	read := seriesDomain.ReadRange(series, seriesDomain.RangeRequest{
+		UntilMilliseconds: 2 * rangeStep,
+		Function:          seriesDomain.ConsolidationMaximum,
+	})
+
+	if read.Function != seriesDomain.ConsolidationMaximum {
+		t.Fatalf("function = %q, want %q", read.Function, seriesDomain.ConsolidationMaximum)
+	}
+
+	assertReadings(t, read.Samples, []float64{20, 21, 22})
+}

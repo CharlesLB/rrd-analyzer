@@ -128,11 +128,11 @@ func Types(entries []domain.ClassifierEntry) []string {
 
 // Hash is a content hash of the entries in order. Order is hashed because it decides which entry
 // wins, so reordering two entries is a change that must invalidate cached reports.
-func Hash(entries []domain.ClassifierEntry) (string, error) {
-	hash, err := digest.OfJSON(entries)
-	if err != nil {
-		return "", fmt.Errorf("hash the classifier: %w", err)
-	}
+//
+// An entry is strings and lists of strings, which JSON always encodes, so the encoding error the
+// digest hands back is nil for every list of entries and is not passed on.
+func Hash(entries []domain.ClassifierEntry) string {
+	hash, _ := digest.OfJSON(entries)
 
-	return hash, nil
+	return hash
 }

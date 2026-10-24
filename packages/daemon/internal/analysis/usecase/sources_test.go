@@ -238,3 +238,32 @@ func TestAddSources_ToSourcesWithNoPath_ReadsThemAfreshSinceWhatStandsInForThemD
 		t.Errorf("series = %q, want %q", got, want)
 	}
 }
+
+// deletedMeanwhileStore writes each addition and then loses the analysis, the way a delete landing
+// between the addition and the read that follows it would.
+type deletedMeanwhileStore struct {
+	*memoryStore
+}
+
+func (store *deletedMeanwhileStore) AddSources(callerContext context.Context, analysisID string, files []analysisDomain.SourceFile) ([]analysisDomain.SourceFile, error) {
+	added, err := store.memoryStore.AddSources(callerContext, analysisID, files)
+	if err != nil {
+		return nil, err
+	}
+
+	return added, store.Delete(callerContext, analysisID)
+}
+
+func TestAddSources_AnAnalysisDeletedOnceTheFilesWereAdded_IsReportedAsNotFound(t *testing.T) {
+	service := analysisUsecase.NewService(&deletedMeanwhileStore{memoryStore: &memoryStore{}}, fileLoader{}, fixedClock{})
+	created, _ := service.Create(context.Background(), "Capacity", sourcesNamed("cpu.rrd"))
+	_, _ = service.Bundle(context.Background(), created.ID)
+
+	if _, err := service.AddSources(context.Background(), created.ID, sourcesNamed("memory.rrd")); !errors.Is(err, analysisDomain.ErrAnalysisNotFound) {
+		t.Fatalf("err = %v, want %v", err, analysisDomain.ErrAnalysisNotFound)
+	}
+
+	if _, err := service.Bundle(context.Background(), created.ID); !errors.Is(err, analysisDomain.ErrAnalysisNotFound) {
+		t.Errorf("bundle err = %v, want the series held before the addition forgotten along with the analysis", err)
+	}
+}

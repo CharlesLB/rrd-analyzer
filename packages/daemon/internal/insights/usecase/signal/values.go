@@ -131,28 +131,37 @@ func largestDeparture(series []float64, laidOut, run Range, center float64) floa
 	return largest
 }
 
+// walkStart is the end of a range a walk for its nearest present value sets out from.
+type walkStart int
+
+const (
+	fromTheFirst walkStart = iota + 1
+	fromTheLast
+)
+
 func firstPresent(values []float64, searched Range) (float64, bool) {
-	clamped, overlaps := searched.clamp(len(values))
-	if !overlaps {
-		return 0, false
-	}
-
-	for index := clamped.From; index <= clamped.Until; index++ {
-		if Present(values[index]) {
-			return values[index], true
-		}
-	}
-
-	return 0, false
+	return nearestPresent(values, searched, fromTheFirst)
 }
 
 func lastPresent(values []float64, searched Range) (float64, bool) {
+	return nearestPresent(values, searched, fromTheLast)
+}
+
+// nearestPresent is the present value of a range, clamped to the slice, that lies closest to the end
+// the walk starts from. The first and the last present value are one walk taken from either end, so
+// the two cannot come to treat a range reaching past the slice differently.
+func nearestPresent(values []float64, searched Range, start walkStart) (float64, bool) {
 	clamped, overlaps := searched.clamp(len(values))
 	if !overlaps {
 		return 0, false
 	}
 
-	for index := clamped.Until; index >= clamped.From; index-- {
+	for offset := range clamped.length() {
+		index := clamped.From + offset
+		if start == fromTheLast {
+			index = clamped.Until - offset
+		}
+
 		if Present(values[index]) {
 			return values[index], true
 		}

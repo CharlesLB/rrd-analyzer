@@ -97,6 +97,10 @@ func (service *Service) readSources(callerContext context.Context, files []expor
 	return contents, nil
 }
 
+// archiveOf zips the sources. Adding an entry fails on a name too long for the format, and writing
+// one fails when the name makes it a directory, as a source named "/" does. Closing writes only the
+// central directory into a bytes.Buffer, which never fails a write, so the error Close returns is
+// always nil here.
 func archiveOf(files []exportDomain.SourceFile, contents [][]byte) ([]byte, error) {
 	var buffer bytes.Buffer
 
@@ -112,9 +116,7 @@ func archiveOf(files []exportDomain.SourceFile, contents [][]byte) ([]byte, erro
 		}
 	}
 
-	if err := archive.Close(); err != nil {
-		return nil, fmt.Errorf("close the archive: %w", err)
-	}
+	_ = archive.Close()
 
 	return buffer.Bytes(), nil
 }

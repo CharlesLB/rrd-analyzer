@@ -4,7 +4,6 @@ package usecase
 import (
 	"bytes"
 	"encoding/csv"
-	"fmt"
 	"strings"
 	"time"
 
@@ -21,6 +20,9 @@ const (
 )
 
 // EncodeTable writes a table as CSV. A table without rows is refused: there is nothing to export.
+//
+// A csv.Writer with its default comma fails only when what it writes into does, and a bytes.Buffer
+// never fails a write, so the errors Write and WriteAll return are always nil here.
 func EncodeTable(table exportDomain.Table) ([]byte, error) {
 	if len(table.Rows) == 0 {
 		return nil, exportDomain.ErrNothingToExport
@@ -29,13 +31,8 @@ func EncodeTable(table exportDomain.Table) ([]byte, error) {
 	var buffer bytes.Buffer
 
 	writer := csv.NewWriter(&buffer)
-	if err := writer.Write(table.Header); err != nil {
-		return nil, fmt.Errorf("write csv header: %w", err)
-	}
-
-	if err := writer.WriteAll(table.Rows); err != nil {
-		return nil, fmt.Errorf("write csv rows: %w", err)
-	}
+	_ = writer.Write(table.Header)
+	_ = writer.WriteAll(table.Rows)
 
 	return buffer.Bytes(), nil
 }

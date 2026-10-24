@@ -66,11 +66,10 @@ func ParseDuration(text string) (int64, error) {
 
 	total := int64(0)
 
+	// A segment's count is at most nine digits, which the pattern above guarantees and an int64 always
+	// holds, so ParseInt has no error to report.
 	for _, segment := range durationSegments.FindAllStringSubmatch(trimmed, -1) {
-		count, err := strconv.ParseInt(segment[1], 10, 64)
-		if err != nil {
-			return 0, fmt.Errorf("duration %q: %w", text, err)
-		}
+		count, _ := strconv.ParseInt(segment[1], 10, 64)
 
 		total += count * unitMilliseconds[segment[2]]
 		if total > longestDuration {
@@ -99,10 +98,9 @@ func ParseWhen(text string) (domain.When, error) {
 		return domain.When{}, fmt.Errorf("when %q is not one of rising, falling, spike, gap, reset, excursion, drift, change_point, flat, > X, < X, > X%%, < X%%", text)
 	}
 
-	level, err := strconv.ParseFloat(parts[2], 64)
-	if err != nil {
-		return domain.When{}, fmt.Errorf("when %q: %w", text, err)
-	}
+	// The level matched a plain decimal of at most fifteen digits on either side of the point, which
+	// ParseFloat always reads, and to a finite number, so it has no error to report.
+	level, _ := strconv.ParseFloat(parts[2], 64)
 
 	return domain.When{
 		Detector:   domain.DetectorThreshold,

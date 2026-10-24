@@ -67,6 +67,11 @@ var openingCanvas = []openingChart{
 }
 
 func Generate() (Dataset, error) {
+	return generate(openingCanvas)
+}
+
+// generate is the sample opening on charts, every one of which has to draw series the sample holds.
+func generate(charts []openingChart) (Dataset, error) {
 	readings := recorded()
 
 	sources := make([]File, 0, len(metrics))
@@ -74,17 +79,12 @@ func Generate() (Dataset, error) {
 		sources = append(sources, File{Name: source.fileName, Content: dumpOf(source, readings[source.fileName])})
 	}
 
-	canvas, err := canvasOf(openingCanvas)
+	canvas, err := canvasOf(charts)
 	if err != nil {
 		return Dataset{}, err
 	}
 
-	log, err := logOf(readings)
-	if err != nil {
-		return Dataset{}, fmt.Errorf("write the sample log: %w", err)
-	}
-
-	return Dataset{Sources: sources, Canvas: canvas, Log: File{Name: LogFileName, Content: log}}, nil
+	return Dataset{Sources: sources, Canvas: canvas, Log: File{Name: LogFileName, Content: logOf(readings)}}, nil
 }
 
 // canvasOf names each chart's series the way the analysis will: by the position of its file among

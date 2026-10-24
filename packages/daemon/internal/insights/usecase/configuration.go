@@ -28,12 +28,27 @@ type UserFiles struct {
 	Rules      UserFile
 }
 
+// defaults is where assembling a configuration finds the classifier and the ruleset the user's files
+// are laid over. The rules are parsed against the merged taxonomy, so they are asked for with it.
+//
+// They are reached through functions rather than called directly because the embedded documents
+// always parse: standing in defaults that do not is the only way to exercise what assembling does
+// when a build ships broken ones.
+type defaults struct {
+	classifier func() ([]domain.ClassifierEntry, error)
+	ruleset    func(knownTypes []string) ([]domain.Rule, error)
+}
+
 // AssembleConfiguration lays the user's classifier over the default one, takes the types rules may
 // name from the result, parses the user's rules against those types and lays them over the default
 // rules, then hashes both, so a cached report notices an edit. A missing user file changes nothing;
 // one that cannot be read or holds mistakes is reported, and every default still loads.
 func AssembleConfiguration(files UserFiles) (domain.Configuration, error) {
-	defaultEntries, err := classify.Defaults()
+	return assembleConfiguration(defaults{classifier: classify.Defaults, ruleset: rules.Defaults}, files)
+}
+
+func assembleConfiguration(shipped defaults, files UserFiles) (domain.Configuration, error) {
+	defaultEntries, err := shipped.classifier()
 	if err != nil {
 		return domain.Configuration{}, err
 	}
@@ -48,7 +63,7 @@ func AssembleConfiguration(files UserFiles) (domain.Configuration, error) {
 	entries := slices.Concat(userEntries, defaultEntries)
 	types := classify.Types(entries)
 
-	defaultRules, err := rules.Defaults(types)
+	defaultRules, err := shipped.ruleset(types)
 	if err != nil {
 		return domain.Configuration{}, err
 	}
@@ -67,16 +82,11 @@ func AssembleConfiguration(files UserFiles) (domain.Configuration, error) {
 		return domain.Configuration{}, err
 	}
 
-	classifierHash, err := classify.Hash(entries)
-	if err != nil {
-		return domain.Configuration{}, err
-	}
-
 	return domain.Configuration{
 		Rules:          merged,
 		Classifier:     entries,
 		RulesetHash:    rulesetHash,
-		ClassifierHash: classifierHash,
+		ClassifierHash: classify.Hash(entries),
 		Diagnostics:    diagnostics,
 	}, nil
 }

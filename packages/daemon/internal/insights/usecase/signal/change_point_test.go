@@ -50,6 +50,7 @@ func TestChangePoints_NothingToDetect_FindsNothing(t *testing.T) {
 		{name: "shift too short to be sustained", give: stepValues(30, 15, 0, 10), searched: signal.Range{From: 0, Until: 29}, parameters: signal.ChangePointParameters{SmoothingSamples: 3, Theta: 3, Sustain: 4}},
 		{name: "all holes", give: holes(10), searched: signal.Range{From: 0, Until: 9}, parameters: parameters},
 		{name: "single sample", give: []float64{2}, searched: signal.Range{From: 0, Until: 0}, parameters: parameters},
+		{name: "two readings, one difference with nothing to vary against", give: []float64{1, 5}, searched: signal.Range{From: 0, Until: 1}, parameters: parameters},
 		{name: "outside the slice", give: stepValues(30, 15, 0, 10), searched: signal.Range{From: 31, Until: 40}, parameters: parameters},
 	}
 
@@ -86,5 +87,21 @@ func TestChangePoints_StillGaugeThatStepsOnce_IsAChangeOnlyWhenTheStepIsMoreThan
 	got := signal.ChangePoints(stepValues(400, 200, 100, 200), searched, parameters)
 	if len(got) != 1 || got[0].Onset != 200 || !got[0].Pronounced || math.IsInf(got[0].Magnitude, 0) {
 		t.Errorf("ChangePoints over a doubling = %+v, want one at 200, pronounced by a finite magnitude", got)
+	}
+}
+
+func TestChangePoints_DepartureCarriedOnlyByTheSmoothingPastTheLastReading_HasNoPeak(t *testing.T) {
+	const departureAfterTheReadings = 13
+
+	values := append(stepValues(10, 0, 0, 0), -6, 0, 0, hole)
+
+	got := signal.ChangePoints(values, signal.Range{From: 0, Until: len(values) - 1}, signal.ChangePointParameters{SmoothingSamples: 3, Theta: 1, Sustain: 1})
+	if len(got) != 2 {
+		t.Fatalf("ChangePoints = %+v, want the fall into -6 and the rise the smoothing shows once it leaves", got)
+	}
+
+	rise := got[1]
+	if rise.Onset != departureAfterTheReadings || rise.Direction != domain.DirectionRising || rise.Base != 0 || !math.IsNaN(rise.Peak) {
+		t.Errorf("rise = %+v, want onset %d from a base of 0 with no reading to call its peak", rise, departureAfterTheReadings)
 	}
 }

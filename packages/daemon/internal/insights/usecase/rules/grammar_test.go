@@ -122,6 +122,8 @@ func TestParseInstant_Grammar(t *testing.T) {
 		{give: "window.end", want: domain.InstantExpression{Alias: "window", Field: domain.FieldEnd}},
 		{give: "outage.start", wantErr: true},
 		{give: "outage.onset - 3x", wantErr: true},
+		{give: "outage.onset - 3", wantErr: true},
+		{give: "outage.onset + 0m", wantErr: true},
 	}
 
 	for _, tt := range tests {

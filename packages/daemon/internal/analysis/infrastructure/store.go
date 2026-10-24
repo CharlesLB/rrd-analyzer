@@ -174,12 +174,7 @@ func (store *Store) Rename(callerContext context.Context, analysisID string, nam
 }
 
 func (store *Store) SaveCanvas(callerContext context.Context, analysisID string, canvas []analysisDomain.CanvasChart) error {
-	encoded, err := json.Marshal(chartsOrEmpty(canvas))
-	if err != nil {
-		return fmt.Errorf("encode the canvas of %q: %w", analysisID, err)
-	}
-
-	result, err := store.handle.ExecContext(callerContext, saveCanvas, string(encoded), len(canvas), analysisID)
+	result, err := store.handle.ExecContext(callerContext, saveCanvas, encodedList(chartsOrEmpty(canvas)), len(canvas), analysisID)
 	if err != nil {
 		return fmt.Errorf("save the canvas of %q: %w", analysisID, err)
 	}
@@ -188,12 +183,7 @@ func (store *Store) SaveCanvas(callerContext context.Context, analysisID string,
 }
 
 func (store *Store) SaveLibraryOrder(callerContext context.Context, analysisID string, order []analysisDomain.ChartReference) error {
-	encoded, err := json.Marshal(referencesOrEmpty(order))
-	if err != nil {
-		return fmt.Errorf("encode the library order of %q: %w", analysisID, err)
-	}
-
-	result, err := store.handle.ExecContext(callerContext, saveLibraryOrder, string(encoded), analysisID)
+	result, err := store.handle.ExecContext(callerContext, saveLibraryOrder, encodedList(referencesOrEmpty(order)), analysisID)
 	if err != nil {
 		return fmt.Errorf("save the library order of %q: %w", analysisID, err)
 	}
@@ -202,17 +192,21 @@ func (store *Store) SaveLibraryOrder(callerContext context.Context, analysisID s
 }
 
 func (store *Store) SaveSeriesColors(callerContext context.Context, analysisID string, colors []analysisDomain.SeriesColor) error {
-	encoded, err := json.Marshal(colorsOrEmpty(colors))
-	if err != nil {
-		return fmt.Errorf("encode the series colors of %q: %w", analysisID, err)
-	}
-
-	result, err := store.handle.ExecContext(callerContext, saveSeriesColors, string(encoded), analysisID)
+	result, err := store.handle.ExecContext(callerContext, saveSeriesColors, encodedList(colorsOrEmpty(colors)), analysisID)
 	if err != nil {
 		return fmt.Errorf("save the series colors of %q: %w", analysisID, err)
 	}
 
 	return updatedOne(result, analysisID)
+}
+
+// encodedList is the JSON text a list column holds. Its items are structs of strings, integers and
+// slices of those, which json.Marshal encodes without fail, so the error it returns is always nil;
+// the type set is what keeps a list that could fail to encode from being passed in.
+func encodedList[Item analysisDomain.CanvasChart | analysisDomain.ChartReference | analysisDomain.SeriesColor](list []Item) string {
+	encoded, _ := json.Marshal(list)
+
+	return string(encoded)
 }
 
 // updatedOne turns an update that matched no row into the not-found error the service reports.
@@ -230,24 +224,13 @@ func updatedOne(result sql.Result, analysisID string) error {
 }
 
 func (store *Store) Save(callerContext context.Context, analysis analysisDomain.Analysis) error {
-	canvas, err := json.Marshal(chartsOrEmpty(analysis.Canvas))
-	if err != nil {
-		return fmt.Errorf("encode the canvas of %q: %w", analysis.ID, err)
-	}
-
-	libraryOrder, err := json.Marshal(referencesOrEmpty(analysis.LibraryOrder))
-	if err != nil {
-		return fmt.Errorf("encode the library order of %q: %w", analysis.ID, err)
-	}
-
-	seriesColors, err := json.Marshal(colorsOrEmpty(analysis.SeriesColors))
-	if err != nil {
-		return fmt.Errorf("encode the series colors of %q: %w", analysis.ID, err)
-	}
+	canvas := encodedList(chartsOrEmpty(analysis.Canvas))
+	libraryOrder := encodedList(referencesOrEmpty(analysis.LibraryOrder))
+	seriesColors := encodedList(colorsOrEmpty(analysis.SeriesColors))
 
 	return store.inTransaction(callerContext, func(transaction *sql.Tx) error {
 		_, err := transaction.ExecContext(callerContext, upsertAnalysis,
-			analysis.ID, analysis.Name, len(analysis.Canvas), string(canvas), string(libraryOrder), string(seriesColors),
+			analysis.ID, analysis.Name, len(analysis.Canvas), canvas, libraryOrder, seriesColors,
 			analysis.CreatedAt.UnixMilli(), analysis.LastAccessed.UnixMilli())
 		if err != nil {
 			return fmt.Errorf("save analysis %q: %w", analysis.ID, err)

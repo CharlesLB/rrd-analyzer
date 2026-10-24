@@ -1,6 +1,9 @@
 package usecase_test
 
 import (
+	"encoding/json"
+	"errors"
+	"math"
 	"testing"
 
 	"github.com/CharlesLB/rrd-analyzer/packages/daemon/internal/insights/domain"
@@ -53,5 +56,46 @@ func TestAssembleConfiguration_UnreadableClassifierAndMalformedRules_ReportsTheC
 	diagnostics := configuration.Diagnostics
 	if len(diagnostics) != 2 || diagnostics[0] != *unreadable || diagnostics[1].Type != rules.DiagnosticUnreadableDocument || diagnostics[1].Origin != userRulesOrigin {
 		t.Fatalf("diagnostics = %+v, want the classifier's read failure, then the rules document's", diagnostics)
+	}
+}
+
+func failingClassifier() ([]domain.ClassifierEntry, error) {
+	return nil, errInducedFailure
+}
+
+func failingRuleset([]string) ([]domain.Rule, error) {
+	return nil, errInducedFailure
+}
+
+func TestAssembleConfiguration_DefaultsThatDoNotLoad_FailTheAssembly(t *testing.T) {
+	tests := []struct {
+		name       string
+		classifier func() ([]domain.ClassifierEntry, error)
+		ruleset    func(knownTypes []string) ([]domain.Rule, error)
+	}{
+		{name: "the classifier", classifier: failingClassifier, ruleset: rules.Defaults},
+		{name: "the ruleset", classifier: classify.Defaults, ruleset: failingRuleset},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			_, err := usecase.AssembleConfigurationOver(tt.classifier, tt.ruleset, usecase.UserFiles{})
+			if !errors.Is(err, errInducedFailure) {
+				t.Errorf("assemble error = %v, want the defaults' failure", err)
+			}
+		})
+	}
+}
+
+func TestAssembleConfiguration_DefaultRuleWithANonFiniteLevel_FailsToHashTheRuleset(t *testing.T) {
+	nonFinite := func([]string) ([]domain.Rule, error) {
+		return []domain.Rule{{ID: "unhashable", Conditions: []domain.Condition{{When: domain.When{Level: math.NaN()}}}}}, nil
+	}
+
+	_, err := usecase.AssembleConfigurationOver(classify.Defaults, nonFinite, usecase.UserFiles{})
+
+	var unsupported *json.UnsupportedValueError
+	if !errors.As(err, &unsupported) {
+		t.Errorf("assemble error = %v, want the encoding failure of the NaN level", err)
 	}
 }

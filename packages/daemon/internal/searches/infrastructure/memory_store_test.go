@@ -2,6 +2,7 @@ package infrastructure_test
 
 import (
 	"context"
+	"errors"
 	"slices"
 	"testing"
 
@@ -88,5 +89,45 @@ func TestMemoryStoreForgetsEverySearchAtOnce(t *testing.T) {
 
 	if got := append(termsKeptInMemory(t, store, "charts"), termsKeptInMemory(t, store, "logs")...); len(got) != 0 {
 		t.Fatalf("want no searches, got %v", got)
+	}
+}
+
+func TestMemoryStore_ACancelledCaller_IsRefusedAndChangesNothing(t *testing.T) {
+	store := searchesInfra.NewMemoryStore()
+	rememberInMemory(t, store, "charts", "cpu")
+
+	cancelled, cancel := context.WithCancel(context.Background())
+	cancel()
+
+	tests := []struct {
+		name     string
+		giveCall func(callerContext context.Context) error
+	}{
+		{name: "terms", giveCall: func(callerContext context.Context) error {
+			_, err := store.Terms(callerContext, "charts")
+
+			return err
+		}},
+		{name: "remember", giveCall: func(callerContext context.Context) error {
+			return store.Remember(callerContext, "charts", "memory", memoryHistoryLimit)
+		}},
+		{name: "forget", giveCall: func(callerContext context.Context) error {
+			return store.Forget(callerContext, "charts", "cpu")
+		}},
+		{name: "delete all", giveCall: func(callerContext context.Context) error {
+			return store.DeleteAll(callerContext)
+		}},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if err := tt.giveCall(cancelled); !errors.Is(err, context.Canceled) {
+				t.Fatalf("err = %v, want %v", err, context.Canceled)
+			}
+
+			if got := termsKeptInMemory(t, store, "charts"); !slices.Equal(got, []string{"cpu"}) {
+				t.Errorf("terms = %v, want [cpu] untouched by the refused call", got)
+			}
+		})
 	}
 }

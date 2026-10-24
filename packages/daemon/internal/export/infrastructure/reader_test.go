@@ -30,3 +30,19 @@ func TestFileReaderReportsASourceNoLongerOnDiskAsUnreadable(t *testing.T) {
 		t.Fatalf("err = %v, want %v wrapping %v", err, exportDomain.ErrSourceUnreadable, os.ErrNotExist)
 	}
 }
+
+func TestFileReaderReadsNothingOnceTheCallerHasGone(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "cpu.rrd")
+	if err := os.WriteFile(path, []byte("RRD\x00content"), 0o600); err != nil {
+		t.Fatalf("write the source: %v", err)
+	}
+
+	cancelled, cancel := context.WithCancel(context.Background())
+	cancel()
+
+	content, err := exportInfra.NewFileReader().Read(cancelled, path)
+
+	if !errors.Is(err, context.Canceled) || content != nil {
+		t.Fatalf("read = %q, %v; want nothing and context.Canceled", content, err)
+	}
+}

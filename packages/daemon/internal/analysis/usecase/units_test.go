@@ -46,3 +46,13 @@ func TestBundle_ConfiguredUnits_RelabelTheFirstMatchingSeriesAndFollowAnEdit(t *
 		t.Errorf("units after the rules were removed = %q, want the parsed units back, the cached series untouched", got)
 	}
 }
+
+func TestBundle_ConfiguredUnitsMatchingNoSeries_LeaveTheParsedUnits(t *testing.T) {
+	rules := &editableUnitRules{rules: []analysisDomain.UnitRule{{Pattern: "elasticsearch_*", Unit: "ops/s"}}}
+	service := analysisUsecase.NewService(&memoryStore{}, &twoPointLoader{}, fixedClock{}, analysisUsecase.WithUnitRules(rules))
+	created, _ := service.Create(context.Background(), "Capacity", []analysisDomain.SourceFile{{Name: "a.rrd"}})
+
+	if got := unitsOf(t, service, created.ID); len(got) != 1 || got[0] != "%" {
+		t.Errorf("units = %q, want the %% parsed from the file", got)
+	}
+}

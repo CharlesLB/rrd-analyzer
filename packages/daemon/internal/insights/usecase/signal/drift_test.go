@@ -84,3 +84,14 @@ func TestDrift_RangeReachingBeforeTheFirstReading_StartsAtTheFirstReading(t *tes
 		t.Errorf("Drift = %+v, want 0..99 from 10 to 20: nothing was read before the first sample", got)
 	}
 }
+
+func TestDrift_SeriesThatNeverMovesAtARatioOfOne_FiresWithNoMagnitude(t *testing.T) {
+	got, found := signal.Drift(stepValues(20, 0, 10, 10), signal.Range{From: 0, Until: 19}, signal.DriftParameters{Ratio: 1, EdgeFraction: 0.1, MinimumEdgeSamples: 6})
+	if !found {
+		t.Fatal("Drift found nothing, want the late edge to reach the early one times one")
+	}
+
+	if got.Magnitude != 0 || got.Pronounced {
+		t.Errorf("Drift magnitude %v pronounced %v, want 0 and not pronounced: a set that never varied did not depart", got.Magnitude, got.Pronounced)
+	}
+}

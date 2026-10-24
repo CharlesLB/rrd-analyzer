@@ -109,3 +109,22 @@ func TestRobustScale_SetMostlyOnItsMedian_IsScaledByHowOftenAndHowFarItDeparts(t
 		})
 	}
 }
+
+func TestMedianOf_RangeOutsideTheSliceOrOverHoles_FindsNoMedian(t *testing.T) {
+	tests := []struct {
+		name     string
+		give     []float64
+		searched signal.Range
+	}{
+		{name: "outside the slice", give: []float64{1, 2, 3}, searched: signal.Range{From: 5, Until: 9}},
+		{name: "over holes", give: holes(3), searched: signal.Range{From: 0, Until: 2}},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got, found := signal.MedianOf(tt.give, tt.searched); found {
+				t.Errorf("MedianOf = %v, want no median", got)
+			}
+		})
+	}
+}

@@ -10,8 +10,11 @@ import (
 
 	"github.com/CharlesLB/rrd-analyzer/packages/daemon/internal/insights/domain"
 	"github.com/CharlesLB/rrd-analyzer/packages/daemon/internal/insights/infrastructure"
+	"github.com/CharlesLB/rrd-analyzer/packages/daemon/internal/insights/usecase"
 	"github.com/CharlesLB/rrd-analyzer/packages/daemon/internal/insights/usecase/rules"
 )
+
+var errAssemblyRefused = errors.New("configuration test: assembly refused")
 
 const overridingRules = `
 [[rule]]
@@ -208,5 +211,31 @@ func TestConfigurationLoader_CancelledContext_ReturnsTheCancellation(t *testing.
 	_, err := infrastructure.NewConfigurationLoader("").Load(callerContext)
 	if !errors.Is(err, context.Canceled) {
 		t.Fatalf("error = %v, want context.Canceled", err)
+	}
+}
+
+func TestConfigurationLoader_AssemblyThatFails_IsReturnedAndTriedAgainOnTheNextLoad(t *testing.T) {
+	const failingAttempts = 1
+
+	assembled := domain.Configuration{RulesetHash: "assembled-ruleset"}
+	attempts := 0
+	assemble := func(usecase.UserFiles) (domain.Configuration, error) {
+		attempts++
+		if attempts <= failingAttempts {
+			return domain.Configuration{}, errAssemblyRefused
+		}
+
+		return assembled, nil
+	}
+
+	loader := infrastructure.NewConfigurationLoaderAssembledBy(t.TempDir(), assemble)
+
+	if _, err := loader.Load(context.Background()); !errors.Is(err, errAssemblyRefused) {
+		t.Fatalf("first load error = %v, want the assembly failure", err)
+	}
+
+	configuration, err := loader.Load(context.Background())
+	if err != nil || configuration.RulesetHash != assembled.RulesetHash {
+		t.Errorf("second load = %+v, %v; want the configuration assembled again, the failure not remembered", configuration, err)
 	}
 }

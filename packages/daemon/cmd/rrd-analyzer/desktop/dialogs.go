@@ -10,18 +10,26 @@ import (
 	"github.com/CharlesLB/rrd-analyzer/packages/daemon/internal/shared/messages"
 )
 
+// nativeDialogs is the open and the save dialog of the system, each parented to the window whose
+// context it is given.
+type nativeDialogs interface {
+	OpenMultipleFilesDialog(windowContext context.Context, dialogOptions runtime.OpenDialogOptions) ([]string, error)
+	SaveFileDialog(windowContext context.Context, dialogOptions runtime.SaveDialogOptions) (string, error)
+}
+
 type dialogs struct {
+	native  nativeDialogs
 	sources surface.SourceDescriber
 
 	windowContext context.Context
 }
 
-func newDialogs(sources surface.SourceDescriber) *dialogs {
-	if sources == nil {
-		panic("desktop dialogs: the source describer is required")
+func newDialogs(native nativeDialogs, sources surface.SourceDescriber) *dialogs {
+	if native == nil || sources == nil {
+		panic("desktop dialogs: the native dialogs and the source describer are both required")
 	}
 
-	return &dialogs{sources: sources}
+	return &dialogs{native: native, sources: sources}
 }
 
 func (opener *dialogs) bindTo(windowContext context.Context) {
@@ -29,7 +37,7 @@ func (opener *dialogs) bindTo(windowContext context.Context) {
 }
 
 func (opener *dialogs) PickSources(callerContext context.Context) ([]surface.FileInfo, error) {
-	paths, err := runtime.OpenMultipleFilesDialog(opener.contextOr(callerContext), runtime.OpenDialogOptions{
+	paths, err := opener.native.OpenMultipleFilesDialog(opener.contextOr(callerContext), runtime.OpenDialogOptions{
 		Title:   messages.PickSourcesTitle,
 		Filters: []runtime.FileFilter{{DisplayName: messages.SourceFilterDisplay, Pattern: messages.SourceFilterPattern}},
 	})
@@ -41,7 +49,7 @@ func (opener *dialogs) PickSources(callerContext context.Context) ([]surface.Fil
 }
 
 func (opener *dialogs) PickSaveTarget(callerContext context.Context, suggestedName string) (string, error) {
-	path, err := runtime.SaveFileDialog(opener.contextOr(callerContext), runtime.SaveDialogOptions{
+	path, err := opener.native.SaveFileDialog(opener.contextOr(callerContext), runtime.SaveDialogOptions{
 		Title:           messages.SaveExportTitle,
 		DefaultFilename: suggestedName,
 	})

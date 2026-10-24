@@ -192,3 +192,17 @@ func TestOpenDrawsEachSeriesInTheColorItWasGivenAndPassesOverAStaleEntry(t *test
 		t.Errorf("cached cpu color = %q, want its default %q: the cache every reader shares is never recolored", got, seriesDomain.ColorAt(1))
 	}
 }
+
+func TestSaveSeriesColor_SourcesThatCannotBeRead_StoreNoColor(t *testing.T) {
+	service, store := newService(fileLoader{})
+	created, _ := service.Create(context.Background(), "Capacity", []analysisDomain.SourceFile{{Name: "broken.rrd"}})
+
+	err := service.SaveSeriesColor(context.Background(), created.ID, analysisDomain.SeriesColor{SeriesID: "s0", Label: "broken.rrd", Color: "#aabbcc"})
+	if !errors.Is(err, errUnreadableSource) {
+		t.Fatalf("err = %v, want %v", err, errUnreadableSource)
+	}
+
+	if got := storedColorsOf(t, store, created.ID); len(got) != 0 {
+		t.Errorf("stored colors = %+v, want none", got)
+	}
+}

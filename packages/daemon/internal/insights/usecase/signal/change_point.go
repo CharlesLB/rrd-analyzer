@@ -59,11 +59,10 @@ func ChangePoints(values []float64, searched Range, parameters ChangePointParame
 func changePointEpisode(values, differences []float64, clamped, run Range, center, scale, sign, theta float64) Episode {
 	largest := largestDeparture(differences, clamped, run, center)
 
+	// The difference that opened the run was taken against the smoothed reading just before it,
+	// whose window holds a present reading inside before: the base is always found.
 	before := Range{From: clamped.From, Until: max(clamped.From, run.From-1)}
-	base, hasBase := lastPresent(values, before)
-	if !hasBase {
-		base = math.NaN()
-	}
+	base, _ := lastPresent(values, before)
 
 	peak, hasPeak := lastPresent(values, run)
 	if !hasPeak {

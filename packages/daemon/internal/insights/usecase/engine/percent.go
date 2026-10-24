@@ -13,11 +13,6 @@ import (
 
 const percentScale = 100
 
-type median struct {
-	value float64
-	found bool
-}
-
 // measuredValues is one series as a condition measures it: the values, the unit they are in, and
 // whether the denominator a percentage needs was resolved at all. The zero value is the
 // unresolved case, which leaves the series out of the condition.
@@ -99,7 +94,8 @@ const sumTypeSeparator = "+"
 
 // percentageOf scales a frame once however many rules and conditions measure it against the same
 // denominator. Several default rules read memory or CPU as the same percentage, and each used to
-// build its own copy of the whole scaled series.
+// build its own copy of the whole scaled series. A percentage of the series' own median names no
+// other series, so its key is the frame alone and the median of a frame is taken once as well.
 func (evaluation *evaluator) percentageOf(condition domain.Condition, frame Frame) percentage {
 	key := percentageKey{
 		frame:       frameKey{seriesID: frame.Series.ID, function: condition.Function},
@@ -136,7 +132,7 @@ func (evaluation *evaluator) scaleToPercent(condition domain.Condition, frame Fr
 
 		return asPercent(scaleValues(values, func(index int) float64 { return sumAt(companions.frames, frame.instantOf(index)) }))
 	case domain.PercentMedian:
-		median, found := evaluation.medianOf(frameKey{seriesID: frame.Series.ID, function: condition.Function}, values)
+		median, found := signal.MedianOf(values, signal.Range{From: 0, Until: len(values) - 1})
 		if !found || !(median > 0) {
 			return percentage{unresolved: "the series has no positive median to measure against"}
 		}
@@ -149,18 +145,6 @@ func (evaluation *evaluator) scaleToPercent(condition domain.Condition, frame Fr
 
 func asPercent(values []float64) percentage {
 	return percentage{measured: measuredValues{values: values, unit: seriesDomain.UnitPercent, resolved: true}}
-}
-
-// medianOf is the median of a whole frame, taken once however many rules measure against it.
-func (evaluation *evaluator) medianOf(key frameKey, values []float64) (float64, bool) {
-	if cached, known := evaluation.medians[key]; known {
-		return cached.value, cached.found
-	}
-
-	value, found := signal.MedianOf(values, signal.Range{From: 0, Until: len(values) - 1})
-	evaluation.medians[key] = median{value: value, found: found}
-
-	return value, found
 }
 
 func (evaluation *evaluator) warn(rule compiledRule, series domain.SeriesInfo, reason string) {

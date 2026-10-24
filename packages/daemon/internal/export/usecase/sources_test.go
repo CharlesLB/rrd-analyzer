@@ -7,6 +7,7 @@ import (
 	"errors"
 	"io"
 	"reflect"
+	"strings"
 	"testing"
 
 	exportDomain "github.com/CharlesLB/rrd-analyzer/packages/daemon/internal/export/domain"
@@ -228,5 +229,73 @@ func TestEncodeSources_AFileThatIsNotASource_IsRefusedAndNothingIsCopied(t *test
 				t.Errorf("err = %v with %d bytes handed over, want %v and none", err, len(document.Content), exportDomain.ErrNotASource)
 			}
 		})
+	}
+}
+
+// unavailableLibrary cannot say which files any analysis was created from.
+type unavailableLibrary struct{}
+
+func (unavailableLibrary) Sources(context.Context, string) (exportDomain.SourceSet, error) {
+	return exportDomain.SourceSet{}, errSourceUnavailable
+}
+
+// zipNameLimit is the longest entry name a zip archive can hold.
+const zipNameLimit = 1<<16 - 1
+
+func TestEncodeSourcesPassesOnALibraryThatCannotBeRead(t *testing.T) {
+	shelf := &sourceShelf{}
+	service := exportUsecase.NewService(exportUsecase.Dependencies{Source: &recordingSource{}, Library: unavailableLibrary{}, Reader: shelf, Format: shelf, Picker: shelf, Writer: shelf})
+
+	if _, err := service.EncodeSources(context.Background(), "a1"); !errors.Is(err, errSourceUnavailable) {
+		t.Fatalf("err = %v, want %v", err, errSourceUnavailable)
+	}
+}
+
+func TestEncodeSourcesRefusesASourceNoLongerOnDiskAndCopiesNothing(t *testing.T) {
+	shelf := &sourceShelf{
+		set:      exportDomain.SourceSet{AnalysisName: "Capacity", Files: []exportDomain.SourceFile{{Name: "cpu.rrd", Path: "/data/cpu.rrd"}, {Name: "moved.rrd", Path: "/data/moved.rrd"}}},
+		contents: map[string]string{"/data/cpu.rrd": "RRD cpu"},
+	}
+
+	document, err := newSourceService(shelf).EncodeSources(context.Background(), "a1")
+
+	if !errors.Is(err, exportDomain.ErrSourceUnreadable) || len(document.Content) != 0 {
+		t.Errorf("err = %v with %d bytes handed over, want %v and none", err, len(document.Content), exportDomain.ErrSourceUnreadable)
+	}
+}
+
+func TestEncodeSources_ANameTheArchiveCannotHold_IsRefusedAndNothingIsCopied(t *testing.T) {
+	tests := []struct {
+		name        string
+		giveName    string
+		wantMessage string
+	}{
+		{name: "too long for the format", giveName: strings.Repeat("n", zipNameLimit+1), wantMessage: "to the archive"},
+		{name: "taken for a directory", giveName: "/", wantMessage: "into the archive"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			shelf := &sourceShelf{
+				set:      exportDomain.SourceSet{AnalysisName: "Capacity", Files: []exportDomain.SourceFile{{Name: "cpu.rrd", Path: "/data/cpu.rrd"}, {Name: tt.giveName, Path: "/data/odd.rrd"}}},
+				contents: map[string]string{"/data/cpu.rrd": "RRD cpu", "/data/odd.rrd": "RRD odd"},
+			}
+
+			document, err := newSourceService(shelf).EncodeSources(context.Background(), "a1")
+
+			if err == nil || !strings.Contains(err.Error(), tt.wantMessage) || len(document.Content) != 0 {
+				t.Errorf("err = %v with %d bytes handed over, want a failure adding the file %s and none", err, len(document.Content), tt.wantMessage)
+			}
+		})
+	}
+}
+
+func TestSaveSourcesOfAnAnalysisWithoutSourcesWritesNothing(t *testing.T) {
+	shelf := &sourceShelf{target: "/exports/copy.zip"}
+
+	saved, err := newSourceService(shelf).SaveSources(context.Background(), "a1")
+
+	if !errors.Is(err, exportDomain.ErrNothingToExport) || saved != (exportDomain.SavedSources{}) || len(shelf.written) != 0 {
+		t.Errorf("saved %+v, %v, wrote %d files; want %v and nothing written", saved, err, len(shelf.written), exportDomain.ErrNothingToExport)
 	}
 }

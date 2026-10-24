@@ -67,3 +67,46 @@ func TestCancelIgnoresACallThatIsNoLongerRunning(t *testing.T) {
 		t.Fatalf("want %d, got %d", http.StatusNoContent, answer.Status)
 	}
 }
+
+func TestServeAnswersACallNoRequestCanBeMadeOfAsMalformed(t *testing.T) {
+	edition := editionServing(http.HandlerFunc(func(writer http.ResponseWriter, _ *http.Request) {
+		writer.WriteHeader(http.StatusNoContent)
+	}))
+
+	answer := edition.Serve(context.Background(), Call{RequestID: "1", Method: "NOT A METHOD", Path: "/api/analyses"})
+
+	if answer.Status != http.StatusBadRequest {
+		t.Fatalf("want %d, got %d: %s", http.StatusBadRequest, answer.Status, answer.Body)
+	}
+}
+
+func TestServeAnswersTheStatusARouteWroteFirst(t *testing.T) {
+	tests := []struct {
+		name       string
+		giveRoute  func(writer http.ResponseWriter)
+		wantStatus int
+	}{
+		{name: "a status written twice", giveRoute: func(writer http.ResponseWriter) {
+			writer.WriteHeader(http.StatusCreated)
+			writer.WriteHeader(http.StatusInternalServerError)
+		}, wantStatus: http.StatusCreated},
+		{name: "a status written after the body", giveRoute: func(writer http.ResponseWriter) {
+			_, _ = writer.Write([]byte("{}"))
+			writer.WriteHeader(http.StatusInternalServerError)
+		}, wantStatus: http.StatusOK},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			edition := editionServing(http.HandlerFunc(func(writer http.ResponseWriter, _ *http.Request) {
+				tt.giveRoute(writer)
+			}))
+
+			answer := edition.Serve(context.Background(), Call{RequestID: "1", Method: http.MethodGet, Path: "/api/analyses"})
+
+			if answer.Status != tt.wantStatus {
+				t.Errorf("want %d, got %d", tt.wantStatus, answer.Status)
+			}
+		})
+	}
+}

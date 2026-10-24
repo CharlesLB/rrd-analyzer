@@ -10,6 +10,7 @@ import (
 
 	"github.com/CharlesLB/rrd-analyzer/packages/daemon/internal/insights/domain"
 	"github.com/CharlesLB/rrd-analyzer/packages/daemon/internal/insights/usecase/engine"
+	"github.com/CharlesLB/rrd-analyzer/packages/daemon/internal/insights/usecase/render"
 )
 
 const oomDocument = `
@@ -760,5 +761,127 @@ func TestScan_Supersedes_LeavesOutTheGeneralFindingOnlyWhereTheSpecificOneOverla
 
 	if busy.RuleID != "busy" || busy.FromMilliseconds != at(60) || busy.ID != "fd1" {
 		t.Errorf("second finding = %s %s at %d, want fd1 busy at %d", busy.ID, busy.RuleID, busy.FromMilliseconds, at(60))
+	}
+}
+
+const joinedToAnUnmatchedOptionalDocument = `
+[[rule]]
+id = "load-driven"
+severity = "info"
+title = "Load driven"
+cause = "CPU busy."
+
+[[rule.condition]]
+type = "cpu.user"
+when = "> 50"
+
+[[rule.condition]]
+as = "load"
+type = "load.avg"
+when = "> 5"
+optional = true
+
+[[rule.condition]]
+as = "requests"
+type = "http.requests"
+when = "> 5"
+after = "load"
+within = "10m"
+optional = true
+
+[[rule.condition]]
+as = "latency"
+type = "http.latency"
+when = "> 5"
+overlaps = "load"
+optional = true
+`
+
+func TestScan_ConditionsJoinedToAnOptionalOneThatFoundNothing_AreLeftUnmatched(t *testing.T) {
+	output := scan(t, scenario{document: joinedToAnUnmatchedOptionalDocument, series: []fakeSeries{
+		series("cpu", "cpu.rrd", "value", "%", withValue(constant(100, 0), 20, 6, 100)),
+		series("requests", "requests.rrd", "value", "", withValue(constant(100, 0), 22, 6, 100)),
+		series("latency", "latency.rrd", "value", "ms", withValue(constant(100, 0), 22, 6, 100)),
+	}})
+
+	if len(output.Findings) != 1 || len(output.Findings[0].Evidence) != 1 || output.Findings[0].Evidence[0].SeriesID != "cpu" {
+		t.Errorf("findings = %+v, want the CPU finding alone: what follows or overlaps a load that was never seen cannot be placed", output.Findings)
+	}
+}
+
+const unresolvedTokensDocument = `
+[[rule]]
+id = "unresolved"
+severity = "info"
+title = "Unresolved"
+cause = "Load counted {load.count}; CPU full in {cpu.user.eta}."
+
+[[rule.condition]]
+type = "cpu.user"
+when = "> 50"
+
+[[rule.condition]]
+as = "load"
+type = "load.avg"
+when = "> 5"
+optional = true
+`
+
+func TestScan_CountOfAnUnmatchedConditionAndEtaWithoutAForecast_ReadNotAvailable(t *testing.T) {
+	output := scan(t, scenario{document: unresolvedTokensDocument, series: []fakeSeries{
+		series("cpu", "cpu.rrd", "value", "%", withValue(constant(100, 0), 20, 6, 100)),
+	}})
+
+	want := fmt.Sprintf("Load counted %s; CPU full in %s.", render.NotAvailable, render.NotAvailable)
+	if len(output.Findings) != 1 || causeText(output.Findings[0]) != want {
+		t.Errorf("findings = %+v, want one whose cause reads %q", output.Findings, want)
+	}
+}
+
+func TestScan_PercentOfASumWhoseOnlyCompanionIsInAnotherFile_AddsThatCompanion(t *testing.T) {
+	output := scan(t, scenario{document: percentDocument, series: []fakeSeries{
+		series("used", "memory-a.rrd", "used", "B", constant(50, 95)),
+		series("free", "memory-b.rrd", "free", "B", constant(50, 5)),
+	}})
+
+	if len(output.Warnings) != 0 || len(output.Findings) != 1 || output.Findings[0].RuleID != "memory-full" {
+		t.Errorf("Scan = %+v, want memory full at 95%% of used plus the one free series there is, without a warning", output)
+	}
+}
+
+const shiftDocument = `
+[[rule]]
+id = "shift"
+severity = "info"
+title = "Shift"
+cause = "Load moved to {load.avg.peak}."
+
+[[rule.condition]]
+type = "load.avg"
+when = "change_point"
+window = "3m"
+theta = 1
+sustain = 1
+`
+
+func TestScan_ChangeCarriedOnlyByTheSmoothingPastTheLastReading_QuotesNoValueItReached(t *testing.T) {
+	values := append(constant(10, 0), -6, 0, 0, hole)
+
+	output := scan(t, scenario{document: shiftDocument, series: []fakeSeries{series("load", "load.rrd", "value", "", values)}})
+
+	rise := slices.IndexFunc(output.Findings, func(finding domain.Finding) bool {
+		return len(finding.Evidence) == 1 && finding.Evidence[0].Direction == domain.DirectionRising
+	})
+	if rise < 0 {
+		t.Fatalf("findings = %+v, want a rise once the -6 leaves the smoothing", output.Findings)
+	}
+
+	evidence := output.Findings[rise].Evidence[0]
+	if evidence.FromValue == nil || *evidence.FromValue != 0 || evidence.ToValue != nil {
+		t.Errorf("evidence = %+v, want it to start from 0 and name no value reached: no reading follows the change", evidence)
+	}
+
+	if got, want := causeText(output.Findings[rise]), "Load moved to "+render.NotAvailable+"."; got != want {
+		t.Errorf("cause = %q, want %q", got, want)
 	}
 }

@@ -51,12 +51,64 @@ func noisyClimb(count, flatUntil, climbSamples int) []float64 {
 	return values
 }
 
-func TestTrends_OneSteadyClimbUnderNoise_IsOneEpisode(t *testing.T) {
-	values := noisyClimb(1200, 400, 400)
+func negated(values []float64) []float64 {
+	turned := make([]float64, len(values))
+	for index, value := range values {
+		turned[index] = -value
+	}
 
-	got := signal.Trends(values, signal.Range{From: 0, Until: 1199}, signal.TrendParameters{Direction: domain.DirectionRising, SmoothingSamples: 6, Theta: 3, Sustain: 3})
-	if len(got) != 1 || got[0].From > 420 || got[0].Until < 780 {
-		t.Fatalf("Trends = %d episodes %+v, want the one climb from about 400 to about 800", len(got), got)
+	return turned
+}
+
+func TestTrends_OneSteadyClimbUnderNoise_IsOneEpisode(t *testing.T) {
+	climb := noisyClimb(1200, 400, 400)
+
+	tests := []struct {
+		name      string
+		give      []float64
+		direction domain.Direction
+	}{
+		{name: "rising", give: climb, direction: domain.DirectionRising},
+		{name: "falling", give: negated(climb), direction: domain.DirectionFalling},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := signal.Trends(tt.give, signal.Range{From: 0, Until: 1199}, signal.TrendParameters{Direction: tt.direction, SmoothingSamples: 6, Theta: 3, Sustain: 3})
+			if len(got) != 1 || got[0].From > 420 || got[0].Until < 780 {
+				t.Fatalf("Trends = %d episodes %+v, want the one %s stretch from about 400 to about 800", len(got), got, tt.direction)
+			}
+		})
+	}
+}
+
+func TestTrends_ClimbBrokenByAHole_IsTwoEpisodes(t *testing.T) {
+	values := []float64{0, 1, 2, 3, 4, 5, hole, 7, 8, 9, 10, 11}
+
+	got := signal.Trends(values, signal.Range{From: 0, Until: len(values) - 1}, signal.TrendParameters{Direction: domain.DirectionRising, SmoothingSamples: 1, Theta: 3, Sustain: 3})
+	if len(got) != 2 || got[0].Until != 5 || got[1].From != 7 {
+		t.Errorf("Trends = %+v, want one climb on each side of the hole at 6: a silent stretch is no climb to bridge", got)
+	}
+}
+
+func TestTrends_ClimbTheSmoothingShowsAfterItsLastReading_IsAnEpisodeOnlyWhenThatReadingIsThere(t *testing.T) {
+	parameters := signal.TrendParameters{Direction: domain.DirectionRising, SmoothingSamples: 2, Theta: 0.5, Sustain: 1}
+
+	tests := []struct {
+		name         string
+		give         []float64
+		wantEpisodes int
+	}{
+		{name: "the climb ends on a reading", give: []float64{20, 20, 20, 20, 0, 10, 10, 10}, wantEpisodes: 1},
+		{name: "the climb ends on a hole", give: []float64{20, 20, 20, 20, 0, 10, 10, hole}, wantEpisodes: 0},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := signal.Trends(tt.give, signal.Range{From: 0, Until: len(tt.give) - 1}, parameters); len(got) != tt.wantEpisodes {
+				t.Errorf("Trends = %+v, want %d episodes: a climb with no reading in it has no base to start from", got, tt.wantEpisodes)
+			}
+		})
 	}
 }
 

@@ -6,14 +6,13 @@ import (
 	"database/sql"
 	"fmt"
 
-	_ "modernc.org/sqlite"
+	"modernc.org/sqlite"
 )
 
-// The driver is registered under "sqlite" by modernc.org/sqlite, which is a translation of
-// SQLite into Go rather than a binding. That matters here: the Windows half of the release
-// cross-compiles with CGO_ENABLED=0, which a C binding would not survive.
-const driverName = "sqlite"
-
+// The driver is modernc.org/sqlite, which is a translation of SQLite into Go rather than a binding.
+// That matters here: the Windows half of the release cross-compiles with CGO_ENABLED=0, which a C
+// binding would not survive.
+//
 // Foreign keys are off by default in SQLite, and the sources of an analysis are only ever
 // reached through it, so the cascade is what keeps a delete from leaving orphans behind. The
 // busy timeout covers the window where a write is waiting on another store's connection to the
@@ -22,14 +21,19 @@ const connectionOptions = "?_pragma=foreign_keys(1)&_pragma=busy_timeout(5000)&_
 
 // Open hands back a handle on the database at path, creating the file when it is not there yet.
 //
+// The connector checks the query string of the name it is given before anything is opened, so a
+// path holding a '?' of its own, which shifts the query string onto part of the path, is refused
+// here rather than on the first statement.
+//
 // The handle holds one connection at a time. The rows are written by a person clicking, not by
 // traffic, and serialising removes every chance of a writer meeting a locked database.
 func Open(path string) (*sql.DB, error) {
-	handle, err := sql.Open(driverName, path+connectionOptions)
+	connector, err := sqlite.NewConnector(path + connectionOptions)
 	if err != nil {
 		return nil, fmt.Errorf("open database %q: %w", path, err)
 	}
 
+	handle := sql.OpenDB(connector)
 	handle.SetMaxOpenConns(1)
 
 	return handle, nil

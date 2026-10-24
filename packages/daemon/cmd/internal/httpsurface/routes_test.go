@@ -9,9 +9,12 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/CharlesLB/rrd-analyzer/packages/daemon/cmd/internal/surface"
+	analysisDomain "github.com/CharlesLB/rrd-analyzer/packages/daemon/internal/analysis/domain"
 	analysisInfra "github.com/CharlesLB/rrd-analyzer/packages/daemon/internal/analysis/infrastructure"
+	analysisUsecase "github.com/CharlesLB/rrd-analyzer/packages/daemon/internal/analysis/usecase"
 	insightsDomain "github.com/CharlesLB/rrd-analyzer/packages/daemon/internal/insights/domain"
 	searchesInfra "github.com/CharlesLB/rrd-analyzer/packages/daemon/internal/searches/infrastructure"
 	seriesDomain "github.com/CharlesLB/rrd-analyzer/packages/daemon/internal/series/domain"
@@ -422,5 +425,231 @@ func TestDevelopmentResetForgetsEverySearch(t *testing.T) {
 
 	if len(history) != 0 {
 		t.Errorf("history after a reset = %q, want none", history)
+	}
+}
+
+// oneSourceDump is an rrdtool dump of one series reading 1, 2 and 3 over three five-minute rows.
+const oneSourceDump = `<rrd><version>0003</version><step>300</step><lastupdate>900</lastupdate>` +
+	`<ds><name>value</name><type>GAUGE</type></ds>` +
+	`<rra><cf>AVERAGE</cf><pdp_per_row>1</pdp_per_row><database>` +
+	`<row><v>1.0e+00</v></row><row><v>2.0e+00</v></row><row><v>3.0e+00</v></row>` +
+	`</database></rra></rrd>`
+
+func writtenDump(t *testing.T, name string) string {
+	t.Helper()
+
+	path := filepath.Join(t.TempDir(), name)
+	if err := os.WriteFile(path, []byte(oneSourceDump), 0o600); err != nil {
+		t.Fatalf("write the source: %v", err)
+	}
+
+	return path
+}
+
+func served(t *testing.T, server http.Handler, method string, path string, body string) *httptest.ResponseRecorder {
+	t.Helper()
+
+	recorder := httptest.NewRecorder()
+	server.ServeHTTP(recorder, httptest.NewRequest(method, path, strings.NewReader(body)))
+
+	return recorder
+}
+
+func decoded[T any](t *testing.T, recorder *httptest.ResponseRecorder, wantStatus int) T {
+	t.Helper()
+
+	if recorder.Code != wantStatus {
+		t.Fatalf("status = %d, want %d: %s", recorder.Code, wantStatus, recorder.Body.String())
+	}
+
+	var answered T
+	if err := json.NewDecoder(recorder.Body).Decode(&answered); err != nil {
+		t.Fatalf("decode the answer: %v", err)
+	}
+
+	return answered
+}
+
+func libraryOf(t *testing.T, server http.Handler) []surface.AnalysisView {
+	t.Helper()
+
+	return decoded[[]surface.AnalysisView](t, served(t, server, http.MethodGet, "/api/analyses", ""), http.StatusOK)
+}
+
+func TestRoutesAnswerAMalformedBodyAsTheCallersFault(t *testing.T) {
+	tests := []struct {
+		name       string
+		giveMethod string
+		givePath   string
+	}{
+		{name: "run insights", giveMethod: http.MethodPost, givePath: "/api/analyses/any/insights"},
+		{name: "create an analysis", giveMethod: http.MethodPost, givePath: "/api/analyses"},
+		{name: "rename an analysis", giveMethod: http.MethodPatch, givePath: "/api/analyses/any"},
+		{name: "add sources", giveMethod: http.MethodPost, givePath: "/api/analyses/any/sources"},
+		{name: "save the canvas", giveMethod: http.MethodPut, givePath: "/api/analyses/any/canvas"},
+		{name: "save the library order", giveMethod: http.MethodPut, givePath: "/api/analyses/any/library-order"},
+		{name: "fetch series", giveMethod: http.MethodPost, givePath: "/api/series"},
+		{name: "fetch a chart", giveMethod: http.MethodPost, givePath: "/api/chart"},
+		{name: "remember a search", giveMethod: http.MethodPost, givePath: "/api/search-history/library"},
+		{name: "forget a search", giveMethod: http.MethodPost, givePath: "/api/search-history/library/forget"},
+		{name: "export a csv", giveMethod: http.MethodPost, givePath: "/api/export/csv"},
+		{name: "seed a development analysis", giveMethod: http.MethodPost, givePath: "/api/dev/analyses"},
+	}
+
+	server := newServer(t)
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			recorder := served(t, server, tt.giveMethod, tt.givePath, `{"name":`)
+
+			if recorder.Code != http.StatusBadRequest {
+				t.Errorf("status = %d, want %d: %s", recorder.Code, http.StatusBadRequest, recorder.Body.String())
+			}
+		})
+	}
+}
+
+func TestDeleteRouteTakesTheAnalysisOutOfTheLibrary(t *testing.T) {
+	server := newServer(t)
+	created := createAnalysisOver(t, server, writtenDump(t, "cpu.xml"))
+
+	deleted := served(t, server, http.MethodDelete, "/api/analyses/"+created.ID, "")
+
+	if deleted.Code != http.StatusNoContent {
+		t.Fatalf("status = %d, want %d: %s", deleted.Code, http.StatusNoContent, deleted.Body.String())
+	}
+
+	if library := libraryOf(t, server); len(library) != 0 {
+		t.Errorf("library after the delete = %+v, want it empty", library)
+	}
+}
+
+func TestAddSourcesRouteAnswersWithTheAnalysisAndHowManyFilesWereNew(t *testing.T) {
+	server := newServer(t)
+	listed := writtenDump(t, "cpu.xml")
+	created := createAnalysisOver(t, server, listed)
+	body, err := json.Marshal(addSourcesBody{Files: []surface.FileInfo{
+		{Name: "cpu.xml", Path: listed},
+		{Name: "memory.xml", Path: writtenDump(t, "memory.xml")},
+	}})
+	if err != nil {
+		t.Fatalf("encode the request: %v", err)
+	}
+
+	added := decoded[surface.AddedSourcesView](t, served(t, server, http.MethodPost, "/api/analyses/"+created.ID+"/sources", string(body)), http.StatusOK)
+
+	if added.Added != 1 || added.Analysis.ID != created.ID {
+		t.Errorf("added = %+v, want the one file that was new to %s", added, created.ID)
+	}
+}
+
+func TestAddSourcesRouteAnswersAnUnknownAnalysisAsNotFound(t *testing.T) {
+	recorder := served(t, newServer(t), http.MethodPost, "/api/analyses/missing/sources", `{"files":[{"name":"cpu.xml","path":"/data/cpu.xml"}]}`)
+
+	if recorder.Code != http.StatusNotFound {
+		t.Errorf("status = %d, want %d: %s", recorder.Code, http.StatusNotFound, recorder.Body.String())
+	}
+}
+
+func TestCanvasRouteStoresTheChartsTheLibraryListsTheAnalysisWith(t *testing.T) {
+	server := newServer(t)
+	created := createAnalysisOver(t, server, "")
+	drawn := openBundleOver(t, server, created.ID).Series[0]
+
+	saved := served(t, server, http.MethodPut, "/api/analyses/"+created.ID+"/canvas", `{"canvas":[{"seriesId":"`+drawn.ID+`","label":"`+drawn.Label+`","merged":[]}]}`)
+
+	if saved.Code != http.StatusNoContent {
+		t.Fatalf("status = %d, want %d: %s", saved.Code, http.StatusNoContent, saved.Body.String())
+	}
+
+	library := libraryOf(t, server)
+	if len(library) != 1 || len(library[0].Canvas) != 1 || library[0].Canvas[0].SeriesID != drawn.ID {
+		t.Errorf("library = %+v, want the analysis listed with one chart of %s", library, drawn.ID)
+	}
+}
+
+func TestLibraryOrderRouteListsTheBundlesSeriesInTheOrderSaved(t *testing.T) {
+	server := newServer(t)
+	created := createAnalysisOver(t, server, "")
+	series := openBundleOver(t, server, created.ID).Series
+	last := series[len(series)-1]
+
+	saved := served(t, server, http.MethodPut, "/api/analyses/"+created.ID+"/library-order", `{"libraryOrder":[{"seriesId":"`+last.ID+`","label":"`+last.Label+`"}]}`)
+
+	if saved.Code != http.StatusNoContent {
+		t.Fatalf("status = %d, want %d: %s", saved.Code, http.StatusNoContent, saved.Body.String())
+	}
+
+	if first := openBundleOver(t, server, created.ID).Series[0]; first.ID != last.ID {
+		t.Errorf("first series after the reorder = %s, want %s", first.ID, last.ID)
+	}
+}
+
+func TestWindowRoutesAnswerAWindowForEachSeriesAsked(t *testing.T) {
+	server := newServer(t)
+	created := createAnalysisOver(t, server, writtenDump(t, "cpu.xml"))
+	bundle := openBundleOver(t, server, created.ID)
+	body, err := json.Marshal(analysisUsecase.WindowRequest{
+		AnalysisID:        created.ID,
+		SeriesIDs:         []string{bundle.Series[0].ID},
+		FromMilliseconds:  bundle.FromMilliseconds,
+		UntilMilliseconds: bundle.UntilMilliseconds,
+		Columns:           3,
+	})
+	if err != nil {
+		t.Fatalf("encode the request: %v", err)
+	}
+
+	windows := decoded[[]seriesDomain.Window](t, served(t, server, http.MethodPost, "/api/series", string(body)), http.StatusOK)
+	chart := decoded[analysisUsecase.Chart](t, served(t, server, http.MethodPost, "/api/chart", string(body)), http.StatusOK)
+
+	if len(windows) != 1 || windows[0].SeriesID != bundle.Series[0].ID {
+		t.Errorf("series windows = %+v, want one of %s", windows, bundle.Series[0].ID)
+	}
+
+	if len(chart.Windows) != 1 || len(chart.Statistics) != 1 {
+		t.Errorf("chart = %d windows and %d statistics, want one of each", len(chart.Windows), len(chart.Statistics))
+	}
+}
+
+func TestCSVExportRouteAnswersWithTheDocumentToDownload(t *testing.T) {
+	server := newServer(t)
+	created := createAnalysisOver(t, server, writtenDump(t, "cpu.xml"))
+	body := `{"analysisId":"` + created.ID + `","seriesIds":["s0"],"fromMilliseconds":0,"untilMilliseconds":900000}`
+
+	exported := decoded[csvExport](t, served(t, server, http.MethodPost, "/api/export/csv", body), http.StatusOK)
+
+	if exported.FileName == "" || !strings.HasPrefix(exported.Content, "timestamp,") || exported.SeriesCount != 1 || exported.SampleCount == 0 {
+		t.Errorf("exported = %+v, want a named csv of one series under a timestamp header", exported)
+	}
+}
+
+func TestCSVExportRouteAnswersAnExportOfNoSeriesAsTheCallersFault(t *testing.T) {
+	server := newServer(t)
+	created := createAnalysisOver(t, server, writtenDump(t, "cpu.xml"))
+
+	recorder := served(t, server, http.MethodPost, "/api/export/csv", `{"analysisId":"`+created.ID+`","untilMilliseconds":900000}`)
+
+	if recorder.Code != http.StatusBadRequest {
+		t.Errorf("status = %d, want %d: %s", recorder.Code, http.StatusBadRequest, recorder.Body.String())
+	}
+}
+
+func TestDevelopmentAnalysesRouteCreatesTheAnalysisInTheStateItIsGiven(t *testing.T) {
+	lastAccessed := time.Date(2026, time.August, 28, 15, 0, 0, 0, time.UTC).UnixMilli()
+	body, err := json.Marshal(developmentAnalysisBody{
+		Name:                     "Atlas prod",
+		Files:                    []surface.FileInfo{{Name: "cpu.xml"}},
+		Canvas:                   []analysisDomain.CanvasChart{{SeriesID: "s0", Label: "cpu"}},
+		LastAccessedMilliseconds: lastAccessed,
+	})
+	if err != nil {
+		t.Fatalf("encode the request: %v", err)
+	}
+
+	created := decoded[surface.AnalysisView](t, served(t, newServer(t), http.MethodPost, "/api/dev/analyses", string(body)), http.StatusOK)
+
+	if created.Name != "Atlas prod" || created.LastAccessedMilliseconds != lastAccessed || len(created.Canvas) != 1 {
+		t.Errorf("created = %+v, want Atlas prod opened at %d on one chart", created, lastAccessed)
 	}
 }

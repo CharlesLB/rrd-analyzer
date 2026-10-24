@@ -94,7 +94,11 @@ func (entry logEntry) about(served request, noise *rand.Rand) logEntry {
 }
 
 // logOf is the log the service wrote over the recording, one JSON object per line, oldest first.
-func logOf(readings recording) ([]byte, error) {
+//
+// A record is strings and integers, which JSON always encodes, written into a buffer that grows
+// rather than fails, so the error each encoding hands back is nil for every entry and is not passed
+// on.
+func logOf(readings recording) []byte {
 	//nolint:gosec // G404: the sample's log is meant to be reproducible, not unpredictable.
 	noise := rand.New(rand.NewPCG(logSeed, noiseStream))
 
@@ -115,12 +119,10 @@ func logOf(readings recording) ([]byte, error) {
 
 	for _, entry := range entries {
 		entry.record.Timestamp = entry.at.UTC().Format(timestampLayout)
-		if err := encoder.Encode(entry.record); err != nil {
-			return nil, fmt.Errorf("encode the log entry of %s: %w", entry.record.Timestamp, err)
-		}
+		_ = encoder.Encode(entry.record)
 	}
 
-	return lines.Bytes(), nil
+	return lines.Bytes()
 }
 
 // routineEntries are what the service says on an ordinary day, every twenty to fifty minutes, except

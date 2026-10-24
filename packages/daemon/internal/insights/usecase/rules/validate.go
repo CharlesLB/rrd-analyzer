@@ -254,12 +254,9 @@ func (checker *checker) requiredTemplate(key, text string, aliases map[string]bo
 }
 
 // template parses one piece of cause text and checks that every token in it names a condition of
-// the rule. Text the document left out is no template and no problem.
+// the rule. Its callers decide what text the document left out means, a missing cause or the
+// rule's own cause for a partial match, so the text it is handed is never empty.
 func (checker *checker) template(key, text string, aliases map[string]bool) domain.Template {
-	if text == "" {
-		return nil
-	}
-
 	template, err := ParseTemplate(text)
 	if err != nil {
 		checker.add(invalidTemplate, fmt.Sprintf("%s: %v", key, err))

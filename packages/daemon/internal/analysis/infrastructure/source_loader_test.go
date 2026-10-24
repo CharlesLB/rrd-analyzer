@@ -190,3 +190,31 @@ func TestSourceLoader_TheCallerLeavingMidway_EndsEveryReadUnderWay(t *testing.T)
 		t.Fatalf("err = %v, want %v", err, context.Canceled)
 	}
 }
+
+func TestNewSourceLoader_WithoutASeriesReader_RefusesToBuild(t *testing.T) {
+	defer func() {
+		if recover() == nil {
+			t.Fatal("a loader was built with nothing to read series through")
+		}
+	}()
+
+	analysisInfra.NewSourceLoader(nil)
+}
+
+// selfCancellingSeriesReader reports every read as cancelled although its caller never gave up, the
+// way a reader stopped by a deadline of its own would.
+type selfCancellingSeriesReader struct{}
+
+func (selfCancellingSeriesReader) ReadSeries(context.Context, string) ([]seriesDomain.Series, error) {
+	return nil, fmt.Errorf("read interrupted: %w", context.Canceled)
+}
+
+func TestSourceLoader_AReadCancelledByTheReaderItself_IsTheFailureNamed(t *testing.T) {
+	files := sourcesNumbered(1)
+
+	_, err := analysisInfra.NewSourceLoader(selfCancellingSeriesReader{}).Load(context.Background(), files)
+
+	if !errors.Is(err, context.Canceled) {
+		t.Fatalf("err = %v, want the cancellation the reader reported", err)
+	}
+}

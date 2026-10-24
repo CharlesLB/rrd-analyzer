@@ -117,6 +117,14 @@ func TestTypeOf_Clauses_AllMustHoldAndFirstMatchWins(t *testing.T) {
 	}
 }
 
+func TestTypeOf_PhraseOfNoWords_MatchesNoSeries(t *testing.T) {
+	entries := []domain.ClassifierEntry{{Type: "anything.at.all", NameAny: []string{"_"}}}
+
+	if got, found := classify.TypeOf(entries, gauge("app_queue.rrd", "value")); found {
+		t.Errorf("TypeOf = %q, want no type: a phrase without words would otherwise hold for every name", got)
+	}
+}
+
 func TestClassify_Series_SplitIntoClassifiedAndUnclassifiedInCatalogOrder(t *testing.T) {
 	entries := []domain.ClassifierEntry{{Type: "cpu.user", NameAny: []string{"cpu_user"}}}
 	series := []domain.SeriesInfo{
@@ -191,17 +199,6 @@ func TestParse_ClassifierDocuments_RejectInvalidEntriesOneByOne(t *testing.T) {
 	}
 }
 
-func hashOf(t *testing.T, entries []domain.ClassifierEntry) string {
-	t.Helper()
-
-	hash, err := classify.Hash(entries)
-	if err != nil {
-		t.Fatalf("hash: %v", err)
-	}
-
-	return hash
-}
-
 func TestTypesAndHash_FollowEntryOrder(t *testing.T) {
 	forwards := []domain.ClassifierEntry{{Type: "cpu.user", NameAny: []string{"cpu"}}, {Type: "disk.read", NameAny: []string{"read"}}, {Type: "cpu.user", NameAny: []string{"user"}}}
 	backwards := []domain.ClassifierEntry{forwards[2], forwards[1], forwards[0]}
@@ -210,12 +207,12 @@ func TestTypesAndHash_FollowEntryOrder(t *testing.T) {
 		t.Errorf("Types = %v, want cpu.user then disk.read once each", types)
 	}
 
-	if hashOf(t, forwards) == hashOf(t, backwards) {
+	if classify.Hash(forwards) == classify.Hash(backwards) {
 		t.Error("reordering entries did not change the hash")
 	}
 
 	rebuilt := []domain.ClassifierEntry{backwards[2], backwards[1], backwards[0]}
-	if hashOf(t, forwards) != hashOf(t, rebuilt) {
+	if classify.Hash(forwards) != classify.Hash(rebuilt) {
 		t.Error("the same entries in the same order hashed differently")
 	}
 }

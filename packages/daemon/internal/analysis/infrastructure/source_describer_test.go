@@ -87,3 +87,45 @@ func TestSourceDescriberStopsOnceTheCallerHasGone(t *testing.T) {
 		t.Fatalf("want context.Canceled, got %v", err)
 	}
 }
+
+func TestSourceDescriber_APathNothingIsAt_IsRefused(t *testing.T) {
+	gone := filepath.Join(t.TempDir(), "moved.rrd")
+
+	if _, err := analysisInfra.NewSourceDescriber().Describe(context.Background(), []string{gone}); err == nil {
+		t.Fatal("want an error for a path nothing is at, got none")
+	}
+}
+
+const (
+	listableFolderMode = 0o700
+
+	// A folder that can be searched but not read cannot be listed, and one that can be read but
+	// not searched lists its names while every file in it stays out of reach.
+	unlistableFolderMode   = 0o300
+	unsearchableFolderMode = 0o400
+)
+
+func TestSourceDescriber_ADroppedFolderItCannotRead_IsRefused(t *testing.T) {
+	tests := []struct {
+		name     string
+		giveMode os.FileMode
+	}{
+		{name: "a folder that cannot be listed", giveMode: unlistableFolderMode},
+		{name: "a folder whose files cannot be looked at", giveMode: unsearchableFolderMode},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			folder := filepath.Dir(writeSource(t, "RRD dump"))
+			if err := os.Chmod(folder, tt.giveMode); err != nil {
+				t.Fatalf("restrict the folder: %v", err)
+			}
+
+			t.Cleanup(func() { _ = os.Chmod(folder, listableFolderMode) })
+
+			if _, err := analysisInfra.NewSourceDescriber().Describe(context.Background(), []string{folder}); err == nil {
+				t.Fatal("want an error for a folder that cannot be read, got none")
+			}
+		})
+	}
+}

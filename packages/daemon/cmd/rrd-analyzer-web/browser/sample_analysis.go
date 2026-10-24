@@ -18,6 +18,9 @@ import (
 // the sample hands its log over for the page to open the way it opens one a person drops.
 const sampleAnalysisRoute = "GET /api/sample-analysis"
 
+// sampleGenerator writes the sample analysis: its sources, the charts it opens on and its log.
+type sampleGenerator func() (sampleanalysis.Dataset, error)
+
 type sampleAnalysisView struct {
 	AnalysisID string  `json:"analysisId"`
 	Log        logView `json:"log"`
@@ -32,8 +35,11 @@ type logView struct {
 // a person opens, so the sample is read, charted and copied exactly the way their own files are.
 // It answers with what the sample analysis route serves, encoded once: the log is a hundred kilobytes that
 // never change.
-func seedSampleAnalysis(callerContext context.Context, operations *surface.Operations, files *memoryfiles.Files, now time.Time) ([]byte, error) {
-	dataset, err := sampleanalysis.Generate()
+//
+// The view is strings, which JSON always encodes, so the error encoding it hands back is nil for every
+// sample and is not passed on.
+func seedSampleAnalysis(callerContext context.Context, operations *surface.Operations, files *memoryfiles.Files, generateSample sampleGenerator, now time.Time) ([]byte, error) {
+	dataset, err := generateSample()
 	if err != nil {
 		return nil, fmt.Errorf("generate the sample analysis: %w", err)
 	}
@@ -53,10 +59,7 @@ func seedSampleAnalysis(callerContext context.Context, operations *surface.Opera
 		return nil, fmt.Errorf("create %q: %w", sampleanalysis.Name, err)
 	}
 
-	view, err := json.Marshal(sampleAnalysisView{AnalysisID: created.ID, Log: logView{FileName: dataset.Log.Name, Content: string(dataset.Log.Content)}})
-	if err != nil {
-		return nil, fmt.Errorf("encode what the sample analysis route answers: %w", err)
-	}
+	view, _ := json.Marshal(sampleAnalysisView{AnalysisID: created.ID, Log: logView{FileName: dataset.Log.Name, Content: string(dataset.Log.Content)}})
 
 	return view, nil
 }

@@ -181,6 +181,10 @@ const (
 	twoPassRows   = 2000
 	twoPassBudget = 500
 	coarseStep    = 4 * minute
+
+	// coarseReadsOfWideWithShort is pass one reading the CPU and the load series, after which the
+	// next read is the load surge measured again at the finest step.
+	coarseReadsOfWideWithShort = 2
 )
 
 func twoPassSeries() []fakeSeries {
@@ -315,20 +319,28 @@ when = "excursion"
 overlaps = "cpu.user"
 `
 
-func TestScan_FindingTooWideToRefine_MeasuresItsShortEpisodesAgainAtTheFinestStep(t *testing.T) {
+// alternatingLoad never settles on one reading, so a stretch of it is no surge and a minute of it is
+// no average of a coarse bucket.
+func alternatingLoad() []float64 {
 	load := make([]float64, twoPassRows)
 	for index := range load {
 		load[index] = float64(1 + index%2)
 	}
 
-	output := scan(t, scenario{
-		document: wideWithShortDocument,
-		series: []fakeSeries{
-			series("cpu", "cpu.rrd", "value", "%", constant(twoPassRows, 100)),
-			series("load", "load.rrd", "value", "", withValue(load, 1501, 2, 100)),
-		},
-		fineSampleBudget: twoPassBudget,
-	})
+	return load
+}
+
+// wideWithShortSeries is CPU busy over the whole window, too wide a finding to refine, and a load
+// surge of two minutes inside it.
+func wideWithShortSeries() []fakeSeries {
+	return []fakeSeries{
+		series("cpu", "cpu.rrd", "value", "%", constant(twoPassRows, 100)),
+		series("load", "load.rrd", "value", "", withValue(alternatingLoad(), 1501, 2, 100)),
+	}
+}
+
+func TestScan_FindingTooWideToRefine_MeasuresItsShortEpisodesAgainAtTheFinestStep(t *testing.T) {
+	output := scan(t, scenario{document: wideWithShortDocument, series: wideWithShortSeries(), fineSampleBudget: twoPassBudget})
 
 	if len(output.Findings) != 1 {
 		t.Fatalf("findings = %+v, want one", output.Findings)
@@ -413,6 +425,7 @@ func TestScan_ReadFailures_StopTheScan(t *testing.T) {
 		{name: "cancelled between reads", callerContext: cancelling, test: scenario{document: twoPassDocument, series: twoPassSeries()}, reader: &fakeReader{cancel: cancelOnRead}, wantErr: context.Canceled},
 		{name: "refused coarse read", callerContext: context.Background(), test: scenario{document: gapsDocument, series: cpu, fineSampleBudget: twoPassBudget}, reader: &fakeReader{refuse: "cpu"}, wantErr: errReadRefused},
 		{name: "refused fine read", callerContext: context.Background(), test: scenario{document: gapsDocument, series: cpu, fineSampleBudget: twoPassBudget}, reader: &fakeReader{refuseAfter: 1}, wantErr: errReadRefused},
+		{name: "refused remeasuring read", callerContext: context.Background(), test: scenario{document: wideWithShortDocument, series: wideWithShortSeries(), fineSampleBudget: twoPassBudget}, reader: &fakeReader{refuseAfter: coarseReadsOfWideWithShort}, wantErr: errReadRefused},
 	}
 
 	for _, tt := range tests {
@@ -486,5 +499,62 @@ func TestScan_CollapseAgainstTheMedianLongerThanAFewCoarseSteps_IsStillFoundInTw
 
 	if len(output.Findings) != 1 || output.Findings[0].FromMilliseconds > at(1000) || output.Findings[0].UntilMilliseconds < at(1059) {
 		t.Errorf("findings = %+v, want one over the hour at 5%% of the median", output.Findings)
+	}
+}
+
+const loadBesideBusyCPUDocument = `
+[[rule]]
+id = "busy-load"
+severity = "warning"
+title = "Busy"
+cause = "CPU busy while load peaked at {load.avg.peak}."
+
+[[rule.condition]]
+type = "cpu.user"
+when = "> 50"
+
+[[rule.condition]]
+type = "load.avg"
+when = "> 50"
+overlaps = "cpu.user"
+`
+
+func TestScan_CoarseEpisodeMeasuredAgainBesideAnotherOne_TakesTheFineEpisodeItOverlaps(t *testing.T) {
+	load := withValue(withValue(alternatingLoad(), 1501, 2, 100), 1509, 2, 200)
+
+	output := scan(t, scenario{
+		document:         loadBesideBusyCPUDocument,
+		series:           []fakeSeries{series("cpu", "cpu.rrd", "value", "%", constant(twoPassRows, 100)), series("load", "load.rrd", "value", "", load)},
+		fineSampleBudget: twoPassBudget,
+	})
+
+	if len(output.Findings) != 1 {
+		t.Fatalf("findings = %+v, want one", output.Findings)
+	}
+
+	finding := output.Findings[0]
+	if got := causeText(finding); !strings.HasSuffix(got, "load peaked at 200.") || finding.Evidence[1].StepMilliseconds != minute {
+		t.Errorf("cause = %q at step %d, want the 200 surge pass one joined, measured at the minute, not the 100 beside it", got, finding.Evidence[1].StepMilliseconds)
+	}
+}
+
+func TestScan_FineRepeatsInARegionTooWideToReadFinely_AreLeftOutRatherThanCountedCoarsely(t *testing.T) {
+	const (
+		firstRestart    = 1000
+		lastRestart     = 1600
+		restartInterval = 10
+	)
+
+	var restarts []int
+	for restart := firstRestart; restart <= lastRestart; restart += restartInterval {
+		restarts = append(restarts, restart)
+	}
+
+	uptime := series("uptime", "uptime.rrd", "value", "", uptimeRestartingAt(twoPassRows, restarts...))
+
+	output := scan(t, scenario{document: burstDocument, series: []fakeSeries{uptime}, fineSampleBudget: twoPassBudget, episodeCap: len(restarts)})
+
+	if len(output.Findings) != 0 {
+		t.Errorf("findings = %+v, want none: only a fine read can count three restarts within thirty minutes, and their region is past the budget", output.Findings)
 	}
 }

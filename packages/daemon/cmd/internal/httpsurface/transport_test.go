@@ -1,12 +1,14 @@
 package httpsurface
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"go/ast"
 	"go/parser"
 	"go/token"
 	"io/fs"
+	"math"
 	"net/http"
 	"net/http/httptest"
 	"path/filepath"
@@ -194,5 +196,45 @@ func TestDecodeRefusesABodyPastTheLimit(t *testing.T) {
 
 	if recorder.Code != http.StatusBadRequest {
 		t.Errorf("status = %d, want %d", recorder.Code, http.StatusBadRequest)
+	}
+}
+
+func TestUnavailableDialogsRefuseEveryHalfOnlyANativeWindowHas(t *testing.T) {
+	dialogs := UnavailableDialogs{}
+	tests := []struct {
+		name string
+		give func() error
+	}{
+		{name: "pick sources", give: func() error {
+			_, err := dialogs.PickSources(context.Background())
+
+			return err
+		}},
+		{name: "pick a save target", give: func() error {
+			_, err := dialogs.PickSaveTarget(context.Background(), "cpu.csv")
+
+			return err
+		}},
+		{name: "write an export", give: func() error {
+			return dialogs.Write(context.Background(), "/data/cpu.csv", []byte("timestamp"))
+		}},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if err := tt.give(); err == nil {
+				t.Error("err = nil, want the refusal a browser is answered with")
+			}
+		})
+	}
+}
+
+func TestRespondAnswersAPayloadJSONCannotEncodeWithNoHalfWrittenBody(t *testing.T) {
+	recorder := httptest.NewRecorder()
+
+	respond(recorder, math.NaN(), nil)
+
+	if recorder.Body.Len() != 0 {
+		t.Errorf("body = %q, want nothing written", recorder.Body.String())
 	}
 }

@@ -3,6 +3,7 @@ package infrastructure_test
 import (
 	"context"
 	"errors"
+	"strings"
 	"testing"
 
 	rrdDomain "github.com/CharlesLB/rrd-analyzer/packages/daemon/internal/rrd/domain"
@@ -41,4 +42,23 @@ func TestSeriesReaderPassesOnWhyTheSourceCouldNotBeRead(t *testing.T) {
 	if !errors.Is(err, rrdDomain.ErrUnreadableSource) {
 		t.Fatalf("err = %v, want %v", err, rrdDomain.ErrUnreadableSource)
 	}
+}
+
+func TestSeriesReaderReportsADumpThatDoesNotParse(t *testing.T) {
+	_, err := rrdInfra.NewSeriesReader(fixedDumpReader{dump: []byte("<rrd><step>")}).ReadSeries(context.Background(), "/data/cut.xml")
+
+	if !errors.Is(err, rrdDomain.ErrNotAnRRDDump) {
+		t.Fatalf("err = %v, want %v", err, rrdDomain.ErrNotAnRRDDump)
+	}
+}
+
+func TestNewSeriesReaderWithoutADumpReaderPanicsNamingTheWire(t *testing.T) {
+	defer func() {
+		recovered := recover()
+		if message, isText := recovered.(string); !isText || !strings.Contains(message, "DumpReader") {
+			t.Errorf("panic = %v, want a message naming the DumpReader", recovered)
+		}
+	}()
+
+	rrdInfra.NewSeriesReader(nil)
 }

@@ -42,3 +42,11 @@ func TestSourcePresenceStopsWhenTheCallerHasGivenUp(t *testing.T) {
 		t.Fatal("exists answered for a caller that had given up")
 	}
 }
+
+func TestSourcePresence_APathThroughAFile_ReportsTheFailureToLook(t *testing.T) {
+	throughAFile := filepath.Join(writeSource(t, "RRD dump"), "inner.rrd")
+
+	if _, err := analysisInfra.NewSourcePresence().Exists(context.Background(), throughAFile); err == nil {
+		t.Fatal("exists answered for a path whose folder is a file")
+	}
+}

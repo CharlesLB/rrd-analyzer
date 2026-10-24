@@ -195,3 +195,15 @@ func TestInsightsSourceCatalog_SeriesThatDifferOnlyInWhereAPartEnds_HaveDifferen
 		t.Errorf("both fingerprints are %q, want series read from different files in different units told apart", one)
 	}
 }
+
+func TestInsightsSource_AnAnalysisTheLibraryDoesNotHold_IsReportedAsNotFound(t *testing.T) {
+	source, _, _ := newInsightsSource(t)
+
+	if _, err := source.Catalog(context.Background(), "missing"); !errors.Is(err, analysisDomain.ErrAnalysisNotFound) {
+		t.Errorf("catalog err = %v, want %v", err, analysisDomain.ErrAnalysisNotFound)
+	}
+
+	if _, err := source.Read(context.Background(), insightsDomain.ReadRequest{AnalysisID: "missing", SeriesID: "s0"}); !errors.Is(err, analysisDomain.ErrAnalysisNotFound) {
+		t.Errorf("read err = %v, want %v", err, analysisDomain.ErrAnalysisNotFound)
+	}
+}

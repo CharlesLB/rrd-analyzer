@@ -91,3 +91,39 @@ func TestUnitRulesLoad_AnEditedFile_IsReadAgain(t *testing.T) {
 		t.Errorf("rules after the edit = %+v, want the edited unit", got)
 	}
 }
+
+func TestUnitRulesLoad_AFolderInPlaceOfTheFile_HoldsNoRules(t *testing.T) {
+	directory := t.TempDir()
+	if err := os.Mkdir(filepath.Join(directory, analysisInfra.UnitsFileName), 0o700); err != nil {
+		t.Fatalf("make the folder: %v", err)
+	}
+
+	if got := analysisInfra.NewUnitRulesLoader(directory).Load(context.Background()); len(got) != 0 {
+		t.Errorf("rules = %+v, want none", got)
+	}
+}
+
+func TestUnitRulesLoad_NoConfigurationDirectoryOrACallerThatHasGone_HoldsNoRules(t *testing.T) {
+	directory := t.TempDir()
+	writeUnits(t, directory, "[[unit]]\nseries = \"a\"\nunit = \"ms\"\n", time.Now())
+
+	gone, leave := context.WithCancel(context.Background())
+	leave()
+
+	tests := []struct {
+		name          string
+		giveDirectory string
+		giveContext   context.Context
+	}{
+		{name: "no configuration directory", giveContext: context.Background()},
+		{name: "a caller that has gone", giveDirectory: directory, giveContext: gone},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := analysisInfra.NewUnitRulesLoader(tt.giveDirectory).Load(tt.giveContext); len(got) != 0 {
+				t.Errorf("rules = %+v, want none", got)
+			}
+		})
+	}
+}

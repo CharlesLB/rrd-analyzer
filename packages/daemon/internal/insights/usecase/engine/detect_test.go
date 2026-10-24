@@ -42,3 +42,13 @@ func TestDetect_DriftOverARangeReachingBeforeTheFrame_IsTimedByTheSamplesThereAr
 		t.Errorf("detect = %+v, want one drift starting at the first sample of the frame", got)
 	}
 }
+
+func TestDetect_LookbackFromTheFirstSample_ReachesOnlyBeforeTheFrameAndFindsNothing(t *testing.T) {
+	values := []float64{1, 2, 3, 4, 5, 6}
+	bound := binding{frame: Frame{Samples: domain.Samples{StepMilliseconds: 60000, Values: values}}, values: values}
+	rising := domain.Condition{When: domain.When{Detector: domain.DetectorRising}, Parameters: domain.DetectorParameters{Theta: signal.DefaultTrendTheta, Sustain: 1}}
+
+	if got := detect(rising, bound, signal.Range{From: -10, Until: -1}); got != nil {
+		t.Errorf("detect = %+v, want nothing: no sample lies in the range searched", got)
+	}
+}

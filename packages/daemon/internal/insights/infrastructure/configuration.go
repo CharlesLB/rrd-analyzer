@@ -44,6 +44,11 @@ type stamps struct {
 type ConfigurationLoader struct {
 	userConfigDirectory string
 
+	// assemble lays the files over the defaults. It is the use case's AssembleConfiguration, held as
+	// a field because over the embedded defaults it cannot fail, and a loader built on one that does
+	// is how the failure is shown not to be remembered.
+	assemble func(files usecase.UserFiles) (domain.Configuration, error)
+
 	mutex         sync.Mutex
 	loaded        bool
 	loadedStamps  stamps
@@ -53,7 +58,7 @@ type ConfigurationLoader struct {
 var _ domain.ConfigurationSource = (*ConfigurationLoader)(nil)
 
 func NewConfigurationLoader(userConfigDirectory string) *ConfigurationLoader {
-	return &ConfigurationLoader{userConfigDirectory: userConfigDirectory}
+	return &ConfigurationLoader{userConfigDirectory: userConfigDirectory, assemble: usecase.AssembleConfiguration}
 }
 
 func (loader *ConfigurationLoader) Load(callerContext context.Context) (domain.Configuration, error) {
@@ -83,7 +88,7 @@ func (loader *ConfigurationLoader) Load(callerContext context.Context) (domain.C
 }
 
 func (loader *ConfigurationLoader) build() (domain.Configuration, error) {
-	return usecase.AssembleConfiguration(usecase.UserFiles{
+	return loader.assemble(usecase.UserFiles{
 		Classifier: loader.readUserFile(ClassifierFileName),
 		Rules:      loader.readUserFile(RulesFileName),
 	})

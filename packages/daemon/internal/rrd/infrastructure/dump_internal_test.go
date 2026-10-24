@@ -5,8 +5,10 @@ import (
 	"errors"
 	"io/fs"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"runtime"
+	"strings"
 	"testing"
 	"time"
 
@@ -96,5 +98,50 @@ func TestDumpReaderHandsRRDToolThePathAfterTheEndOfItsOptions(t *testing.T) {
 
 	if want := "dump\n--\n" + source + "\n"; string(arguments) != want {
 		t.Errorf("rrdtool was run with %q, want %q so a path can never be read as an option", arguments, want)
+	}
+}
+
+func TestDumpReaderReportsAnRRDToolThatFailsWithWhatItWroteToStandardError(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("the stand-in rrdtool is a shell script")
+	}
+
+	directory := t.TempDir()
+	tool := filepath.Join(directory, dumpToolName)
+
+	if err := os.WriteFile(tool, []byte("#!/bin/sh\necho 'ERROR: unknown data source format' >&2\nexit 1\n"), 0o700); err != nil {
+		t.Fatalf("write stand-in tool: %v", err)
+	}
+
+	source := filepath.Join(directory, "broken.rrd")
+	if err := os.WriteFile(source, []byte("RRD\x00a layout this build does not read in place"), 0o600); err != nil {
+		t.Fatalf("write source: %v", err)
+	}
+
+	reader := &DumpReader{contents: diskContents{}, toolPath: tool, timeout: hangingToolBound, withoutTool: rrdDomain.ErrDumpToolMissing}
+
+	_, err := reader.ReadDump(context.Background(), source)
+
+	var exitError *exec.ExitError
+	if !errors.As(err, &exitError) || !strings.Contains(err.Error(), "unknown data source format") {
+		t.Fatalf("err = %v, want the tool's exit status and what it wrote to standard error", err)
+	}
+}
+
+func TestDumpReaderReportsAnRRDToolThatCannotBeStarted(t *testing.T) {
+	directory := t.TempDir()
+
+	source := filepath.Join(directory, "old.rrd")
+	if err := os.WriteFile(source, []byte("RRD\x00a layout this build does not read in place"), 0o600); err != nil {
+		t.Fatalf("write source: %v", err)
+	}
+
+	reader := &DumpReader{contents: diskContents{}, toolPath: filepath.Join(directory, "uninstalled", dumpToolName), timeout: hangingToolBound, withoutTool: rrdDomain.ErrDumpToolMissing}
+
+	_, err := reader.ReadDump(context.Background(), source)
+
+	var exitError *exec.ExitError
+	if err == nil || errors.As(err, &exitError) || !errors.Is(err, fs.ErrNotExist) {
+		t.Fatalf("err = %v, want the reason the tool could not be started", err)
 	}
 }

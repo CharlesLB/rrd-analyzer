@@ -2,6 +2,7 @@ package synthetic_test
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"testing"
 
@@ -123,4 +124,31 @@ func TestLoaderKeepsAGapInEveryArchive(t *testing.T) {
 
 func averageSamplesOf(series seriesDomain.Series) []seriesDomain.Sample {
 	return series.ArchivesFor(seriesDomain.ConsolidationAverage)[0].Samples
+}
+
+func TestLoader_ACallerThatHasGone_BuildsNothing(t *testing.T) {
+	gone, leave := context.WithCancel(context.Background())
+	leave()
+
+	if _, err := synthetic.NewLoader().Load(gone, nil); !errors.Is(err, context.Canceled) {
+		t.Fatalf("err = %v, want %v", err, context.Canceled)
+	}
+}
+
+func TestLoader_OneFilePerMetric_NamesEachSeriesAfterItsFileAlone(t *testing.T) {
+	fileNames := make([]string, 0, len(referenceProbes))
+	for number := range len(referenceProbes) {
+		fileNames = append(fileNames, fmt.Sprintf("host%02d.rrd", number))
+	}
+
+	loaded, err := synthetic.NewLoader().Load(context.Background(), fileNames)
+	if err != nil {
+		t.Fatalf("load synthetic series: %v", err)
+	}
+
+	for index, series := range loaded {
+		if want := fmt.Sprintf("host%02d", index); series.Name != want || series.File != fileNames[index] {
+			t.Errorf("series %d = %q from %q, want %q from %q", index, series.Name, series.File, want, fileNames[index])
+		}
+	}
 }

@@ -13,6 +13,7 @@ import (
 
 	"github.com/CharlesLB/rrd-analyzer/packages/daemon/cmd/internal/httpsurface"
 	"github.com/CharlesLB/rrd-analyzer/packages/daemon/cmd/internal/surface"
+	"github.com/CharlesLB/rrd-analyzer/packages/daemon/cmd/rrd-analyzer-web/browser/sampleanalysis"
 	analysisInfra "github.com/CharlesLB/rrd-analyzer/packages/daemon/internal/analysis/infrastructure"
 	rrdInfra "github.com/CharlesLB/rrd-analyzer/packages/daemon/internal/rrd/infrastructure"
 	searchesInfra "github.com/CharlesLB/rrd-analyzer/packages/daemon/internal/searches/infrastructure"
@@ -33,6 +34,11 @@ type Edition struct {
 // New builds the edition and opens its library on the sample analysis, so a visitor has something
 // to explore before opening a file of their own. now is the moment the sample counts as opened.
 func New(callerContext context.Context, now time.Time) (*Edition, error) {
+	return newEdition(callerContext, now, sampleanalysis.Generate)
+}
+
+// newEdition builds the edition over the sample generateSample writes.
+func newEdition(callerContext context.Context, now time.Time, generateSample sampleGenerator) (*Edition, error) {
 	files := memoryfiles.New()
 
 	operations := surface.Build(surface.Wiring{
@@ -45,7 +51,7 @@ func New(callerContext context.Context, now time.Time) (*Edition, error) {
 		Writer:                 httpsurface.UnavailableDialogs{},
 	})
 
-	sampleAnswer, err := seedSampleAnalysis(callerContext, operations, files, now)
+	sampleAnswer, err := seedSampleAnalysis(callerContext, operations, files, generateSample, now)
 	if err != nil {
 		return nil, fmt.Errorf("open the sample analysis: %w", err)
 	}

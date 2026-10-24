@@ -355,3 +355,35 @@ func TestParseDumpRefusesAnXMLHeaderPastWhatTheBinaryReaderAllows(t *testing.T) 
 		})
 	}
 }
+
+func TestParseDumpReadsAReadingMissingFromARowAsAGap(t *testing.T) {
+	dump := `<rrd><version>0003</version><step>300</step><lastupdate>3000</lastupdate>` +
+		`<ds><name>inbound</name><type>GAUGE</type></ds><ds><name>outbound</name><type>GAUGE</type></ds>` +
+		`<rra><cf>AVERAGE</cf><pdp_per_row>1</pdp_per_row><database>` +
+		`<row><v>1.0</v><v>2.0</v></row><row><v>3.0</v></row></database></rra></rrd>`
+
+	parsed, err := rrdUsecase.ParseDump([]byte(dump), "/sources/link.rrd")
+	if err != nil {
+		t.Fatalf("parse dump: %v", err)
+	}
+
+	assertSamples(t, "inbound", archiveOf(t, parsed[0], seriesDomain.ConsolidationAverage, 300*1000).Samples, []float64{1, 3})
+	assertSamples(t, "outbound", archiveOf(t, parsed[1], seriesDomain.ConsolidationAverage, 300*1000).Samples, []float64{2, 0})
+}
+
+func TestParseDumpLeavesOutAnArchiveWithoutRowsOrWithoutPointsPerRow(t *testing.T) {
+	dump := `<rrd><version>0003</version><step>300</step><lastupdate>3000</lastupdate>` +
+		`<ds><name>value</name><type>GAUGE</type></ds>` +
+		`<rra><cf>AVERAGE</cf><pdp_per_row>1</pdp_per_row><database></database></rra>` +
+		`<rra><cf>MAX</cf><pdp_per_row>0</pdp_per_row><database><row><v>9.0</v></row></database></rra>` +
+		`<rra><cf>AVERAGE</cf><pdp_per_row>2</pdp_per_row><database><row><v>1.0</v></row></database></rra></rrd>`
+
+	parsed, err := rrdUsecase.ParseDump([]byte(dump), "/sources/sparse.rrd")
+	if err != nil {
+		t.Fatalf("parse dump: %v", err)
+	}
+
+	if len(parsed[0].Archives) != 1 || parsed[0].Archives[0].StepMilliseconds != 600*1000 {
+		t.Fatalf("archives = %+v, want only the average over two steps", parsed[0].Archives)
+	}
+}

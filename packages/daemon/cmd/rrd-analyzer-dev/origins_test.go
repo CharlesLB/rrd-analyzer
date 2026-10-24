@@ -44,3 +44,20 @@ func TestAllowWebOriginsLetsOnlyTheWebAppCallFromABrowser(t *testing.T) {
 		})
 	}
 }
+
+func TestAllowWebOriginsAnswersAPreflightWithoutReachingTheRoutes(t *testing.T) {
+	served := false
+	handler := allowWebOrigins([]string{"http://localhost:4200"}, http.HandlerFunc(func(http.ResponseWriter, *http.Request) {
+		served = true
+	}))
+	request := httptest.NewRequest(http.MethodOptions, "/api/analyses", http.NoBody)
+	request.Header.Set("Origin", "http://localhost:4200")
+	recorder := httptest.NewRecorder()
+
+	handler.ServeHTTP(recorder, request)
+
+	if recorder.Code != http.StatusNoContent || served || recorder.Header().Get("Access-Control-Allow-Methods") == "" {
+		t.Errorf("preflight answered %d with methods %q, served %v; want %d with the allowed methods, not served",
+			recorder.Code, recorder.Header().Get("Access-Control-Allow-Methods"), served, http.StatusNoContent)
+	}
+}

@@ -12,6 +12,7 @@ import (
 	"testing"
 
 	"github.com/CharlesLB/rrd-analyzer/packages/daemon/cmd/internal/surface"
+	analysisDomain "github.com/CharlesLB/rrd-analyzer/packages/daemon/internal/analysis/domain"
 	analysisInfra "github.com/CharlesLB/rrd-analyzer/packages/daemon/internal/analysis/infrastructure"
 	exportDomain "github.com/CharlesLB/rrd-analyzer/packages/daemon/internal/export/domain"
 	exportInfra "github.com/CharlesLB/rrd-analyzer/packages/daemon/internal/export/infrastructure"
@@ -20,15 +21,16 @@ import (
 
 var pngSignature = []byte{0x89, 'P', 'N', 'G', '\r', '\n', 0x1a, '\n'}
 
-// savePicker stands in for the native save dialog: it answers with a fixed target and remembers
-// the names it was offered.
+// savePicker stands in for the native dialogs: it answers the open dialog with fixed files and the
+// save dialog with a fixed target, and remembers the names it was offered.
 type savePicker struct {
+	picked    []surface.FileInfo
 	target    string
 	suggested []string
 }
 
 func (picker *savePicker) PickSources(context.Context) ([]surface.FileInfo, error) {
-	return nil, nil
+	return picker.picked, nil
 }
 
 func (picker *savePicker) PickSaveTarget(_ context.Context, suggestedName string) (string, error) {
@@ -325,5 +327,104 @@ func TestBuild_WiresTheConfiguredUnitsAndTheLookForMissingSourcesIntoTheAnalyses
 	missing, err := operations.MissingSources(context.Background(), created.ID)
 	if err != nil || len(missing) != 1 || missing[0].Path != source {
 		t.Fatalf("missing = %+v, %v; want the removed source named", missing, err)
+	}
+}
+
+func TestNew_NoDependencies_PanicsNamingTheWires(t *testing.T) {
+	defer func() {
+		if recover() == nil {
+			t.Error("construction went through, want a panic naming the missing wires")
+		}
+	}()
+
+	surface.New(surface.Dependencies{})
+}
+
+func cancelledContext() context.Context {
+	callerContext, cancel := context.WithCancel(context.Background())
+	cancel()
+
+	return callerContext
+}
+
+func TestListAnalyses_ACallerThatGaveUp_FailsWithTheCallersError(t *testing.T) {
+	_, err := newOperations(t, &savePicker{}).ListAnalyses(cancelledContext())
+
+	if !errors.Is(err, context.Canceled) {
+		t.Fatalf("err = %v, want %v", err, context.Canceled)
+	}
+}
+
+func TestResetLibrary_ALibraryThatCannotBeListed_ForgetsNoSearch(t *testing.T) {
+	operations := newOperations(t, &savePicker{})
+	if _, err := operations.RememberSearch(context.Background(), "library", "prod"); err != nil {
+		t.Fatalf("remember: %v", err)
+	}
+
+	err := operations.ResetLibrary(cancelledContext())
+
+	history, historyErr := operations.SearchHistory(context.Background(), "library")
+	if !errors.Is(err, context.Canceled) || historyErr != nil || !reflect.DeepEqual(history, []string{"prod"}) {
+		t.Fatalf("reset err = %v leaving %q (%v), want %v and the search still remembered", err, history, historyErr, context.Canceled)
+	}
+}
+
+func TestSelectRRDFiles_AnswersTheFilesThePickerPicked(t *testing.T) {
+	picked := []surface.FileInfo{{Name: "cpu.rrd", Path: "/data/cpu.rrd", Size: 3}}
+
+	selected, err := newOperations(t, &savePicker{picked: picked}).SelectRRDFiles(context.Background())
+
+	if err != nil || !reflect.DeepEqual(selected, picked) {
+		t.Fatalf("selected = %+v, %v; want %+v", selected, err, picked)
+	}
+}
+
+func TestCreateOperations_NoSources_RefuseWithTheirSentinel(t *testing.T) {
+	tests := []struct {
+		name   string
+		create func(operations *surface.Operations) error
+	}{
+		{name: "an analysis", create: func(operations *surface.Operations) error {
+			_, err := operations.CreateAnalysis(context.Background(), "Capacity", nil)
+
+			return err
+		}},
+		{name: "a seeded analysis", create: func(operations *surface.Operations) error {
+			_, err := operations.CreateSeededAnalysis(context.Background(), surface.SeededAnalysis{Name: "Capacity"})
+
+			return err
+		}},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if err := tt.create(newOperations(t, &savePicker{})); !errors.Is(err, analysisDomain.ErrNoSources) {
+				t.Errorf("err = %v, want %v", err, analysisDomain.ErrNoSources)
+			}
+		})
+	}
+}
+
+func TestExportSources_WritesTheSourceWhereTheSaveDialogPoints(t *testing.T) {
+	source := filepath.Join(t.TempDir(), "cpu.xml")
+	if err := os.WriteFile(source, []byte(oneSourceDump), 0o600); err != nil {
+		t.Fatalf("write source: %v", err)
+	}
+
+	target := filepath.Join(t.TempDir(), "chosen.xml")
+	operations := newOperations(t, &savePicker{target: target})
+	created, err := operations.CreateAnalysis(context.Background(), "Capacity", []surface.FileInfo{{Name: "cpu.xml", Path: source, Size: int64(len(oneSourceDump))}})
+	if err != nil {
+		t.Fatalf("create: %v", err)
+	}
+
+	saved, err := operations.ExportSources(context.Background(), created.ID)
+	if err != nil {
+		t.Fatalf("export: %v", err)
+	}
+
+	written, err := os.ReadFile(target)
+	if err != nil || saved.Path != target || string(written) != oneSourceDump {
+		t.Fatalf("saved %+v holding %q (%v), want the source's bytes at %q", saved, written, err, target)
 	}
 }

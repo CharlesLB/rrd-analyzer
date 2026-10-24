@@ -45,7 +45,6 @@ type evaluator struct {
 	bindingsByCondition map[conditionKey][]binding
 	windowEpisodes      map[conditionKey][]located
 	lookbackEpisodes    map[lookbackKey][]signal.Episode
-	medians             map[frameKey]median
 	percentages         map[percentageKey]percentage
 }
 
@@ -62,7 +61,6 @@ func newEvaluator(input Input, loaded frames, window Window) *evaluator {
 		bindingsByCondition: map[conditionKey][]binding{},
 		windowEpisodes:      map[conditionKey][]located{},
 		lookbackEpisodes:    map[lookbackKey][]signal.Episode{},
-		medians:             map[frameKey]median{},
 		percentages:         map[percentageKey]percentage{},
 	}
 }

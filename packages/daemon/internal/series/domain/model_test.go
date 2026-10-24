@@ -56,6 +56,88 @@ func TestWindowWithNoSamplesEncodesAnEmptyListRatherThanNull(t *testing.T) {
 	}
 }
 
+func TestSampleDecodesWhatItEncodes(t *testing.T) {
+	tests := []struct {
+		name string
+		give string
+		want seriesDomain.Sample
+	}{
+		{name: "a reading", give: "42.5", want: seriesDomain.Known(42.5)},
+		{name: "a hole", give: "null", want: seriesDomain.Unknown()},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			var got seriesDomain.Sample
+			if err := json.Unmarshal([]byte(tt.give), &got); err != nil {
+				t.Fatalf("decode %s: %v", tt.give, err)
+			}
+
+			if got != tt.want {
+				t.Errorf("sample = %+v, want %+v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestSampleRefusesAValueThatIsNotANumber(t *testing.T) {
+	var sample seriesDomain.Sample
+
+	if err := json.Unmarshal([]byte(`"forty"`), &sample); err == nil {
+		t.Fatalf("decoded %+v from text, want the text refused", sample)
+	}
+}
+
+const holtWintersPrediction = "HWPREDICT"
+
+func TestKnownConsolidationFunctionNamesOnlyWhatIsPlotted(t *testing.T) {
+	tests := []struct {
+		give      string
+		want      seriesDomain.ConsolidationFunction
+		wantKnown bool
+	}{
+		{give: "AVERAGE", want: seriesDomain.ConsolidationAverage, wantKnown: true},
+		{give: "MIN", want: seriesDomain.ConsolidationMinimum, wantKnown: true},
+		{give: "MAX", want: seriesDomain.ConsolidationMaximum, wantKnown: true},
+		{give: "LAST", want: seriesDomain.ConsolidationLast, wantKnown: true},
+		{give: holtWintersPrediction, want: seriesDomain.ConsolidationAverage, wantKnown: false},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.give, func(t *testing.T) {
+			got, known := seriesDomain.KnownConsolidationFunction(tt.give)
+
+			if got != tt.want || known != tt.wantKnown {
+				t.Errorf("KnownConsolidationFunction(%q) = %q, %t; want %q, %t", tt.give, got, known, tt.want, tt.wantKnown)
+			}
+		})
+	}
+}
+
+func TestParseConsolidationFunctionReadsAnUnplottedConsolidationAsTheAverage(t *testing.T) {
+	if got := seriesDomain.ParseConsolidationFunction(holtWintersPrediction); got != seriesDomain.ConsolidationAverage {
+		t.Errorf("ParseConsolidationFunction(%q) = %q, want %q", holtWintersPrediction, got, seriesDomain.ConsolidationAverage)
+	}
+}
+
+func TestArchiveWithoutRowsEndsWhereItStarts(t *testing.T) {
+	const startMilliseconds = 2 * rangeStep
+
+	archive := seriesDomain.Archive{StepMilliseconds: rangeStep, StartMilliseconds: startMilliseconds, CoversIntervals: true}
+
+	if got := archive.UntilMilliseconds(); got != startMilliseconds {
+		t.Errorf("until = %d, want the start %d", got, startMilliseconds)
+	}
+}
+
+func TestSmallestOfNoItemsIsZero(t *testing.T) {
+	stepOf := func(archive seriesDomain.Archive) int64 { return archive.StepMilliseconds }
+
+	if got := seriesDomain.SmallestOf([]seriesDomain.Archive{}, stepOf); got != 0 {
+		t.Errorf("smallest = %d, want 0", got)
+	}
+}
+
 func BenchmarkWindowEncoding_TenChartsOf260Columns(b *testing.B) {
 	windows := make([]seriesDomain.Window, 10)
 	for index := range windows {

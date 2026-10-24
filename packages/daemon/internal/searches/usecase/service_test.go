@@ -9,6 +9,7 @@ import (
 
 	searchesDomain "github.com/CharlesLB/rrd-analyzer/packages/daemon/internal/searches/domain"
 	searchesUsecase "github.com/CharlesLB/rrd-analyzer/packages/daemon/internal/searches/usecase"
+	"github.com/CharlesLB/rrd-analyzer/packages/daemon/internal/shared/failure"
 )
 
 const chartLibraryField = "chart-library"
@@ -44,6 +45,101 @@ func (store *memoryStore) Forget(_ context.Context, _ string, term string) error
 
 func (store *memoryStore) DeleteAll(context.Context) error {
 	return nil
+}
+
+const errStoreUnavailable failure.Error = "the search history cannot be reached"
+
+// failingStore is a search history that refuses every call, the way a database that went away
+// would.
+type failingStore struct{}
+
+func (failingStore) Terms(context.Context, string) ([]string, error) {
+	return nil, errStoreUnavailable
+}
+
+func (failingStore) Remember(context.Context, string, string, int) error {
+	return errStoreUnavailable
+}
+
+func (failingStore) Forget(context.Context, string, string) error {
+	return errStoreUnavailable
+}
+
+func (failingStore) DeleteAll(context.Context) error {
+	return errStoreUnavailable
+}
+
+// historyFailingStore remembers and forgets, then cannot read back what the field holds.
+type historyFailingStore struct {
+	memoryStore
+}
+
+func (*historyFailingStore) Terms(context.Context, string) ([]string, error) {
+	return nil, errStoreUnavailable
+}
+
+func TestNewServiceWithoutAStorePanicsNamingTheWire(t *testing.T) {
+	defer func() {
+		recovered := recover()
+		if message, isText := recovered.(string); !isText || !strings.Contains(message, "store") {
+			t.Errorf("panic = %v, want a message naming the store", recovered)
+		}
+	}()
+
+	searchesUsecase.NewService(nil)
+}
+
+func TestServiceReportsAStoreThatFails(t *testing.T) {
+	tests := []struct {
+		name      string
+		giveStore searchesDomain.Store
+		giveCall  func(service *searchesUsecase.Service) error
+	}{
+		{name: "history", giveStore: failingStore{}, giveCall: func(service *searchesUsecase.Service) error {
+			_, err := service.History(context.Background(), chartLibraryField)
+
+			return err
+		}},
+		{name: "remember", giveStore: failingStore{}, giveCall: func(service *searchesUsecase.Service) error {
+			_, err := service.Remember(context.Background(), chartLibraryField, "cpu")
+
+			return err
+		}},
+		{name: "forget", giveStore: failingStore{}, giveCall: func(service *searchesUsecase.Service) error {
+			_, err := service.Forget(context.Background(), chartLibraryField, "cpu")
+
+			return err
+		}},
+		{name: "delete all", giveStore: failingStore{}, giveCall: func(service *searchesUsecase.Service) error {
+			return service.DeleteAll(context.Background())
+		}},
+		{name: "the history read back after remembering", giveStore: &historyFailingStore{}, giveCall: func(service *searchesUsecase.Service) error {
+			_, err := service.Remember(context.Background(), chartLibraryField, "cpu")
+
+			return err
+		}},
+		{name: "the history read back after forgetting", giveStore: &historyFailingStore{}, giveCall: func(service *searchesUsecase.Service) error {
+			_, err := service.Forget(context.Background(), chartLibraryField, "cpu")
+
+			return err
+		}},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := tt.giveCall(searchesUsecase.NewService(tt.giveStore))
+
+			if !errors.Is(err, errStoreUnavailable) {
+				t.Errorf("err = %v, want %v", err, errStoreUnavailable)
+			}
+		})
+	}
+}
+
+func TestDeleteAllEmptiesTheHistoryThroughTheStore(t *testing.T) {
+	if err := searchesUsecase.NewService(&memoryStore{}).DeleteAll(context.Background()); err != nil {
+		t.Errorf("delete all: %v", err)
+	}
 }
 
 func TestRememberKeepsTheTrimmedTermAndAnswersWithTheHistory(t *testing.T) {
@@ -97,6 +193,18 @@ func TestRememberRefusesWhatIsNotWorthRemembering(t *testing.T) {
 func TestHistoryRefusesAFieldWithoutAName(t *testing.T) {
 	if _, err := searchesUsecase.NewService(&memoryStore{}).History(context.Background(), ""); !errors.Is(err, searchesDomain.ErrFieldInvalid) {
 		t.Errorf("err = %v, want %v", err, searchesDomain.ErrFieldInvalid)
+	}
+}
+
+func TestForgetRefusesAFieldWithoutANameAndForgetsNothing(t *testing.T) {
+	store := &memoryStore{}
+
+	if _, err := searchesUsecase.NewService(store).Forget(context.Background(), " ", "cpu"); !errors.Is(err, searchesDomain.ErrFieldInvalid) {
+		t.Errorf("err = %v, want %v", err, searchesDomain.ErrFieldInvalid)
+	}
+
+	if len(store.forgotten) != 0 {
+		t.Errorf("forgotten %q for a refused request", store.forgotten)
 	}
 }
 

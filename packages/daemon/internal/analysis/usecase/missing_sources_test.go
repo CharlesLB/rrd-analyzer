@@ -76,3 +76,17 @@ func TestMissingSources_AnAnalysisThatDoesNotExist_IsReportedAsNotFound(t *testi
 		t.Errorf("error = %v, want %v", err, analysisDomain.ErrAnalysisNotFound)
 	}
 }
+
+func TestMissingSources_WithoutAWayToLookAtTheDisk_NamesNoFileMissing(t *testing.T) {
+	service, _ := newService(fileLoader{})
+	created, _ := service.Create(context.Background(), "Capacity", []analysisDomain.SourceFile{{Name: "cpu.rrd", Path: "/data/cpu.rrd"}})
+
+	missing, err := service.MissingSources(context.Background(), created.ID)
+	if err != nil {
+		t.Fatalf("missing sources: %v", err)
+	}
+
+	if len(missing) != 0 {
+		t.Errorf("missing = %+v, want every source taken to be present", missing)
+	}
+}

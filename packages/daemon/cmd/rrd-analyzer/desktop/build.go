@@ -9,7 +9,6 @@ import (
 	"io/fs"
 	"runtime"
 
-	"github.com/wailsapp/wails/v2"
 	"github.com/wailsapp/wails/v2/pkg/options"
 	"github.com/wailsapp/wails/v2/pkg/options/assetserver"
 	"github.com/wailsapp/wails/v2/pkg/options/linux"
@@ -50,7 +49,16 @@ const (
 //go:embed appicon.png
 var windowIcon []byte
 
-func Run(frontendAssets fs.FS) error {
+// nativeRuntime is everything the desktop binary needs of Wails: the window the application runs
+// in, and the dialogs that window opens.
+type nativeRuntime interface {
+	nativeDialogs
+	RunWindow(application *options.App) error
+}
+
+// run opens the library where this machine keeps it and runs the window over it, returning once the
+// window is closed.
+func run(frontendAssets fs.FS, native nativeRuntime) error {
 	paths, err := config.Resolve()
 	if err != nil {
 		return fmt.Errorf("resolve application paths: %w", err)
@@ -68,7 +76,7 @@ func Run(frontendAssets fs.FS) error {
 	}
 	defer func() { _ = searchHistory.Close() }()
 
-	dialogs := newDialogs(analysisInfra.NewSourceDescriber())
+	dialogs := newDialogs(native, analysisInfra.NewSourceDescriber())
 	operations := surface.Build(surface.Wiring{
 		Store:                  store,
 		SearchHistory:          searchHistory,
@@ -80,7 +88,7 @@ func Run(frontendAssets fs.FS) error {
 	})
 	binding := NewAPI(operations, dialogs)
 
-	return wails.Run(&options.App{
+	return native.RunWindow(&options.App{
 		Title:            messages.ApplicationName,
 		Frameless:        runtime.GOOS != macOSPlatform,
 		Width:            windowWidth,
