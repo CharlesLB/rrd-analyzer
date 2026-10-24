@@ -253,7 +253,6 @@ export type WorkspaceMessages = {
   readonly chartSeriesLimit: string;
   readonly chartsMerged: string;
   readonly undo: string;
-  readonly redo: string;
   readonly csvExported: PluralForms;
   readonly nothingToExport: string;
   readonly seriesUnavailable: string;
