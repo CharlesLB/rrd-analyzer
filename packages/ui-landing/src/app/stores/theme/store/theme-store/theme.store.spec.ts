@@ -87,6 +87,20 @@ describe('ThemeStore', () => {
     expect(TestBed.inject(ThemeStore).theme()).toBe('dark');
   });
 
+  it('still switches the theme when storage refuses to keep the choice', () => {
+    vi.stubGlobal('localStorage', {
+      ...inMemoryStorage(),
+      setItem: () => {
+        throw new DOMException('quota exceeded');
+      },
+    });
+    const store = TestBed.inject(ThemeStore);
+
+    store.toggle();
+
+    expect(store.isDark()).toBe(true);
+  });
+
   it('falls back to the system theme when storage cannot be read at all', () => {
     vi.stubGlobal('localStorage', undefined);
     stubSystemTheme(true);

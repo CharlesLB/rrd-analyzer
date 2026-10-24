@@ -1,3 +1,4 @@
+import { DOCUMENT } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ReleasesStore } from './releases.store';
@@ -44,6 +45,16 @@ describe('ReleasesStore', () => {
 
     expect(store.primaryDownload().file).toBeNull();
     expect(store.platforms().find((platform) => platform.isVisitors)?.platform).toBe('macos');
+  });
+
+  it('keeps offering the Windows installer when the page has no window to read the browser from', () => {
+    TestBed.resetTestingModule();
+    TestBed.configureTestingModule({ providers: [{ provide: DOCUMENT, useValue: { defaultView: null } }] });
+    const store = TestBed.inject(ReleasesStore);
+
+    store.detectVisitorPlatform();
+
+    expect(store.visitorPlatform()).toBe('windows');
   });
 
   it('builds every link from the version it announces', () => {
