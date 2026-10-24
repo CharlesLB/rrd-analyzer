@@ -4,7 +4,7 @@ import { formatCompactValue, unitLabelOf } from '../../../../shared/utils/value-
 import type { SeriesStatistics } from '../../../../stores/workspace/models/series/series.model';
 import { STATISTIC_KEYS, type StatisticKey, statisticValueOf } from '../../../../stores/workspace/models/statistic-key/statistic-key';
 
-export type HeaderStat = {
+type HeaderStat = {
   readonly key: StatisticKey;
   readonly label: string;
   readonly value: string;
@@ -18,7 +18,7 @@ export type HeaderStatistics = {
   readonly unitLabel: string;
 };
 
-export const STATISTIC_KEYS_BY_IMPORTANCE: readonly StatisticKey[] = [
+const STATISTIC_KEYS_BY_IMPORTANCE: readonly StatisticKey[] = [
   STATISTIC_KEYS.CURRENT,
   STATISTIC_KEYS.PERCENTILE95,
   STATISTIC_KEYS.MAXIMUM,

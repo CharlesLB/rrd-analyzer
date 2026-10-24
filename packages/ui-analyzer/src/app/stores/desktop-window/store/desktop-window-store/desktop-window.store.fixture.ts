@@ -1,6 +1,6 @@
 import { type Mock, vi } from 'vitest';
 
-export type DesktopRuntimeStub = {
+type DesktopRuntimeStub = {
   readonly Environment: Mock<() => Promise<{ platform: string }>>;
   readonly WindowMinimise: Mock<() => void>;
   readonly WindowToggleMaximise: Mock<() => void>;

@@ -27,7 +27,7 @@ export type PlotArea = {
   readonly height: number;
 };
 
-export type ChartSlot = {
+type ChartSlot = {
   readonly top: number;
   readonly height: number;
   readonly plot: PlotArea;

@@ -5,7 +5,7 @@ import { entriesOfTypesShown, type LogEntry } from '../../../../stores/logs/mode
 import { fractionAt } from '../../../../stores/time-window/models/range-fraction/range-fraction';
 import type { TimeRange } from '../../../../stores/workspace/models/timeframe/timeframe';
 
-export const TRACK_SLOTS = 320;
+const TRACK_SLOTS = 320;
 
 const SINGLE_LANE = '*';
 const KEY_SEPARATOR = '|';
@@ -18,13 +18,13 @@ export type TrackGroup = {
   readonly color: string;
 };
 
-export type TrackLane = {
+type TrackLane = {
   readonly name: string;
   readonly color: string | null;
   readonly groups: readonly TrackGroup[];
 };
 
-export type LogTrack = {
+type LogTrack = {
   readonly lanes: readonly TrackLane[];
   readonly inViewCount: number;
 };

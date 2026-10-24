@@ -12,12 +12,12 @@ export const TRACK_ACTIONS = {
 
 export type TrackAction = ValueOf<typeof TRACK_ACTIONS>;
 
-export type TrackNoticeAction = {
+type TrackNoticeAction = {
   readonly kind: TrackAction;
   readonly label: string;
 };
 
-export type TrackNotice = {
+type TrackNotice = {
   readonly text: string;
   readonly detail: string;
   readonly action: TrackNoticeAction | null;

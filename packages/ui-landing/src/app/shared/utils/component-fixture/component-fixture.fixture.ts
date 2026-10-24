@@ -12,7 +12,7 @@ export const renderWithInputs = <TComponent>(component: Type<TComponent>, inputs
   return fixture;
 };
 
-export const hostOf = (fixture: ComponentFixture<unknown>): HTMLElement => {
+const hostOf = (fixture: ComponentFixture<unknown>): HTMLElement => {
   const host: HTMLElement = fixture.nativeElement;
 
   return host;

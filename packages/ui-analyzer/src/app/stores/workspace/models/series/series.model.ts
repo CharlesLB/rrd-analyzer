@@ -34,14 +34,14 @@ export type SeriesBundle = {
 
 export type SampleTracks = Readonly<Record<string, readonly SeriesSample[]>>;
 
-export type SeriesTrack = {
+type SeriesTrack = {
   readonly seriesId: string;
   readonly samples: readonly SeriesSample[];
 };
 
 export const tracksOf = (tracks: readonly SeriesTrack[]): SampleTracks => Object.fromEntries(R.map(tracks, (track) => [track.seriesId, track.samples]));
 
-export type StatisticsBySeries = Readonly<Record<string, SeriesStatistics | null>>;
+type StatisticsBySeries = Readonly<Record<string, SeriesStatistics | null>>;
 
 export type ChartData = {
   readonly tracks: SampleTracks;

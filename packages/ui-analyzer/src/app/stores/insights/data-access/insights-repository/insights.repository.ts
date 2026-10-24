@@ -17,7 +17,7 @@ import {
   type Severity,
 } from '../../models/finding/finding.model';
 
-export type InsightsQuery = {
+type InsightsQuery = {
   readonly analysisId: string;
   readonly scope: InsightScope;
   readonly window: TimeRange;

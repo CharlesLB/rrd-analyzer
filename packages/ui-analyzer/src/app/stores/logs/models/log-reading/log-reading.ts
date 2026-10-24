@@ -10,7 +10,7 @@ export type EntryReading = {
   readonly message: unknown;
 };
 
-export const typeNameOf = (value: unknown): string => (isMissingValue(value) || typeof value === 'object' ? UNKNOWN_LOG_TYPE : String(value));
+const typeNameOf = (value: unknown): string => (isMissingValue(value) || typeof value === 'object' ? UNKNOWN_LOG_TYPE : String(value));
 
 export const readTimeOf = (record: LogRecord, path: string): number | null => parseLogTimestamp(valueAtPath(record, path));
 

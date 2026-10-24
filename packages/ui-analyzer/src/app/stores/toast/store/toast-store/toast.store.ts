@@ -1,9 +1,9 @@
 import { computed, Service, signal, untracked } from '@angular/core';
 
-export const TOAST_LIFETIME_MILLISECONDS = 2000;
-export const LASTING_TOAST_LIFETIME_MILLISECONDS = 6000;
+const TOAST_LIFETIME_MILLISECONDS = 2000;
+const LASTING_TOAST_LIFETIME_MILLISECONDS = 6000;
 
-export type ToastAction = {
+type ToastAction = {
   readonly label: string;
   readonly run: () => void;
   readonly otherwise?: () => void;

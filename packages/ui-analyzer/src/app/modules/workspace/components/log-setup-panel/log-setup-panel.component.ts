@@ -31,12 +31,12 @@ type OpenPicker = {
   readonly name: string;
 };
 
-export type FieldChoice = {
+type FieldChoice = {
   readonly role: LogRole;
   readonly path: string;
 };
 
-export type ColorChoice = {
+type ColorChoice = {
   readonly type: string;
   readonly color: string;
 };

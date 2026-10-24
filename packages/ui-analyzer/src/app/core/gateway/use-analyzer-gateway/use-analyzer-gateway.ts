@@ -4,7 +4,7 @@ import { APPLICATION_EDITION } from '../../config/edition.token';
 import type { AnalyzerGateway } from '../analyzer.gateway';
 import { isDesktopRuntime } from '../desktop-runtime/desktop-runtime';
 
-export type GatewayOperation = <TResult>(operation: (gateway: AnalyzerGateway) => Promise<TResult> | TResult) => Promise<TResult>;
+type GatewayOperation = <TResult>(operation: (gateway: AnalyzerGateway) => Promise<TResult> | TResult) => Promise<TResult>;
 
 const loadDesktopGateway = async (): Promise<ProviderToken<AnalyzerGateway>> => (await import('../desktop-gateway/desktop.gateway')).DesktopGateway;
 

@@ -17,13 +17,9 @@ export const inMemoryStorage = (): Storage => {
   } as Storage;
 };
 
-export const stubBrowserStorage = (): void => {
-  vi.stubGlobal('localStorage', inMemoryStorage());
-};
-
 type MediaQueryListener = (event: MediaQueryListEvent) => void;
 
-export type StubbedSystemTheme = {
+type StubbedSystemTheme = {
   readonly switchTo: (isDark: boolean) => void;
 };
 

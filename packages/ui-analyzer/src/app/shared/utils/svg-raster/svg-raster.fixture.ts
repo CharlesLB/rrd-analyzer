@@ -2,9 +2,9 @@ import { vi } from 'vitest';
 
 const CANVAS_TAG = 'canvas';
 
-export type ImageOutcome = 'load' | 'error';
+type ImageOutcome = 'load' | 'error';
 
-export type StubbedCanvas = {
+type StubbedCanvas = {
   readonly canvas: { width: number; height: number; readonly getContext: ReturnType<typeof vi.fn>; readonly toBlob: ReturnType<typeof vi.fn> };
   readonly context: { fillStyle: string; readonly fillRect: ReturnType<typeof vi.fn>; readonly drawImage: ReturnType<typeof vi.fn> };
 };

@@ -2,7 +2,7 @@ import { SEVERITIES, type Severity } from '../../../../stores/insights/models/fi
 
 export const MUTED_COLOR = 'var(--mut)';
 
-export type SeverityTone = {
+type SeverityTone = {
   readonly foreground: string;
   readonly surface: string;
   readonly band: string;

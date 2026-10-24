@@ -3,7 +3,7 @@ export const PNG_MIME_TYPE = 'image/png';
 const CANVAS_TAG = 'canvas';
 const TWO_DIMENSIONS = '2d';
 
-export type SvgPicture = {
+type SvgPicture = {
   readonly markup: string;
   readonly width: number;
   readonly height: number;

@@ -1,7 +1,7 @@
 import type { ValueOf } from '../../../../shared/types/value-of';
 import { PLATFORMS, type Platform } from '../platform/platform.model';
 
-export const RELEASE_FILE_KINDS = {
+const RELEASE_FILE_KINDS = {
   WINDOWS_INSTALLER: 'windowsInstaller',
   WINDOWS_PORTABLE: 'windowsPortable',
   DEBIAN_PACKAGE: 'debianPackage',
@@ -9,9 +9,9 @@ export const RELEASE_FILE_KINDS = {
   LINUX_ARCHIVE: 'linuxArchive',
 } as const;
 
-export type ReleaseFileKind = ValueOf<typeof RELEASE_FILE_KINDS>;
+type ReleaseFileKind = ValueOf<typeof RELEASE_FILE_KINDS>;
 
-export type ReleaseSource = {
+type ReleaseSource = {
   readonly repositoryUrl: string;
   readonly version: string;
 };
@@ -23,7 +23,7 @@ export type ReleaseFile = {
   readonly url: string;
 };
 
-export type PlatformRelease = {
+type PlatformRelease = {
   readonly platform: Platform;
   readonly files: readonly ReleaseFile[];
 };

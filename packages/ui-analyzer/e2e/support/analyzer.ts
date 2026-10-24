@@ -16,26 +16,26 @@ const HTTP_METHODS = {
   PUT: 'PUT',
 } as const;
 
-export type SourceFile = {
+type SourceFile = {
   readonly name: string;
   readonly path: string;
   readonly size: number;
 };
 
-export type ChartReference = {
+type ChartReference = {
   readonly seriesId: string;
   readonly label: string;
 };
 
-export type MergedSeriesSeed = ChartReference & {
+type MergedSeriesSeed = ChartReference & {
   readonly axis: number;
 };
 
-export type CanvasChartSeed = ChartReference & {
+type CanvasChartSeed = ChartReference & {
   readonly merged?: readonly MergedSeriesSeed[];
 };
 
-export type AnalysisSeed = {
+type AnalysisSeed = {
   readonly name: string;
   readonly files?: readonly SourceFile[];
   readonly canvas?: readonly CanvasChartSeed[];
@@ -55,7 +55,7 @@ export const REFERENCE_LABELS = {
   s9: 'http_latency_p95',
 } as const;
 
-export type ReferenceSeriesId = keyof typeof REFERENCE_LABELS;
+type ReferenceSeriesId = keyof typeof REFERENCE_LABELS;
 
 export const REFERENCE_FILES: readonly SourceFile[] = Object.values(REFERENCE_LABELS).map((label) => ({
   name: `atlas_${label}.rrd`,
@@ -91,7 +91,7 @@ const isCanvasSave = (response: Response): boolean => response.url().endsWith(CA
 const isLibraryOrderSave = (response: Response): boolean =>
   response.url().endsWith(LIBRARY_ORDER_PATH_SUFFIX) && response.request().method() === HTTP_METHODS.PUT;
 
-export type RequestRecording = {
+type RequestRecording = {
   readonly requests: readonly Request[];
   readonly stop: () => void;
 };

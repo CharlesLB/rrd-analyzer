@@ -27,7 +27,7 @@ export type PlotLine = {
   readonly path: string;
 };
 
-export type AxisValueLabel = {
+type AxisValueLabel = {
   readonly text: string;
   readonly color: string | null;
 };
@@ -43,9 +43,9 @@ export const TICK_ALIGNMENTS = {
   END: 'end',
 } as const;
 
-export type TickAlignment = ValueOf<typeof TICK_ALIGNMENTS>;
+type TickAlignment = ValueOf<typeof TICK_ALIGNMENTS>;
 
-export type TimeTick = {
+type TimeTick = {
   readonly left: string;
   readonly label: string;
   readonly alignment: TickAlignment;

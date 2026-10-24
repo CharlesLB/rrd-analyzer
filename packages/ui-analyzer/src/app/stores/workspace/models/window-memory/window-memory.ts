@@ -7,7 +7,7 @@ const REMEMBERED_WINDOWS = 8;
 
 export type WindowMemory<TValue> = RecentRecord<TValue>;
 
-export type WindowKeyParts = {
+type WindowKeyParts = {
   readonly analysisId: string;
   readonly fromMilliseconds: number;
   readonly untilMilliseconds: number;
@@ -17,7 +17,7 @@ export type WindowKeyParts = {
 export const windowKeyOf = (window: WindowKeyParts): string =>
   [window.analysisId, window.fromMilliseconds, window.untilMilliseconds, window.columns].join(KEY_SEPARATOR);
 
-export type SeriesWindowKeyParts = WindowKeyParts & {
+type SeriesWindowKeyParts = WindowKeyParts & {
   readonly seriesIds: readonly string[];
 };
 

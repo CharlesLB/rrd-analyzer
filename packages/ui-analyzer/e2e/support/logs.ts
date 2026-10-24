@@ -6,7 +6,7 @@ const DAY_MINUTES = 1440;
 
 export const REFERENCE_DATA_END = Date.parse('2026-08-29T15:00:00-03:00');
 
-export type LogFile = {
+type LogFile = {
   readonly name: string;
   readonly mimeType: string;
   readonly buffer: Buffer;

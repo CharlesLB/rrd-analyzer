@@ -12,7 +12,7 @@ const HEADER_CONTROL_SELECTOR = 'button';
 
 const isOnHeaderControl = (target: EventTarget | null): boolean => target instanceof Element && target.closest(HEADER_CONTROL_SELECTOR) !== null;
 
-export type HeaderSwatch = {
+type HeaderSwatch = {
   readonly seriesId: string;
   readonly color: string;
   readonly label: string;

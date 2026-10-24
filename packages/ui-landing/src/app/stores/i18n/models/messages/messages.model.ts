@@ -1,16 +1,16 @@
-export type MetaMessages = {
+type MetaMessages = {
   readonly title: string;
   readonly description: string;
 };
 
-export type CommonMessages = {
+type CommonMessages = {
   readonly productName: string;
   readonly opensInNewTab: string;
   readonly version: string;
   readonly separator: string;
 };
 
-export type HeaderMessages = {
+type HeaderMessages = {
   readonly navigation: string;
   readonly features: string;
   readonly demo: string;
@@ -20,7 +20,7 @@ export type HeaderMessages = {
   readonly menu: string;
 };
 
-export type DownloadCallMessages = {
+type DownloadCallMessages = {
   readonly downloadFor: string;
   readonly getProduct: string;
   readonly fileDetail: string;
@@ -28,7 +28,7 @@ export type DownloadCallMessages = {
   readonly unpackagedDetail: string;
 };
 
-export type HeroMessages = {
+type HeroMessages = {
   readonly releaseHeadline: string;
   readonly titleLead: string;
   readonly titleHighlight: string;
@@ -41,14 +41,14 @@ export type HeroMessages = {
   readonly darkScreenshotDescription: string;
 };
 
-export type FeatureMessages = {
+type FeatureMessages = {
   readonly ordinal: string;
   readonly title: string;
   readonly body: string;
   readonly screenshotDescription: string;
 };
 
-export type LogTypeMessages = {
+type LogTypeMessages = {
   readonly fatal: string;
   readonly error: string;
   readonly warning: string;
@@ -56,12 +56,12 @@ export type LogTypeMessages = {
   readonly debug: string;
 };
 
-export type HighlightMessages = {
+type HighlightMessages = {
   readonly title: string;
   readonly body: string;
 };
 
-export type FeaturesMessages = {
+type FeaturesMessages = {
   readonly eyebrow: string;
   readonly title: string;
   readonly canvas: FeatureMessages & { readonly points: readonly string[] };
@@ -72,12 +72,12 @@ export type FeaturesMessages = {
   readonly highlights: readonly HighlightMessages[];
 };
 
-export type PrivacyPointMessages = {
+type PrivacyPointMessages = {
   readonly title: string;
   readonly body: string;
 };
 
-export type DemoMessages = {
+type DemoMessages = {
   readonly eyebrow: string;
   readonly title: string;
   readonly introduction: string;
@@ -93,18 +93,18 @@ export type DemoMessages = {
   readonly offlineDownload: string;
 };
 
-export type PlatformMessages = {
+type PlatformMessages = {
   readonly name: string;
   readonly requirement: string;
 };
 
-export type PlatformsMessages = {
+type PlatformsMessages = {
   readonly windows: PlatformMessages;
   readonly linux: PlatformMessages;
   readonly macos: PlatformMessages;
 };
 
-export type ReleaseFileMessages = {
+type ReleaseFileMessages = {
   readonly windowsInstaller: string;
   readonly windowsPortable: string;
   readonly debianPackage: string;
@@ -112,7 +112,7 @@ export type ReleaseFileMessages = {
   readonly linuxArchive: string;
 };
 
-export type DownloadMessages = {
+type DownloadMessages = {
   readonly eyebrow: string;
   readonly title: string;
   readonly introduction: string;
@@ -131,7 +131,7 @@ export type DownloadMessages = {
   readonly tryInBrowser: string;
 };
 
-export type DonateMessages = {
+type DonateMessages = {
   readonly title: string;
   readonly body: string;
   readonly cardTitle: string;
@@ -141,7 +141,7 @@ export type DonateMessages = {
   readonly paymentsNote: string;
 };
 
-export type FooterMessages = {
+type FooterMessages = {
   readonly license: string;
   readonly github: string;
   readonly releases: string;

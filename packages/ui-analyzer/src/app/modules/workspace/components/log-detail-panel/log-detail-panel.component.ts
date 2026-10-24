@@ -26,7 +26,7 @@ const JSON_INDENT = 2;
 const NO_QUERY = '';
 const FIRST_MATCH = 0;
 
-export type DetailShortcutLabels = {
+type DetailShortcutLabels = {
   readonly find: string;
   readonly previousMatch: string;
 };

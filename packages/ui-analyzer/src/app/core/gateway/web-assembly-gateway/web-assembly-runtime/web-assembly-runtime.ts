@@ -1,6 +1,6 @@
 import type { ApiCall } from '../../api-gateway/api.gateway';
 
-export const RUNTIME_MESSAGE_KINDS = {
+const RUNTIME_MESSAGE_KINDS = {
   SERVE: 'serve',
   CANCEL: 'cancel',
   KEEP: 'keep',
@@ -24,7 +24,7 @@ export type RuntimeWorker = {
   addEventListener(type: string, listener: (event: MessageEvent) => void): void;
 };
 
-export type WorkerFactory = () => RuntimeWorker;
+type WorkerFactory = () => RuntimeWorker;
 
 const MESSAGE_EVENT = 'message';
 const ERROR_EVENT = 'error';

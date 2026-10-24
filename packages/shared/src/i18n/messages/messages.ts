@@ -100,7 +100,7 @@ export type TimeframeBarMessages = {
   readonly absoluteRange: string;
 };
 
-export type AnalysisTitleMessages = {
+type AnalysisTitleMessages = {
   readonly rename: string;
   readonly nameLabel: string;
   readonly menu: string;
@@ -112,7 +112,7 @@ export type AnalysisTitleMessages = {
   readonly addSourcesDetail: string;
 };
 
-export type ViewSettingsMessages = {
+type ViewSettingsMessages = {
   readonly menu: string;
   readonly thumbnailFill: string;
   readonly synchronizedCrosshair: string;
@@ -138,7 +138,7 @@ export type BrowserEditionMessages = {
   readonly offlineDownload: string;
 };
 
-export type WindowControlsMessages = {
+type WindowControlsMessages = {
   readonly minimise: string;
   readonly maximise: string;
   readonly restore: string;
@@ -228,7 +228,7 @@ export type StatisticsMessages = {
   readonly hideLine: string;
 };
 
-export type SeriesMenuMessages = {
+type SeriesMenuMessages = {
   readonly buttonLabel: string;
   readonly buttonTip: string;
   readonly caption: string;
@@ -237,7 +237,7 @@ export type SeriesMenuMessages = {
   readonly separate: string;
 };
 
-export type AnalysisUnavailableMessages = {
+type AnalysisUnavailableMessages = {
   readonly title: string;
   readonly missingSources: PluralForms;
   readonly missingSourcesHint: string;
@@ -367,7 +367,7 @@ export type InsightsMessages = {
   readonly runFailed: string;
 };
 
-export type LogFailureMessages = {
+type LogFailureMessages = {
   readonly empty: string;
   readonly invalidJson: string;
   readonly invalidJsonNearLine: string;
@@ -381,19 +381,19 @@ export type LogFailureMessages = {
   readonly noDatedLines: string;
 };
 
-export type LogNoteMessages = {
+type LogNoteMessages = {
   readonly arrayProperty: string;
   readonly skippedLines: PluralForms;
   readonly skippedValues: PluralForms;
   readonly undatedLines: PluralForms;
 };
 
-export type LogRoleMessages = {
+type LogRoleMessages = {
   readonly label: string;
   readonly hint: string;
 };
 
-export type LogFileBadgeMessages = {
+type LogFileBadgeMessages = {
   readonly json: string;
   readonly csv: string;
   readonly text: string;
@@ -528,7 +528,7 @@ export type LogsMessages = {
   readonly detail: LogDetailMessages;
 };
 
-export type ColorPickerMessages = {
+type ColorPickerMessages = {
   readonly palette: string;
   readonly custom: string;
   readonly shade: string;
@@ -540,7 +540,7 @@ export type ColorPickerMessages = {
   readonly cancel: string;
 };
 
-export type SearchFieldMessages = {
+type SearchFieldMessages = {
   readonly clear: string;
   readonly history: string;
   readonly forget: string;

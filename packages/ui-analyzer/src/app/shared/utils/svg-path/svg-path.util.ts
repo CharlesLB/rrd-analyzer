@@ -3,18 +3,18 @@ import * as R from 'remeda';
 const COORDINATE_DECIMALS = 1;
 const NOT_FOUND = -1;
 
-export const SVG_COMMANDS = {
+const SVG_COMMANDS = {
   MOVE: 'M',
   LINE: 'L',
   CLOSE: 'Z',
 } as const;
 
-export type PlotPoint = {
+type PlotPoint = {
   readonly x: number;
   readonly y: number;
 };
 
-export type PresentRun = {
+type PresentRun = {
   readonly from: number;
   readonly until: number;
 };

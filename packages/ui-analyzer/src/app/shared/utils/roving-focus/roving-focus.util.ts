@@ -1,6 +1,6 @@
 const NOT_AMONG_THEM = -1;
 
-export const ROVING_KEYS = {
+const ROVING_KEYS = {
   NEXT: 'ArrowDown',
   PREVIOUS: 'ArrowUp',
   FIRST: 'Home',

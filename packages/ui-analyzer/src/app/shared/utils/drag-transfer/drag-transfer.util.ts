@@ -8,7 +8,7 @@ export const DRAG_EFFECTS = {
   COPY_MOVE: 'copyMove',
 } as const;
 
-export type DragEffect = ValueOf<typeof DRAG_EFFECTS>;
+type DragEffect = ValueOf<typeof DRAG_EFFECTS>;
 
 export const startDragTransfer = (event: DragEvent, payload: string, effect: DragEffect): void => {
   const transfer = event.dataTransfer;
@@ -27,7 +27,7 @@ export const hasLeftTarget = (event: DragEvent): boolean => {
   return event.clientX < bounds.left || event.clientX >= bounds.right || event.clientY < bounds.top || event.clientY >= bounds.bottom;
 };
 
-export type FileCarryingDragEvent = DragEvent & { readonly dataTransfer: DataTransfer };
+type FileCarryingDragEvent = DragEvent & { readonly dataTransfer: DataTransfer };
 
 export const carriesFiles = (event: DragEvent): event is FileCarryingDragEvent => event.dataTransfer?.types.includes(FILES_TRANSFER_TYPE) ?? false;
 

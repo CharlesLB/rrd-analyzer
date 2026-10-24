@@ -9,7 +9,7 @@ const MERGE_HEADING_HEIGHT_ALLOWANCE = 28;
 const MERGE_ITEM_HEIGHT_ALLOWANCE = 30;
 const NO_MERGE_ALLOWANCE = 0;
 
-export type PointerPosition = {
+type PointerPosition = {
   readonly clientX: number;
   readonly clientY: number;
 };

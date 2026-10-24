@@ -33,7 +33,7 @@ export type DropTargetUpdate = {
   readonly verticalFraction: number;
 };
 
-export type ChartHeightUpdate = {
+type ChartHeightUpdate = {
   readonly chartId: string;
   readonly height: number;
 };

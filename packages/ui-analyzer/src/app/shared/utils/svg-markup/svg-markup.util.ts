@@ -21,7 +21,7 @@ export const TEXT_ANCHORS = {
   END: 'end',
 } as const;
 
-export type SvgAttributes = Readonly<Record<string, string | number>>;
+type SvgAttributes = Readonly<Record<string, string | number>>;
 
 export type TextSpan = {
   readonly text: string;

@@ -12,7 +12,7 @@ export type LogMark = {
   readonly isSelected: boolean;
 };
 
-export type MarkedEntries = {
+type MarkedEntries = {
   readonly hovered: LogEntry | null;
   readonly selected: LogEntry | null;
 };

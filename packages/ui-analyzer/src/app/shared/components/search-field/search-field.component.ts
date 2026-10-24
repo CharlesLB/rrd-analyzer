@@ -11,7 +11,7 @@ export const SEARCH_FIELD_SIZES = {
   ROOMY: 'roomy',
 } as const;
 
-export type SearchFieldSize = ValueOf<typeof SEARCH_FIELD_SIZES>;
+type SearchFieldSize = ValueOf<typeof SEARCH_FIELD_SIZES>;
 
 const SEARCH_FIELD_KEYS = {
   NEXT: 'ArrowDown',

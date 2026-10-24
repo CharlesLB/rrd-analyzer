@@ -11,7 +11,7 @@ import { I18nStore } from '../../../../stores/i18n/store/i18n-store/i18n.store';
 import type { AxisChoice } from '../../../../stores/workspace/models/chart-axes/chart-axes';
 import { SERIES_MENU_SIZE, type SeriesMenuRow } from '../../../../stores/workspace/models/series-menu/series-menu';
 
-export type AxisChange = {
+type AxisChange = {
   readonly seriesId: string;
   readonly axis: number;
 };

@@ -10,7 +10,7 @@ export const HIGHLIGHTS = {
 
 export type Highlight = ValueOf<typeof HIGHLIGHTS>;
 
-export type SearchMatch = {
+type SearchMatch = {
   readonly lineIndex: number;
   readonly start: number;
   readonly end: number;

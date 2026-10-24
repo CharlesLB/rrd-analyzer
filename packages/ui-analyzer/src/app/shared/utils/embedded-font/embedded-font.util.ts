@@ -3,7 +3,7 @@ import { dataUrlOf } from '../blob-encoding/blob-encoding.util';
 const VARIABLE_WEIGHT_RANGE = '200 1000';
 const WOFF2_FORMAT = 'woff2';
 
-export type EmbeddedFont = {
+type EmbeddedFont = {
   readonly family: string;
   readonly url: string;
 };
