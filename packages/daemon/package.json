@@ -9,7 +9,7 @@
     "build": "go build -o bin/rrd-analyzer-dev ./cmd/rrd-analyzer-dev",
     "build:browser": "../../tools/build-browser-runtime.sh",
     "test": "go test -race -cover ./...",
-    "test:ci": "go test -race -cover ./...",
+    "test:ci": "../../tools/check-go-coverage.sh",
     "lint": "../../tools/golangci-lint.sh run && ../../tools/check-unfused-arithmetic.sh",
     "lint:fix": "../../tools/golangci-lint.sh run --fix",
     "format": "../../tools/golangci-lint.sh fmt",

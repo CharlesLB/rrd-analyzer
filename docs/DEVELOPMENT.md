@@ -348,7 +348,15 @@ what Biome does not cover: semantic blank lines through `@stylistic`, and the
 `eslint-plugin-security` rules. golangci-lint covers the daemon through
 `tools/golangci-lint.sh`, which pins its version and installs it on first use.
 
-Unit tests are Vitest for the TypeScript packages and `go test -race` for the daemon. The end-to-end
+Unit tests are Vitest for the TypeScript packages and `go test -race` for the daemon, and `pnpm test`
+fails below 100% coverage in every package. The TypeScript packages count statements, branches,
+functions and lines (`coverageThresholds` in each `angular.json`, `thresholds` in
+`packages/shared/vitest.config.ts`); the daemon counts statements across packages through
+`tools/check-go-coverage.sh`, which lists every statement no test runs as file:line. The only
+exclusions sit beside each threshold and are entry points: `main.ts`, `main.server.ts` and the
+bootstrap configs, and each binary's `main.go` plus the js/wasm glue. A gap is closed with a test,
+never with a coverage pragma or a new exclusion. `pnpm --filter <package> test` keeps watching
+without coverage; `test:ci` is what measures. The end-to-end
 suite is Playwright over the real UI and the real Go use cases: `pnpm test:e2e` starts both
 servers itself, and `pnpm test:e2e:report` opens the last report. It always starts its own daemon,
 on a library under `$TMPDIR`, and refuses to run while something else holds `:34115`: every test

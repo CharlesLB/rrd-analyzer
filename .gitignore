@@ -10,7 +10,7 @@ coverage.out
 # Node / Angular
 node_modules/
 .angular/
-packages/ui-analyzer/coverage/
+coverage/
 packages/ui-analyzer/out-tsc/
 packages/ui-analyzer/tools/design-check/shots/
 packages/ui-analyzer/e2e/report/

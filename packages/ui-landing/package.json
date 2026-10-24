@@ -10,7 +10,7 @@
     "embed:app": "rm -rf dist/browser/app && cp -R ../ui-analyzer/dist/browser-edition dist/browser/app",
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
-    "test:ci": "ng test --no-watch",
+    "test:ci": "ng test --no-watch --coverage",
     "lint": "biome check .",
     "lint:fix": "biome check --write .",
     "format": "biome format --write .",
@@ -41,6 +41,7 @@
     "@biomejs/biome": "^2.5.11",
     "@playwright/test": "^1.62.1",
     "@types/node": "^26.4.0",
+    "@vitest/coverage-v8": "4.1.11",
     "jsdom": "^28.0.0",
     "typescript": "~6.0.2",
     "vitest": "^4.0.8"
