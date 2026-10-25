@@ -10,7 +10,7 @@ const THEMES = {
   DARK: 'dark',
 } as const;
 
-export type Theme = ValueOf<typeof THEMES>;
+type Theme = ValueOf<typeof THEMES>;
 
 const FOLLOWS_THE_SYSTEM = null;
 

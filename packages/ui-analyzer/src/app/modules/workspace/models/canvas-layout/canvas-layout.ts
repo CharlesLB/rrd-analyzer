@@ -14,7 +14,7 @@ const HIDDEN_OVERFLOW = 'hidden';
 
 export type ChartHeight = number | null;
 
-export type CanvasGrid = {
+type CanvasGrid = {
   readonly columns: string;
   readonly rows: string;
   readonly autoRows: string;

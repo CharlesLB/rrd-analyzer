@@ -213,14 +213,12 @@ describe('LogDetailPanelComponent', () => {
     expect(textOf(fixture, '.log-detail-panel-copy')).toBe('Copy JSON');
   });
 
-  it('says the copy was blocked when the browser refuses it both ways', async () => {
+  it('says the copy was blocked when the browser refuses it', async () => {
     vi.stubGlobal('navigator', {});
-    Object.defineProperty(document, 'execCommand', { value: vi.fn().mockReturnValue(false), configurable: true });
     const fixture = renderPanel();
 
     elementOf(fixture, '.log-detail-panel-copy')?.click();
     await vi.advanceTimersByTimeAsync(0);
-    Reflect.deleteProperty(document, 'execCommand');
 
     expect(TestBed.inject(ToastStore).message()).toBe('copy blocked by the browser');
   });

@@ -22,9 +22,9 @@ describe('ExportMenuComponent', () => {
 
     expect(textOf(fixture, '.export-menu-scope-label')).toBe('atlas_system_cpu_user · 24 h');
     expect(elementOf(fixture, '.export-menu-scope .color-swatch')?.style.background).toBe(cssColorOf(SERIES_COLORS[3]));
-    expect(textsOf(fixture, '.export-menu-tag')).toEqual(['PNG', 'COPY', 'SVG', 'CSV']);
-    expect(textsOf(fixture, '.export-menu-title')).toEqual(['PNG image', 'Copy PNG to clipboard', 'SVG vector', 'CSV data']);
-    expect(textsOf(fixture, '.export-menu-detail')).toEqual([
+    expect(textsOf(fixture, '.menu-option-tag')).toEqual(['PNG', 'COPY', 'SVG', 'CSV']);
+    expect(textsOf(fixture, '.menu-option-heading')).toEqual(['PNG image', 'Copy PNG to clipboard', 'SVG vector', 'CSV data']);
+    expect(textsOf(fixture, '.menu-option-detail')).toEqual([
       '1920 × 1080',
       '1920 × 1080, paste into a doc',
       '1920 × 1080 vector',
@@ -41,7 +41,7 @@ describe('ExportMenuComponent', () => {
       seriesCount: 2,
     });
 
-    expect(textsOf(fixture, '.export-menu-detail').at(-1)).toBe('raw samples for its 2 series');
+    expect(textsOf(fixture, '.menu-option-detail').at(-1)).toBe('raw samples for its 2 series');
   });
 
   it('export menu is fixed under the button it was opened from', () => {
@@ -75,7 +75,7 @@ describe('ExportMenuComponent', () => {
     component.allChartsRequested.subscribe(everything);
     component.closeRequested.subscribe(closed);
 
-    elementsOf(fixture, '.export-menu-item').forEach((row) => {
+    elementsOf(fixture, '.menu-option').forEach((row) => {
       row.click();
     });
     elementOf(fixture, '.export-menu-all')?.click();

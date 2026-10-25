@@ -26,7 +26,7 @@ const FRAME_SIZE = { width: EXPORT_FRAME.WIDTH, height: EXPORT_FRAME.HEIGHT };
 
 type ChartExporter = (charts: readonly ExportChartPlan[]) => Promise<boolean>;
 
-export type ExportMenuDetails = ExportMenuPlacement & {
+type ExportMenuDetails = ExportMenuPlacement & {
   readonly color: string;
   readonly scopeLabel: string;
   readonly chartCount: number;

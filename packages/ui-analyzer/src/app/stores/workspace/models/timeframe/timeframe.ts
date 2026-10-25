@@ -24,14 +24,14 @@ export type SelectionDraft = {
   readonly focusFraction: number;
 };
 
-export type SelectionExtent = {
+type SelectionExtent = {
   readonly start: number;
   readonly end: number;
 };
 
 export type QuickPresetKey = keyof QuickPresetMessages;
 
-export type QuickPreset = {
+type QuickPreset = {
   readonly key: QuickPresetKey;
   readonly milliseconds: number;
 };

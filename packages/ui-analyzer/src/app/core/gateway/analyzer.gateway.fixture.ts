@@ -6,9 +6,9 @@ import type { AnalysisDto, BundleDto, ConfigurationStampDto, InsightsReportDto, 
 import type { AnalyzerGateway } from './analyzer.gateway';
 import { BrowserGateway } from './browser-gateway/browser.gateway';
 
-export const FIXTURE_ANALYSIS_ID = 'a1';
+const FIXTURE_ANALYSIS_ID = 'a1';
 export const FIXTURE_UNTIL_MILLISECONDS = 1_788_026_400_000;
-export const FIXTURE_STEP_MILLISECONDS = 300_000;
+const FIXTURE_STEP_MILLISECONDS = 300_000;
 
 export const analysisDtoFixture = (overrides: Partial<AnalysisDto> = {}): AnalysisDto => ({
   id: FIXTURE_ANALYSIS_ID,

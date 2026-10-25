@@ -10,7 +10,7 @@ import (
 
 var excursionValues = []float64{1, 1, 1, 1, 1, 5, 9, 10, 6, 1, 1, 1}
 
-func TestExcursion_KnownPeak_ExpandsWhileNeighboursClearTheBar(t *testing.T) {
+func TestExcursions_KnownPeak_ExpandsWhileNeighboursClearTheBar(t *testing.T) {
 	tests := []struct {
 		name       string
 		give       []float64
@@ -41,13 +41,14 @@ func TestExcursion_KnownPeak_ExpandsWhileNeighboursClearTheBar(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, found := signal.Excursion(tt.give, tt.searched, tt.parameters)
-			if !found {
-				t.Fatal("Excursion found nothing")
+			episodes := signal.Excursions(tt.give, tt.searched, tt.parameters)
+			if len(episodes) != 1 {
+				t.Fatalf("Excursions = %+v, want the one episode around the peak", episodes)
 			}
 
+			got := episodes[0]
 			if spanOf(got) != tt.want || got.Base != tt.wantBase || got.Peak != tt.wantPeak || got.Median != tt.wantMedian || !sameValue(got.Mean, tt.wantMean) {
-				t.Errorf("Excursion = %+v, want span %+v base %v peak %v median %v mean %v", got, tt.want, tt.wantBase, tt.wantPeak, tt.wantMedian, tt.wantMean)
+				t.Errorf("Excursions = %+v, want span %+v base %v peak %v median %v mean %v", got, tt.want, tt.wantBase, tt.wantPeak, tt.wantMedian, tt.wantMean)
 			}
 
 			if got.Direction != domain.DirectionRising || got.ChangePoint != tt.want.onset {
@@ -78,9 +79,8 @@ func TestExcursions_TwoSurgesAndABump_KeepEverySurgeUpToTheLimitAndLeaveTheBump(
 	onlyOne := upToThree
 	onlyOne.MaximumEpisodes = 1
 
-	largest, _ := signal.Excursion(values, searched, upToThree)
-	if one := signal.Excursions(values, searched, onlyOne); len(one) != 1 || one[0] != largest {
-		t.Errorf("Excursions with a limit of one = %+v, want exactly Excursion's %+v", one, largest)
+	if one := signal.Excursions(values, searched, onlyOne); len(one) != 1 || one[0] != both[0] {
+		t.Errorf("Excursions with a limit of one = %+v, want only the larger surge %+v", one, both[0])
 	}
 }
 
@@ -111,10 +111,10 @@ func TestExcursions_OneSmoothSurge_IsOneEpisodeHoweverManyAreAllowed(t *testing.
 	upToEight := signal.ExcursionParameters{ThresholdFraction: 0.25, MinimumSamples: 8, MaximumEpisodes: 8}
 	searched := signal.Range{From: 0, Until: 599}
 
-	largest, _ := signal.Excursion(values, searched, upToEight)
+	largest := signal.Excursions(values, searched, signal.ExcursionParameters{ThresholdFraction: 0.25, MinimumSamples: 8})
 
-	if got := signal.Excursions(values, searched, upToEight); len(got) != 1 || got[0] != largest {
-		t.Errorf("Excursions = %d episodes %+v, want only Excursion's %+v: the slopes of a surge are not surges of their own", len(got), got, largest)
+	if got := signal.Excursions(values, searched, upToEight); len(got) != 1 || len(largest) != 1 || got[0] != largest[0] {
+		t.Errorf("Excursions = %d episodes %+v, want only the largest %+v: the slopes of a surge are not surges of their own", len(got), got, largest)
 	}
 }
 
@@ -129,7 +129,7 @@ func TestExcursions_TwoSmoothSurges_AreTwoEpisodes(t *testing.T) {
 	}
 }
 
-func TestExcursion_InsufficientOrGuardedData_FindsNothing(t *testing.T) {
+func TestExcursions_InsufficientOrGuardedData_FindNothing(t *testing.T) {
 	tests := []struct {
 		name       string
 		give       []float64
@@ -146,8 +146,8 @@ func TestExcursion_InsufficientOrGuardedData_FindsNothing(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got, found := signal.Excursion(tt.give, tt.searched, tt.parameters); found {
-				t.Errorf("Excursion = %+v, want nothing", got)
+			if got := signal.Excursions(tt.give, tt.searched, tt.parameters); len(got) != 0 {
+				t.Errorf("Excursions = %+v, want nothing", got)
 			}
 		})
 	}

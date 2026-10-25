@@ -22,7 +22,18 @@ func gauge(file, dataSource string) domain.SeriesInfo {
 	return domain.SeriesInfo{ID: file + "/" + dataSource, File: file, DataSource: dataSource, DataSourceType: "GAUGE"}
 }
 
-func TestTypeOf_DefaultClassifier_NamesEverySeriesTheRulesNeed(t *testing.T) {
+// typeOf classifies one series the way a run classifies a whole catalog, and reports the type it
+// was given, if any.
+func typeOf(entries []domain.ClassifierEntry, info domain.SeriesInfo) (string, bool) {
+	result := classify.Classify(entries, []domain.SeriesInfo{info})
+	if len(result.Classified) == 0 {
+		return "", false
+	}
+
+	return result.Classified[0].Type, true
+}
+
+func TestClassify_DefaultClassifier_NamesEverySeriesTheRulesNeed(t *testing.T) {
 	entries := defaultEntries(t)
 
 	tests := []struct {
@@ -81,15 +92,15 @@ func TestTypeOf_DefaultClassifier_NamesEverySeriesTheRulesNeed(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, found := classify.TypeOf(entries, tt.give)
+			got, found := typeOf(entries, tt.give)
 			if got != tt.want || found != tt.wantType {
-				t.Errorf("TypeOf(%s, %s) = %q, %v; want %q, %v", tt.give.File, tt.give.DataSource, got, found, tt.want, tt.wantType)
+				t.Errorf("Classify(%s, %s) = %q, %v; want %q, %v", tt.give.File, tt.give.DataSource, got, found, tt.want, tt.wantType)
 			}
 		})
 	}
 }
 
-func TestTypeOf_Clauses_AllMustHoldAndFirstMatchWins(t *testing.T) {
+func TestClassify_Clauses_AllMustHoldAndFirstMatchWins(t *testing.T) {
 	entries := []domain.ClassifierEntry{
 		{Type: "counter.reset", NameAny: []string{"restarts"}, DataSourceTypeAny: []string{"counter"}},
 		{Type: "queue.depth", FileAny: []string{"queue_depth*"}, ExcludeAny: []string{"dead"}},
@@ -110,18 +121,18 @@ func TestTypeOf_Clauses_AllMustHoldAndFirstMatchWins(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got, _ := classify.TypeOf(entries, tt.give); got != tt.want {
-				t.Errorf("TypeOf(%s) = %q, want %q", tt.give.File, got, tt.want)
+			if got, _ := typeOf(entries, tt.give); got != tt.want {
+				t.Errorf("Classify(%s) = %q, want %q", tt.give.File, got, tt.want)
 			}
 		})
 	}
 }
 
-func TestTypeOf_PhraseOfNoWords_MatchesNoSeries(t *testing.T) {
+func TestClassify_PhraseOfNoWords_MatchesNoSeries(t *testing.T) {
 	entries := []domain.ClassifierEntry{{Type: "anything.at.all", NameAny: []string{"_"}}}
 
-	if got, found := classify.TypeOf(entries, gauge("app_queue.rrd", "value")); found {
-		t.Errorf("TypeOf = %q, want no type: a phrase without words would otherwise hold for every name", got)
+	if got, found := typeOf(entries, gauge("app_queue.rrd", "value")); found {
+		t.Errorf("Classify = %q, want no type: a phrase without words would otherwise hold for every name", got)
 	}
 }
 

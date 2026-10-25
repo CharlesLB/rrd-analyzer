@@ -1,6 +1,6 @@
 import { expect, type Locator, type Page, type Request } from '@playwright/test';
 
-export const BROWSER_APP_PATH = '/app/';
+const BROWSER_APP_PATH = '/app/';
 export const SAMPLE_ANALYSIS = 'Sample API · production';
 export const SAMPLE_LINE_COUNT = 5;
 export const SAMPLE_FINDING_COUNT = 4;
@@ -36,7 +36,7 @@ export const createAnalysisFrom = async (page: Page, fileName: string, content: 
   await page.locator('.new-analysis-dialog-create').click();
 };
 
-export type RequestRecording = {
+type RequestRecording = {
   readonly requests: readonly Request[];
 };
 

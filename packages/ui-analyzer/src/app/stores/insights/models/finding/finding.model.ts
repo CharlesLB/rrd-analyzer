@@ -26,7 +26,7 @@ export const EVIDENCE_DIRECTIONS = {
 
 export type EvidenceDirection = ValueOf<typeof EVIDENCE_DIRECTIONS>;
 
-export type CausePart = {
+type CausePart = {
   readonly text: string;
   readonly isEmphasized: boolean;
 };

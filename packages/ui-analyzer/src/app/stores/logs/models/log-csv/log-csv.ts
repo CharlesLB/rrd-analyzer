@@ -1,6 +1,6 @@
 import * as R from 'remeda';
 
-export type CsvRow = Readonly<Record<string, string>>;
+type CsvRow = Readonly<Record<string, string>>;
 
 type CsvDialect = {
   readonly delimiter: string;

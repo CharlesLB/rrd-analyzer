@@ -65,7 +65,7 @@ export const evidenceGlyphColorOf = (evidence: Evidence, severity: Severity): st
   return isRise(evidence) ? DIRECTION_COLORS.RISE : DIRECTION_COLORS.FALL;
 };
 
-export type EvidenceBadge = {
+type EvidenceBadge = {
   readonly color: string;
   readonly background: string;
   readonly border: string;

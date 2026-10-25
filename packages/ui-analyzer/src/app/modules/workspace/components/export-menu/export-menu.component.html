@@ -4,13 +4,7 @@
     <span class="export-menu-scope-label">{{ scopeLabel() }}</span>
   </div>
   @for (item of items(); track item.format) {
-    <button class="export-menu-item" type="button" (click)="formatChosen.emit(item.format)">
-      <span class="export-menu-tag">{{ item.tag }}</span>
-      <span class="export-menu-text">
-        <span class="export-menu-title">{{ item.title }}</span>
-        <span class="export-menu-detail">{{ item.detail }}</span>
-      </span>
-    </button>
+    <app-menu-option [tag]="item.tag" [heading]="item.title" [detail]="item.detail" (chosen)="formatChosen.emit(item.format)" />
   }
   @if (offersAllCharts()) {
     <div class="export-menu-divider"></div>

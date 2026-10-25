@@ -17,26 +17,26 @@ const NOISE_SPREAD = 7919;
 const NOISE_OFFSET = 13;
 const WAVE_PERIOD_ROWS = 9;
 
-export type ConsolidationName = 'AVERAGE' | 'MIN' | 'MAX' | 'LAST' | 'HWPREDICT';
+type ConsolidationName = 'AVERAGE' | 'MIN' | 'MAX' | 'LAST' | 'HWPREDICT';
 
-export type ArchiveShape = {
+type ArchiveShape = {
   readonly consolidationFunction: ConsolidationName;
   readonly primaryPointsPerRow: number;
   readonly rows: number;
   readonly scale: number;
 };
 
-export type DataSourceShape = {
+type DataSourceShape = {
   readonly name: string;
   readonly type: 'GAUGE' | 'COUNTER' | 'DERIVE' | 'ABSOLUTE';
 };
 
-export type UnknownRange = {
+type UnknownRange = {
   readonly fromRow: number;
   readonly untilRow: number;
 };
 
-export type RrdFixture = {
+type RrdFixture = {
   readonly fileName: string;
   readonly dataSources: readonly DataSourceShape[];
   readonly archives: readonly ArchiveShape[];
@@ -46,7 +46,7 @@ export type RrdFixture = {
   readonly truncatedRows?: UnknownRange;
 };
 
-export type BrokenSource = {
+type BrokenSource = {
   readonly fileName: string;
   readonly content: string;
 };
@@ -225,7 +225,7 @@ const dataSourceOf = (source: DataSourceShape): string =>
     '\t</ds>',
   ].join('\n');
 
-export const dumpOf = (fixture: RrdFixture): string =>
+const dumpOf = (fixture: RrdFixture): string =>
   [
     '<?xml version="1.0" encoding="utf-8"?>',
     '<!DOCTYPE rrd SYSTEM "http://oss.oetiker.ch/rrdtool/rrdtool.dtd">',
@@ -265,13 +265,13 @@ const ARCHIVE_POINTS_PER_ROW_OFFSET = 32;
 
 const BINARY_ROTATION = 137;
 
-export type BinaryArchiveShape = {
+type BinaryArchiveShape = {
   readonly consolidationFunction: ConsolidationName;
   readonly primaryPointsPerRow: number;
   readonly rows: number;
 };
 
-export type BinaryRrdFixture = {
+type BinaryRrdFixture = {
   readonly fileName: string;
   readonly dataSource: DataSourceShape;
   readonly archives: readonly BinaryArchiveShape[];
@@ -412,7 +412,7 @@ export const writeBrokenSources = (): readonly WrittenSource[] => {
 
 export const MISSING_SOURCE: WrittenSource = { name: 'deleted_since.xml', path: `${FIXTURE_DIRECTORY}/deleted_since.xml`, size: 2048 };
 
-export type RestorableSource = {
+type RestorableSource = {
   readonly source: WrittenSource;
   readonly restore: () => void;
 };

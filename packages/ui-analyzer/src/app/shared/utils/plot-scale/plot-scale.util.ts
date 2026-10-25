@@ -5,7 +5,7 @@ export type VerticalBand = {
   readonly height: number;
 };
 
-export type SampleExtent = {
+type SampleExtent = {
   readonly lowest: number;
   readonly highest: number;
   readonly last: number;

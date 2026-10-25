@@ -434,7 +434,7 @@ export const scenarios = {
     await addZoomHistory(page);
     await page.click('.chart-panel-header-export >> nth=0');
     await settle(page, 300);
-    await page.locator('.export-menu-item').filter({ hasText: 'CSV data' }).click();
+    await page.locator('app-export-menu .menu-option').filter({ hasText: 'CSV data' }).click();
     await restPointer(page);
     await settle(page, 700);
   },
@@ -518,7 +518,7 @@ export const scenarios = {
   '04-export-output-single': async (page) => {
     await openCapacityWorkspace(page);
     await page.clock.setFixedTime(new Date(REFERENCE_EXPORT_TIMES.SINGLE));
-    await showExportedImage(page, await exportFromMenu(page, '.export-menu-item >> nth=0'), EXPORT_VIEWER.LIGHT_SURROUND);
+    await showExportedImage(page, await exportFromMenu(page, 'app-export-menu .menu-option >> nth=0'), EXPORT_VIEWER.LIGHT_SURROUND);
   },
 
   '05-export-output-multi': async (page) => {
@@ -531,6 +531,6 @@ export const scenarios = {
     await openFindingWindowWithInsights(page);
     await toggleTheme(page);
     await page.clock.setFixedTime(new Date(REFERENCE_EXPORT_TIMES.DARK));
-    await showExportedImage(page, await exportFromMenu(page, '.export-menu-item >> nth=0'), EXPORT_VIEWER.DARK_SURROUND);
+    await showExportedImage(page, await exportFromMenu(page, 'app-export-menu .menu-option >> nth=0'), EXPORT_VIEWER.DARK_SURROUND);
   },
 };

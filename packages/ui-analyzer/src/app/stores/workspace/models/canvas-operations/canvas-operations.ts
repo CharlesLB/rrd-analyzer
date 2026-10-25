@@ -17,7 +17,7 @@ import {
   seriesIdsOf,
 } from '../plotted-chart/plotted-chart';
 
-export const MAXIMUM_CHART_SERIES = 5;
+const MAXIMUM_CHART_SERIES = 5;
 
 const BEFORE_LIMIT = 0.25;
 const AFTER_LIMIT = 0.75;
@@ -36,7 +36,7 @@ export const DRAG_ORIGINS = {
   CANVAS: 'canvas',
 } as const;
 
-export type DragOrigin = ValueOf<typeof DRAG_ORIGINS>;
+type DragOrigin = ValueOf<typeof DRAG_ORIGINS>;
 
 export type DraggedItem = {
   readonly origin: DragOrigin;
@@ -48,7 +48,7 @@ export type DropTarget = {
   readonly position: DropPosition;
 };
 
-export const CANVAS_REFUSALS = {
+const CANVAS_REFUSALS = {
   CHART_FULL: 'chart-full',
 } as const;
 
@@ -60,7 +60,7 @@ const REFUSAL_MESSAGES: Readonly<Record<CanvasRefusal, (messages: WorkspaceMessa
 
 export const refusalMessageOf = (refusal: CanvasRefusal, messages: WorkspaceMessages): string => REFUSAL_MESSAGES[refusal](messages);
 
-export type CanvasOutcome = {
+type CanvasOutcome = {
   readonly canvas: Canvas;
   readonly refusal: CanvasRefusal | null;
 };

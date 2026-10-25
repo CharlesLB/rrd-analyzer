@@ -241,7 +241,6 @@ export const ENGLISH_MESSAGES: Messages = {
     chartSeriesLimit: 'limit of 5 series in one chart',
     chartsMerged: '{merged} merged into {target}',
     undo: 'Undo',
-    redo: 'Redo',
     csvExported: { one: 'CSV exported · {samples} samples × {count} chart', other: 'CSV exported · {samples} samples × {count} charts' },
     nothingToExport: 'nothing on the canvas to export',
     seriesUnavailable: 'Could not read the series for this window',

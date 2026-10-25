@@ -1,8 +1,8 @@
 import * as R from 'remeda';
 
-export type PlainTextEntry = Readonly<Record<string, string | number>>;
+type PlainTextEntry = Readonly<Record<string, string | number>>;
 
-export type PlainTextReading = {
+type PlainTextReading = {
   readonly entries: readonly PlainTextEntry[];
   readonly undatedLineCount: number;
 };

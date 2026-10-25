@@ -37,6 +37,5 @@ packages/daemon/cmd/rrd-analyzer/dist/*
 # Sample round robin databases kept for hand testing, never part of the repository
 /metrics/
 
-# Docs
-/spec
+# Assistant settings kept per machine
 .claude/

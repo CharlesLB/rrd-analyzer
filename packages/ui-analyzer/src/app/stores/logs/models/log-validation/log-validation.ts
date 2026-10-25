@@ -16,7 +16,7 @@ export const VALIDATION_STATES = {
   ERROR: 'error',
 } as const;
 
-export type ValidationState = ValueOf<typeof VALIDATION_STATES>;
+type ValidationState = ValueOf<typeof VALIDATION_STATES>;
 
 export type RoleValidation = {
   readonly state: ValidationState;

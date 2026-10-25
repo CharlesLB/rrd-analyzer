@@ -10,29 +10,15 @@ type ExcursionParameters struct {
 	PeakAtLeast       *float64
 	PeakOverMedian    *float64
 
-	// MaximumEpisodes bounds how many episodes Excursions reports. Excursion reports the first alone,
-	// whatever it says.
+	// MaximumEpisodes bounds how many episodes Excursions reports; below one it reports the first alone.
 	MaximumEpisodes int
 }
 
-// Excursion is the reference prototype's findRise. It takes the global peak of the range (the
-// first index holding the strict maximum), sets a bar a fraction of the way from the median to
-// that peak, and widens the episode left and right while the neighbours are present and above the
-// bar. The optional guards reject a peak that is too low in absolute terms or relative to the
-// median.
-func Excursion(values []float64, searched Range, parameters ExcursionParameters) (Episode, bool) {
-	parameters.MaximumEpisodes = 1
-
-	episodes := Excursions(values, searched, parameters)
-	if len(episodes) == 0 {
-		return Episode{}, false
-	}
-
-	return episodes[0], true
-}
-
-// Excursions is Excursion repeated. Its first episode is exactly what Excursion returns; after it,
-// the highest peak outside every surge found so far becomes the next, for as long as that peak
+// Excursions is the reference prototype's findRise, repeated. Its first episode is the global peak
+// of the range (the first index holding the strict maximum), widened left and right while the
+// neighbours are present and above a bar a fraction of the way from the median to that peak; the
+// optional guards reject a peak that is too low in absolute terms or relative to the median. After
+// it, the highest peak outside every surge found so far becomes the next, for as long as that peak
 // clears the same guards and stands out from the median of the whole range, so a month holding two
 // surges reports both instead of only the larger.
 func Excursions(values []float64, searched Range, parameters ExcursionParameters) []Episode {

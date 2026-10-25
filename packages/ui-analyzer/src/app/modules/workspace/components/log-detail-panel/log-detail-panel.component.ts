@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, DOCUMENT, inject, input, linkedSignal, output, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, input, linkedSignal, output, signal } from '@angular/core';
 import { formatMessage, formatPlural } from '@rrd-analyzer/shared';
 import { SearchIconComponent } from '../../../../shared/components/icons/search-icon/search-icon.component';
 import { GLYPHS } from '../../../../shared/constants/glyphs';
@@ -26,7 +26,7 @@ const JSON_INDENT = 2;
 const NO_QUERY = '';
 const FIRST_MATCH = 0;
 
-export type DetailShortcutLabels = {
+type DetailShortcutLabels = {
   readonly find: string;
   readonly previousMatch: string;
 };
@@ -53,7 +53,6 @@ export class LogDetailPanelComponent {
   public readonly stepRequested = output<StepDirection>();
   public readonly centerRequested = output<void>();
 
-  private readonly _document = inject(DOCUMENT);
   private readonly _toasts = inject(ToastStore);
   private readonly _searchHistory = inject(SearchHistoryStore);
   private readonly _isSearchOpenState = signal(false);
@@ -163,7 +162,7 @@ export class LogDetailPanelComponent {
   }
 
   protected async copyJson(): Promise<void> {
-    const isCopied = await copyText(JSON.stringify(this.entry().record, null, JSON_INDENT), this._document);
+    const isCopied = await copyText(JSON.stringify(this.entry().record, null, JSON_INDENT));
 
     if (!isCopied) {
       this._toasts.show(this.texts().logs.detail.copyBlocked);

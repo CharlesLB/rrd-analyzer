@@ -11,7 +11,7 @@ import { WorkspaceStore } from './workspace.store';
 
 const LIBRARY_SIZE = 7;
 
-export type OpenedWorkspace = {
+type OpenedWorkspace = {
   readonly gateway: AnalyzerGateway;
   readonly workspace: WorkspaceStore;
   readonly seriesData: SeriesDataStore;

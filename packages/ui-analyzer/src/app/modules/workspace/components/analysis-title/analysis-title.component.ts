@@ -2,6 +2,7 @@ import { afterNextRender, ChangeDetectionStrategy, Component, computed, ElementR
 import { FormField, FormRoot, form, submit } from '@angular/forms/signals';
 import { formatPlural } from '@rrd-analyzer/shared';
 import { AnchoredMenuComponent } from '../../../../shared/components/anchored-menu/anchored-menu.component';
+import { MenuOptionComponent } from '../../../../shared/components/menu-option/menu-option.component';
 import { GLYPHS } from '../../../../shared/constants/glyphs';
 import { currentViewport, leftEdgeAnchorOf, placeUnderLeftEdge } from '../../../../shared/utils/anchored-popover/anchored-popover.util';
 import { I18nStore } from '../../../../stores/i18n/store/i18n-store/i18n.store';
@@ -12,7 +13,7 @@ const MENU_WIDTH = 236;
 
 @Component({
   selector: 'app-analysis-title',
-  imports: [AnchoredMenuComponent, FormField, FormRoot],
+  imports: [AnchoredMenuComponent, FormField, FormRoot, MenuOptionComponent],
   templateUrl: './analysis-title.component.html',
   styleUrl: './analysis-title.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,

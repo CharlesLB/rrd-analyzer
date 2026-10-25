@@ -26,19 +26,12 @@
 </button>
 @if (menuPlacement(); as placement) {
   <app-anchored-menu [placement]="placement" [width]="menuWidth" (closeRequested)="closeMenu()">
-    <button class="analysis-title-menu-item" type="button" (click)="addSources()">
-      <span class="analysis-title-menu-tag">{{ texts().analysisTitle.addSourcesTag }}</span>
-      <span class="analysis-title-menu-text">
-        <span class="analysis-title-menu-title">{{ texts().analysisTitle.addSourcesTitle }}</span>
-        <span class="analysis-title-menu-detail">{{ texts().analysisTitle.addSourcesDetail }}</span>
-      </span>
-    </button>
-    <button class="analysis-title-menu-item" type="button" (click)="exportSources()">
-      <span class="analysis-title-menu-tag">{{ texts().analysisTitle.sourcesTag }}</span>
-      <span class="analysis-title-menu-text">
-        <span class="analysis-title-menu-title">{{ texts().analysisTitle.sourcesTitle }}</span>
-        <span class="analysis-title-menu-detail">{{ sourcesDetail() }}</span>
-      </span>
-    </button>
+    <app-menu-option
+      [tag]="texts().analysisTitle.addSourcesTag"
+      [heading]="texts().analysisTitle.addSourcesTitle"
+      [detail]="texts().analysisTitle.addSourcesDetail"
+      (chosen)="addSources()"
+    />
+    <app-menu-option [tag]="texts().analysisTitle.sourcesTag" [heading]="texts().analysisTitle.sourcesTitle" [detail]="sourcesDetail()" (chosen)="exportSources()" />
   </app-anchored-menu>
 }

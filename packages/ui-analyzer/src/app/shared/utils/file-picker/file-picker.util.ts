@@ -7,7 +7,7 @@ const FOCUS_EVENT = 'focus';
 
 export const CANCEL_GRACE_MILLISECONDS = 1000;
 
-export type FilePickRequest = {
+type FilePickRequest = {
   readonly accept: string;
   readonly allowsMany: boolean;
 };

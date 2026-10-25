@@ -1,6 +1,6 @@
 import { schema, validate } from '@angular/forms/signals';
 
-export type AnalysisNameDraft = {
+type AnalysisNameDraft = {
   readonly name: string;
 };
 

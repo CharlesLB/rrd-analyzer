@@ -1,6 +1,6 @@
 import { DestroyRef, inject, type Signal, signal } from '@angular/core';
 
-export type SettlingSignal<TValue> = {
+type SettlingSignal<TValue> = {
   readonly value: Signal<TValue>;
   readonly set: (value: TValue) => void;
   readonly settle: (value: TValue) => void;

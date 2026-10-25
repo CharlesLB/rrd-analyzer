@@ -1,6 +1,6 @@
 import type { SampleTracks } from '../../../workspace/models/series/series.model';
 
-export type TrackQuery = {
+type TrackQuery = {
   readonly analysisId: string;
   readonly seriesIds: readonly string[];
   readonly fromMilliseconds: number;

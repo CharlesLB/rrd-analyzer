@@ -3,7 +3,7 @@ import { openLibrary } from './analyzer';
 
 export type PickedSources = Parameters<FileChooser['setFiles']>[0];
 
-export type DroppedFile = {
+type DroppedFile = {
   readonly name: string;
   readonly size: number;
 };

@@ -2,7 +2,7 @@ import type { RuntimeAnswer, RuntimeWorker } from './web-assembly-runtime';
 
 type Listener = (event: MessageEvent) => void;
 
-export type PostedMessage = {
+type PostedMessage = {
   readonly message: Record<string, unknown>;
   readonly transfer: readonly Transferable[];
 };

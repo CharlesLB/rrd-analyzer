@@ -16,12 +16,12 @@ const THUMBNAIL_BAND: VerticalBand = { top: THUMBNAIL_TOP, height: THUMBNAIL_DRA
 
 export const SPARKLINE_VIEW_BOX = `0 0 ${THUMBNAIL_WIDTH} ${THUMBNAIL_HEIGHT}`;
 
-export type ThumbnailPaths = {
+type ThumbnailPaths = {
   readonly line: string;
   readonly area: string;
 };
 
-export type ThumbnailArt = ThumbnailPaths & {
+type ThumbnailArt = ThumbnailPaths & {
   readonly areaFill: string;
 };
 

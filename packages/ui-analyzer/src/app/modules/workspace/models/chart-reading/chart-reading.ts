@@ -4,7 +4,7 @@ import { formatValue } from '../../../../shared/utils/value-format/value-format.
 import type { RangedLine } from '../../../../stores/workspace/models/value-axis/value-axis';
 import { lastPresentOf, plotTopPercentOf, sampleAtFraction } from '../plot-geometry/plot-geometry';
 
-export type LineReading = {
+type LineReading = {
   readonly line: RangedLine;
   readonly value: number | null;
 };
@@ -37,7 +37,7 @@ export type CursorReading = {
 export const lineReadingsOf = (lines: readonly RangedLine[], cursor: CursorReading | null): readonly LineReading[] =>
   R.map(lines, (line) => ({ line, value: cursor === null ? lastPresentOf(line.samples) : sampleAtFraction(line.samples, cursor.fraction) }));
 
-export const formatReading = (reading: LineReading, texts: ReadingTexts): string =>
+const formatReading = (reading: LineReading, texts: ReadingTexts): string =>
   reading.value === null ? texts.canvas.noData : formatValue(reading.value, reading.line.series.unit, texts.units);
 
 export const crosshairReadingsOf = (readings: readonly LineReading[], cursor: CursorReading | null, texts: ReadingTexts): readonly CrosshairReading[] =>

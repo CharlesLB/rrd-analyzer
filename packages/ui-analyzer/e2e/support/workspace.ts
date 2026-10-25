@@ -181,4 +181,4 @@ export const openExportMenu = async (page: Page, chartTitle: string): Promise<vo
   await expect(exportMenu(page)).toBeVisible();
 };
 
-export const exportMenuItem = (page: Page, title: string): Locator => page.locator('.export-menu-item').filter({ hasText: title });
+export const exportMenuItem = (page: Page, title: string): Locator => page.locator('app-export-menu .menu-option').filter({ hasText: title });

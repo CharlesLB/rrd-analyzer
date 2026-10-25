@@ -1,10 +1,10 @@
-export type ShortcutCombination = {
+type ShortcutCombination = {
   readonly key: string;
   readonly withCommand?: boolean;
   readonly withShift?: boolean;
 };
 
-export type PlatformDescription = {
+type PlatformDescription = {
   readonly platform?: string;
   readonly userAgent?: string;
 };

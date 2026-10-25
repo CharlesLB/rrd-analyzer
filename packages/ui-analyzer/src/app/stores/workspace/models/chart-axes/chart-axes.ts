@@ -3,7 +3,7 @@ import { isPercentUnit } from '../../../../shared/utils/value-format/value-forma
 import { FIRST_AXIS, type PlottedChart, type PlottedSeries } from '../plotted-chart/plotted-chart';
 import type { Series, SeriesStatistics } from '../series/series.model';
 
-export const SHARED_AXIS_SPREAD = 10;
+const SHARED_AXIS_SPREAD = 10;
 
 const PERCENT_SCALE = 100;
 

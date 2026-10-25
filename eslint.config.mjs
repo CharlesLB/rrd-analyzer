@@ -1,4 +1,7 @@
+import { existsSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
 import stylistic from '@stylistic/eslint-plugin';
+import { includeIgnoreFile } from 'eslint/config';
 import security from 'eslint-plugin-security';
 import tseslint from 'typescript-eslint';
 
@@ -42,7 +45,13 @@ const securityRules = {
   'security/detect-object-injection': 'off',
 };
 
+const GIT_IGNORE_FILES = ['.gitignore', '.git/info/exclude'].map((relativePath) => fileURLToPath(new URL(relativePath, import.meta.url)));
+
+// eslint-disable-next-line security/detect-non-literal-fs-filename -- the paths are the two ignore files of this repository, fixed above, never input
+const presentGitIgnoreFiles = GIT_IGNORE_FILES.filter((ignoreFile) => existsSync(ignoreFile));
+
 export default [
+  ...presentGitIgnoreFiles.map((ignoreFile) => includeIgnoreFile(ignoreFile)),
   {
     ignores: [
       '**/node_modules/**',
@@ -58,7 +67,6 @@ export default [
       'packages/ui-analyzer/tools/design-check/shots/**',
       'packages/ui-landing/e2e/report/**',
       'packages/ui-landing/e2e/.artifacts/**',
-      'spec/**',
       'coverage/**',
     ],
   },

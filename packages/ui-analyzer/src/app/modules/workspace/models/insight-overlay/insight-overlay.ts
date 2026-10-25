@@ -14,7 +14,7 @@ const MINIMUM_BAND_WIDTH = 1;
 const OPACITY_DECIMALS = 2;
 const NO_STROKE = 'none';
 
-export type InsightBand = {
+type InsightBand = {
   readonly x: string;
   readonly width: string;
   readonly fill: string;
@@ -22,7 +22,7 @@ export type InsightBand = {
   readonly stroke: string;
 };
 
-export type InsightMark = {
+type InsightMark = {
   readonly x: string;
   readonly color: string;
   readonly opacity: string;
@@ -33,7 +33,7 @@ export type InsightOverlays = {
   readonly marks: readonly InsightMark[];
 };
 
-export type OverlayFocus = {
+type OverlayFocus = {
   readonly isPanelOpen: boolean;
   readonly hoveredFindingId: string | null;
   readonly flashingFindingId: string | null;

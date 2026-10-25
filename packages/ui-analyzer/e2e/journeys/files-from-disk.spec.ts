@@ -107,7 +107,12 @@ test.describe('journey: reading files off disk', () => {
       await expect(analysisTitleName(page)).toHaveText(RENAMED);
 
       await page.locator('.analysis-title-menu-toggle').click();
-      const download = await downloadFrom(page, async () => await page.locator('.analysis-title-menu-item').filter({ hasText: 'Export RRD files' }).click());
+
+      const download = await downloadFrom(
+        page,
+        async () => await page.locator('app-analysis-title .menu-option').filter({ hasText: 'Export RRD files' }).click(),
+      );
+
       const archive = (await downloadedBytes(download)).toString('latin1');
 
       expect(download.suggestedFilename()).toBe('atlas-host-from-disk.zip');

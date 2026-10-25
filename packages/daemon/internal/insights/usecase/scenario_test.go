@@ -115,8 +115,9 @@ func benignHost() []seriesDomain.Series {
 	)
 }
 
-// oomHost is the spec's worked example: disk reads climb, memory crosses 90% shortly after, and
-// every series goes silent for two and a half hours until the host comes back with a fresh uptime.
+// oomHost is the out-of-memory host the rules are written around: disk reads climb, memory crosses
+// 90% shortly after, and every series goes silent for two and a half hours until the host comes back
+// with a fresh uptime.
 func oomHost() []seriesDomain.Series {
 	down := func(values []float64) []float64 { return silenced(values, 440, 470) }
 

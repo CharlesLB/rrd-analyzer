@@ -12,12 +12,12 @@ export type LogFailure = {
   readonly detail: string;
 };
 
-export type ParsedLogs = {
+type ParsedLogs = {
   readonly records: readonly LogRecord[];
   readonly notes: readonly string[];
 };
 
-export type LogParsing = { readonly parsed: ParsedLogs; readonly failure: null } | { readonly parsed: null; readonly failure: LogFailure };
+type LogParsing = { readonly parsed: ParsedLogs; readonly failure: null } | { readonly parsed: null; readonly failure: LogFailure };
 
 type JsonReading = { readonly value: unknown; readonly error: null } | { readonly value: null; readonly error: Error };
 

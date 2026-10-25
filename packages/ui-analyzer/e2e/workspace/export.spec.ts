@@ -38,7 +38,7 @@ test.describe('export menu', () => {
 
     await expect(button).toHaveClass(/chart-panel-header-export-open/);
     await expect(page.locator('.export-menu-scope-label')).toHaveText('atlas_system_cpu_user · 24 h');
-    await expect(page.locator('.export-menu-tag')).toHaveText(['PNG', 'COPY', 'SVG', 'CSV']);
+    await expect(page.locator('app-export-menu .menu-option-tag')).toHaveText(['PNG', 'COPY', 'SVG', 'CSV']);
     await expect(page.locator('.export-menu-all-label')).toHaveText('PNG of all 2 charts on the canvas');
     await expect(exportMenu(page)).toHaveCSS('top', `${Math.round(buttonBox.y + buttonBox.height + MENU_GAP)}px`);
     await expect(exportMenu(page)).toHaveCSS('right', `${Math.round(viewportWidth - (buttonBox.x + buttonBox.width))}px`);

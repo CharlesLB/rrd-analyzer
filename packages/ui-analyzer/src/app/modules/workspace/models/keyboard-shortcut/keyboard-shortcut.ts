@@ -62,7 +62,7 @@ export const SHORTCUT_ACTIONS = {
   NONE: 'none',
 } as const;
 
-export type ShortcutAction = ValueOf<typeof SHORTCUT_ACTIONS>;
+type ShortcutAction = ValueOf<typeof SHORTCUT_ACTIONS>;
 
 export type PerformedShortcut = Exclude<ShortcutAction, typeof SHORTCUT_ACTIONS.NONE>;
 

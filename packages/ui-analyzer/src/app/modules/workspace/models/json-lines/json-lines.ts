@@ -12,7 +12,7 @@ export const JSON_TOKEN_KINDS = {
 
 export type JsonTokenKind = ValueOf<typeof JSON_TOKEN_KINDS>;
 
-export type JsonToken = {
+type JsonToken = {
   readonly start: number;
   readonly end: number;
   readonly kind: JsonTokenKind;

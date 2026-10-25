@@ -1,4 +1,4 @@
-# Scenario rules for the service tests: the technical spec's worked examples, with windows and
+# Scenario rules for the service tests: worked examples of the default rules, with windows and
 # allowances sized for the five-minute fixtures built in usecase/scenario_test.go. They are test
 # material, not defaults.
 

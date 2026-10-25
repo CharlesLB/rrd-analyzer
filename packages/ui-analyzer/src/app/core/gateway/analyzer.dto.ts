@@ -1,11 +1,11 @@
-export type SampleDto = number | null;
+type SampleDto = number | null;
 
 export type ChartReferenceDto = {
   readonly seriesId: string;
   readonly label: string;
 };
 
-export type MergedSeriesDto = {
+type MergedSeriesDto = {
   readonly seriesId: string;
   readonly label: string;
   readonly axis: number;
@@ -44,7 +44,7 @@ export type SeriesDto = {
   readonly stepMilliseconds: number;
 };
 
-export type PlottedSeriesDto = {
+type PlottedSeriesDto = {
   readonly seriesId: string;
   readonly axis: number;
 };
@@ -68,7 +68,7 @@ export type WindowDto = {
   readonly samples: readonly SampleDto[];
 };
 
-export type StatisticsValuesDto = {
+type StatisticsValuesDto = {
   readonly minimum: number;
   readonly maximum: number;
   readonly average: number;
@@ -133,7 +133,7 @@ export type InsightsRequestDto = {
   readonly seriesIds: readonly string[];
 };
 
-export type CausePartDto = {
+type CausePartDto = {
   readonly text: string;
   readonly emphasis: boolean;
 };
@@ -168,7 +168,7 @@ export type ConfigurationStampDto = {
   readonly classifierHash: string;
 };
 
-export type AnalyzedSpanDto = ConfigurationStampDto & {
+type AnalyzedSpanDto = ConfigurationStampDto & {
   readonly scope: string;
   readonly fromMilliseconds: number;
   readonly untilMilliseconds: number;
@@ -187,7 +187,7 @@ export type BuildDto = {
   readonly summary: string;
 };
 
-export type SampleAnalysisLogDto = {
+type SampleAnalysisLogDto = {
   readonly fileName: string;
   readonly content: string;
 };

@@ -2,11 +2,9 @@ import io, os, sys
 from PIL import Image, ImageChops, ImageFilter
 import numpy as np
 
-REPOSITORY_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "..", ".."))
-REF_DIRS = [os.environ["REFERENCE_DIR"]] if os.environ.get("REFERENCE_DIR") else [
-    os.path.join(REPOSITORY_ROOT, "spec", "screenshots"),
-    os.path.join(REPOSITORY_ROOT, "spec", "new-spec", "screenshots"),
-]
+if not os.environ.get("REFERENCE_DIR"):
+    sys.exit("compare.py: set REFERENCE_DIR to the photographs to compare against, such as the set the commit before took")
+REF_DIRS = [os.environ["REFERENCE_DIR"]]
 SHOT_DIR = os.environ.get("OUT_DIR") or os.path.join(os.path.dirname(os.path.abspath(__file__)), "shots")
 OUT_DIR = os.path.join(SHOT_DIR, "diff")
 os.makedirs(OUT_DIR, exist_ok=True)

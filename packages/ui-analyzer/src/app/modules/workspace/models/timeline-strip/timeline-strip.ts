@@ -40,20 +40,20 @@ export type StripGesture = {
   readonly window: TimeRange;
 };
 
-export type StripTick = {
+type StripTick = {
   readonly left: string;
   readonly label: string;
   readonly transform: string;
 };
 
-export type StripWindowPlacement = {
+type StripWindowPlacement = {
   readonly startLeft: string;
   readonly endLeft: string;
   readonly width: string;
   readonly isNarrow: boolean;
 };
 
-export type OverviewArt = {
+type OverviewArt = {
   readonly line: string;
   readonly area: string;
 };

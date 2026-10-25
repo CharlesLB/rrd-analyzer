@@ -181,7 +181,7 @@ describe('WorkspacePageComponent', () => {
     document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
     fixture.detectChanges();
 
-    expect(elementOf(fixture, '.analysis-title-menu-item')).toBeNull();
+    expect(elementOf(fixture, 'app-analysis-title .menu-option')).toBeNull();
     expect(elementOf(fixture, 'app-timeframe-popover')).not.toBeNull();
   });
 
@@ -248,7 +248,7 @@ describe('WorkspacePageComponent', () => {
     expect(countOf(fixture, '.chart-panel-header-export-open')).toBe(1);
     expect(elementsOf(fixture, '.chart-panel-header-export')[1]?.classList).toContain('chart-panel-header-export-open');
 
-    click(fixture, '.export-menu-item', 3);
+    click(fixture, 'app-export-menu .menu-option', 3);
 
     expect(TestBed.inject(ExportStore).menu()).toBeNull();
     await vi.waitFor(() => expect(gateway.exportCsv).toHaveBeenCalledWith(expect.objectContaining({ seriesIds: ['s1'] })));
@@ -765,6 +765,6 @@ describe('WorkspacePageComponent', () => {
     click(fixture, '.analysis-title-menu-toggle');
     press(fixture, 'Escape');
 
-    expect(elementOf(fixture, '.analysis-title-menu-item')).toBeNull();
+    expect(elementOf(fixture, 'app-analysis-title .menu-option')).toBeNull();
   });
 });

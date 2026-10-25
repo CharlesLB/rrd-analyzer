@@ -23,7 +23,7 @@ export const stubBrowserStorage = (): void => {
 
 type MediaQueryListener = (event: MediaQueryListEvent) => void;
 
-export type StubbedSystemTheme = {
+type StubbedSystemTheme = {
   readonly switchTo: (isDark: boolean) => void;
 };
 

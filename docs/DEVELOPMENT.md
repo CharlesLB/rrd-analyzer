@@ -8,7 +8,7 @@ frontend rendering the UI. There is no chart, component or CSS library. Every ch
 and insight overlay is inline SVG drawn from the workspace's own geometry
 (`modules/workspace/models/plot-geometry`), and every control is a plain element styled from one
 set of design tokens in `src/styles/_tokens.scss`. The one bundled asset is the Nunito font; the
-icons are unicode glyphs, as the reference design draws them.
+icons are unicode glyphs.
 
 ## Layout
 
@@ -50,7 +50,6 @@ packages/
 
 packaging/linux/                   desktop entry and icon that go into the .deb and the Arch package
 packaging/windows/                 NSIS installer script and the executable's version metadata
-spec/                              the reference design, its screenshots and the insights spec
 tools/                             golangci-lint, the Windows installer, signing, local release
 ```
 
@@ -73,9 +72,8 @@ No user-facing string is written at its point of use. `@rrd-analyzer/shared` hol
 `Messages` contract and the English catalogue that satisfies it, plus `formatMessage` for
 named placeholders and `formatPlural` for counted nouns. The web app reads the catalogue
 through `I18nStore`, so a component says `texts().library.analysisDeleted` and a second locale is a
-second catalogue rather than a sweep through the templates. The English wording is the
-reference design's, copied verbatim. The Go side keeps its own strings, the ones a person sees
-before the frontend loads, in `internal/shared/messages`.
+second catalogue rather than a sweep through the templates. The Go side keeps its own strings,
+the ones a person sees before the frontend loads, in `internal/shared/messages`.
 
 ## Where your work is kept
 
@@ -260,8 +258,7 @@ that overrides one by `id` can therefore stop overriding anything.
 
 `internal/insights` turns the series an analysis already parsed into ranked findings. It never
 opens a file: `analysis/usecase.InsightsSource` serves it the same archives the charts draw, so a
-finding and the chart beneath it cannot disagree about the data. `spec/spec-insights-technical.md`
-is the full specification; what follows is the shape of it.
+finding and the chart beneath it cannot disagree about the data.
 
 A run goes through four steps:
 
@@ -275,7 +272,7 @@ A run goes through four steps:
    it by ordering (`after` with `within`), overlap and lookback, then scores confidence from how
    pronounced the episodes are and how tightly the ordering holds.
 4. **Render.** `usecase/render` fills the rule's cause sentence with the numbers behind it,
-   formatted the way the reference design formats them.
+   formatted the way the panel shows them.
 
 The engine reads a series across its archives the way the charts do, each instant from the finest
 archive that covers it, with one difference: a hole inside an archive stays a hole even where a
@@ -480,5 +477,5 @@ executable in a per-user installer that needs no elevation.
   paints, lists and exports none of those findings, and its pill runs insights for it instead of
   opening a panel of someone else's findings.
 - **The window can be as narrow as a phone.** Below 760px the library becomes a strip of cards
-  above the canvas and the bar drops pan and the duration, as the reference design
-  lays it out; the desktop window's minimum width is 400px so that layout is reachable.
+  above the canvas and the bar drops pan and the duration; the desktop window's minimum width is
+  400px so that layout is reachable.

@@ -14,7 +14,7 @@ const dumps: { written: readonly WrittenSource[] } = { written: [] };
 
 const nameField = (page: Page): Locator => page.locator('.analysis-title-input');
 
-const sourcesItem = (page: Page): Locator => page.locator('.analysis-title-menu-item').filter({ hasText: 'Export RRD files' });
+const sourcesItem = (page: Page): Locator => page.locator('app-analysis-title .menu-option').filter({ hasText: 'Export RRD files' });
 
 const menuToggle = (page: Page): Locator => page.locator('.analysis-title-menu-toggle');
 
@@ -72,7 +72,7 @@ test.describe('analysis title', () => {
     await seedWorkspace(page, { name: 'Temperature', files: [source], canvas: [{ seriesId: 's0', label: 'temperature' }] });
 
     await page.locator('.analysis-title-menu-toggle').click();
-    await expect(sourcesItem(page).locator('.analysis-title-menu-detail')).toHaveText('a copy of the source file');
+    await expect(sourcesItem(page).locator('.menu-option-detail')).toHaveText('a copy of the source file');
     await page.keyboard.press('Escape');
     const download = await exportSources(page);
 
