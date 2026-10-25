@@ -34,7 +34,7 @@ export const stubCanvasEncoding = (encoded: Blob | null): StubbedCanvas => {
     toBlob: vi.fn((callback: (blob: Blob | null) => void) => callback(encoded)),
   };
 
-  const createElement = document.createElement.bind(document);
+  const createElement: (tagName: string) => HTMLElement = Reflect.get(document, 'createElement').bind(document);
 
   vi.spyOn(document, 'createElement').mockImplementation((tag: string) => (tag === CANVAS_TAG ? (canvas as unknown as HTMLCanvasElement) : createElement(tag)));
 
