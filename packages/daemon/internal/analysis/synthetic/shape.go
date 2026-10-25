@@ -24,10 +24,11 @@ type syntheticShape struct {
 	count          int
 }
 
-// shapeOf places the incident the design reference was drawn around: the CPU saturation lands at
+// shapeOf places the incident the design check photographs: the CPU saturation lands at
 // the same row for every run, the request burst a little before it so the two overlap, and every
 // other series draws its spike from the generator. The generator is only consulted for those
-// others, which is what keeps the row sequence of the random walk identical to the reference.
+// others, which is what keeps the row sequence of the random walk identical to the reference
+// prototype's.
 func shapeOf(definition syntheticDefinition, count int, random func() float64) syntheticShape {
 	shape := syntheticShape{
 		spikeHalfWidth: defaultSpikeHalfWidth,

@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { DEFAULT_LOCALE, LOCALES } from '../locale/locale';
 import { messagesFor } from './translations';
 
-const REFERENCE_SENTENCES_WITH_DASHES = [
+const SENTENCES_WRITTEN_WITH_DASHES = [
   'PNG render failed — export SVG instead',
   'PNG copied — paste into the postmortem',
   'copy blocked — use “PNG image” to download',
@@ -44,9 +44,9 @@ describe('messagesFor', () => {
     expect(messagesFor(DEFAULT_LOCALE).application.name).toBe('RRD Analyzer');
   });
 
-  it('keeps dashes to the sentences the reference design writes with them', () => {
+  it('keeps dashes to the few sentences written with them on purpose', () => {
     const withDashes = stringsOf(messagesFor(LOCALES.ENGLISH)).filter((message) => message.includes('—') || message.includes('–'));
 
-    expect(withDashes).toEqual(REFERENCE_SENTENCES_WITH_DASHES);
+    expect(withDashes).toEqual(SENTENCES_WRITTEN_WITH_DASHES);
   });
 });

@@ -44,8 +44,8 @@ func Aggregate(series Series, request AggregationRequest) []Sample {
 	return out
 }
 
-// consolidateArchive reads the rows stamped inside the column, which is the reference design's
-// rule: from the first row at or after the column's start up to the last row before its end, and
+// consolidateArchive reads the rows stamped inside the column: from the first row at or after the
+// column's start up to the last row before its end, and
 // always at least one row, so a column narrower than the step still shows the reading under it.
 func consolidateArchive(archive Archive, fromMilliseconds, untilMilliseconds float64, function ConsolidationFunction) Sample {
 	start := float64(archive.StartMilliseconds)

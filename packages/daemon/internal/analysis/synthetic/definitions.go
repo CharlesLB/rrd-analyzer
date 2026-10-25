@@ -2,8 +2,8 @@ package synthetic
 
 import seriesDomain "github.com/CharlesLB/rrd-analyzer/packages/daemon/internal/series/domain"
 
-// The two series the design reference was drawn around: their incident is placed by hand so the
-// screenshots land on the same rows every run, while every other series draws its own.
+// The two series the design check photographs: their incident is placed by hand so the screenshots
+// land on the same rows every run, while every other series draws its own.
 const (
 	cpuUserSeries     = "atlas_system_cpu_user"
 	requestRateSeries = "atlas_http_requests_rate"
