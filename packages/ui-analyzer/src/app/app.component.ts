@@ -1,10 +1,10 @@
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
+import { ThemeStore } from '@rrd-analyzer/ui-shared';
 import { APPLICATION_EDITION } from './core/config/edition.token';
 import { BrowserEditionNoticeComponent } from './shared/components/browser-edition-notice/browser-edition-notice.component';
 import { ToastComponent } from './shared/components/toast/toast.component';
 import { carriesFiles } from './shared/utils/drag-transfer/drag-transfer.util';
-import { ThemeStore } from './stores/theme/store/theme-store/theme.store';
 import { ToastStore } from './stores/toast/store/toast-store/toast.store';
 
 const NO_DROP_EFFECT = 'none';
@@ -21,7 +21,7 @@ export class AppComponent {
   private readonly _toasts = inject(ToastStore);
 
   protected readonly edition = inject(APPLICATION_EDITION);
-  protected readonly themeClass = inject(ThemeStore).themeClass;
+  protected readonly theme = inject(ThemeStore).theme;
   protected readonly toastMessage = this._toasts.message;
   protected readonly toastActionLabel = this._toasts.actionLabel;
 

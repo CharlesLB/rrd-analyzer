@@ -1,7 +1,7 @@
-import { computed, DOCUMENT, effect, inject, Service, signal } from '@angular/core';
-import { MEDIA_QUERIES } from '../../../../shared/constants/media-queries';
-import type { ValueOf } from '../../../../shared/types/value-of';
-import { useMediaQuery } from '../../../../shared/utils/media-query/media-query.util';
+import { isPlatformBrowser } from '@angular/common';
+import { computed, DOCUMENT, effect, inject, PLATFORM_ID, Service, signal } from '@angular/core';
+import { MEDIA_QUERIES } from '../../../../constants/media-queries';
+import { useMediaQuery } from '../../../../utils/media-query/media-query.util';
 
 const THEME_STORAGE_KEY = 'rrd-analyzer.theme';
 
@@ -10,7 +10,7 @@ const THEMES = {
   DARK: 'dark',
 } as const;
 
-type Theme = ValueOf<typeof THEMES>;
+type Theme = (typeof THEMES)[keyof typeof THEMES];
 
 const FOLLOWS_THE_SYSTEM = null;
 
@@ -26,16 +26,18 @@ const readChosenTheme = (): Theme | typeof FOLLOWS_THE_SYSTEM => {
 
 @Service()
 export class ThemeStore {
+  private readonly _isInBrowser = isPlatformBrowser(inject(PLATFORM_ID));
   private readonly _root = inject(DOCUMENT).documentElement;
   private readonly _isSystemDark = useMediaQuery(MEDIA_QUERIES.DARK_SYSTEM_THEME);
-  private readonly _chosenThemeState = signal<Theme | typeof FOLLOWS_THE_SYSTEM>(readChosenTheme());
+  private readonly _chosenThemeState = signal<Theme | typeof FOLLOWS_THE_SYSTEM>(this._isInBrowser ? readChosenTheme() : FOLLOWS_THE_SYSTEM);
 
   public readonly theme = computed<Theme>(() => this._chosenThemeState() ?? this._systemTheme());
   public readonly isDark = computed(() => this.theme() === THEMES.DARK);
-  public readonly themeClass = computed(() => this.theme());
 
   public constructor() {
-    effect(() => this._wear(this.theme()));
+    if (this._isInBrowser) {
+      effect(() => this._wear(this.theme()));
+    }
   }
 
   public toggle(): void {

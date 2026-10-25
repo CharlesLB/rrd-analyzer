@@ -2,6 +2,7 @@ import { TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { provideRouter, Router } from '@angular/router';
 import { MILLISECONDS_PER_HOUR } from '@rrd-analyzer/shared';
+import { stubBrowserStorage } from '@rrd-analyzer/ui-shared/testing';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { AnalyzerGateway } from '../../../../core/gateway/analyzer.gateway';
 import {
@@ -18,7 +19,6 @@ import { LogsStore } from '../../../../stores/logs/store/logs-store/logs.store';
 import { logFileFixture } from '../../../../stores/logs/store/logs-store/logs.store.fixture';
 import { SampleAnalysisStore } from '../../../../stores/sample-analysis/store/sample-analysis-store/sample-analysis.store';
 import { SettingsStore } from '../../../../stores/settings/store/settings-store/settings.store';
-import { stubBrowserStorage } from '../../../../stores/theme/store/theme-store/theme.store.fixture';
 import { TimeWindowStore } from '../../../../stores/time-window/store/time-window-store/time-window.store';
 import { chartIdOf } from '../../../../stores/workspace/models/plotted-chart/plotted-chart';
 import { CanvasDragStore } from '../../../../stores/workspace/store/canvas-drag-store/canvas-drag.store';

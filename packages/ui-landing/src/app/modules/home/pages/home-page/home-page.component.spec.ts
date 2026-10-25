@@ -1,9 +1,9 @@
 import { TestBed } from '@angular/core/testing';
 import { Meta } from '@angular/platform-browser';
+import { ThemeStore } from '@rrd-analyzer/ui-shared';
+import { inMemoryStorage, stubSystemTheme } from '@rrd-analyzer/ui-shared/testing';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { elementOf, textOf, textsOf } from '../../../../shared/utils/component-fixture/component-fixture.fixture';
-import { ThemeStore } from '../../../../stores/theme/store/theme-store/theme.store';
-import { inMemoryStorage, stubSystemTheme } from '../../../../stores/theme/store/theme-store/theme.store.fixture';
 import { HomePageComponent } from './home-page.component';
 
 const LINUX_FIREFOX = 'Mozilla/5.0 (X11; Linux x86_64; rv:142.0) Gecko/20100101 Firefox/142.0';

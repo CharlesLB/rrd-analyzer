@@ -1,8 +1,8 @@
 import { afterNextRender, ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 import { Meta } from '@angular/platform-browser';
+import { ThemeStore } from '@rrd-analyzer/ui-shared';
 import { I18nStore } from '../../../../stores/i18n/store/i18n-store/i18n.store';
 import { ReleasesStore } from '../../../../stores/releases/store/releases-store/releases.store';
-import { ThemeStore } from '../../../../stores/theme/store/theme-store/theme.store';
 import { DemoSectionComponent } from '../../components/demo-section/demo-section.component';
 import { DonateSectionComponent } from '../../components/donate-section/donate-section.component';
 import { DownloadSectionComponent } from '../../components/download-section/download-section.component';

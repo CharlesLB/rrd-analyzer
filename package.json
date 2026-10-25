@@ -20,7 +20,7 @@
     "lint:fix": "biome check --write . && eslint --fix . && pnpm --filter @rrd-analyzer/daemon lint:fix",
     "format": "biome format --write . && pnpm --filter @rrd-analyzer/daemon format",
     "format:check": "biome format . && pnpm --filter @rrd-analyzer/daemon format:check",
-    "typecheck": "pnpm --filter @rrd-analyzer/shared typecheck && pnpm --filter @rrd-analyzer/ui-analyzer typecheck && pnpm --filter @rrd-analyzer/ui-landing typecheck",
+    "typecheck": "pnpm --filter @rrd-analyzer/shared typecheck && pnpm --filter @rrd-analyzer/ui-shared typecheck && pnpm --filter @rrd-analyzer/ui-analyzer typecheck && pnpm --filter @rrd-analyzer/ui-landing typecheck",
     "design:check": "pnpm --filter @rrd-analyzer/ui-analyzer design:check",
     "audit:deps": "pnpm audit --audit-level=high --prod && pnpm --filter @rrd-analyzer/daemon audit:vulns",
     "verify": "pnpm format:check && pnpm lint && pnpm typecheck && pnpm test && pnpm test:e2e && pnpm build",

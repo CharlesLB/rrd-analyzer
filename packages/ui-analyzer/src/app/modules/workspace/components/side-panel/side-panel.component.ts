@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
+import { useMediaQuery } from '@rrd-analyzer/ui-shared';
 import { GLYPHS } from '../../../../shared/constants/glyphs';
-import { useMediaQuery } from '../../../../shared/utils/media-query/media-query.util';
 import { COMPACT_LAYOUT_QUERY } from '../../models/compact-layout/compact-layout';
 
 @Component({

@@ -3,6 +3,7 @@
 !pnpm-lock.yaml
 !pnpm-workspace.yaml
 !packages/shared
+!packages/ui-shared
 !packages/ui-analyzer
 !packages/ui-landing
 !packages/daemon/package.json

@@ -27,6 +27,7 @@ WORKDIR /workspace
 
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY packages/shared/package.json packages/shared/
+COPY packages/ui-shared/package.json packages/ui-shared/
 COPY packages/ui-analyzer/package.json packages/ui-analyzer/
 COPY packages/ui-landing/package.json packages/ui-landing/
 COPY packages/daemon/package.json packages/daemon/
@@ -37,6 +38,7 @@ COPY packages/daemon/cmd packages/daemon/cmd
 COPY packages/daemon/internal packages/daemon/internal
 COPY tools/build-browser-runtime.sh tools/
 COPY packages/shared packages/shared
+COPY packages/ui-shared packages/ui-shared
 COPY packages/ui-analyzer packages/ui-analyzer
 COPY packages/ui-landing packages/ui-landing
 ARG RELEASE_VERSION

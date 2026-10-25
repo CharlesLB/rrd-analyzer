@@ -1,11 +1,11 @@
 import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
+import { ThemeStore } from '@rrd-analyzer/ui-shared';
+import { stubBrowserStorage } from '@rrd-analyzer/ui-shared/testing';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { AppComponent } from './app.component';
 import { APPLICATION_EDITION } from './core/config/edition.token';
 import { elementOf, textOf } from './shared/utils/component-fixture/component-fixture.fixture';
-import { ThemeStore } from './stores/theme/store/theme-store/theme.store';
-import { stubBrowserStorage } from './stores/theme/store/theme-store/theme.store.fixture';
 import { ToastStore } from './stores/toast/store/toast-store/toast.store';
 
 describe('AppComponent', () => {

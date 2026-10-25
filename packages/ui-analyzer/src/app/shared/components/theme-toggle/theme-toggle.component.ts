@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
+import { ThemeStore } from '@rrd-analyzer/ui-shared';
 import { I18nStore } from '../../../stores/i18n/store/i18n-store/i18n.store';
-import { ThemeStore } from '../../../stores/theme/store/theme-store/theme.store';
 import { GLYPHS } from '../../constants/glyphs';
 
 @Component({

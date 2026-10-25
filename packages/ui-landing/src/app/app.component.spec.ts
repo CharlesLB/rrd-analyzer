@@ -1,9 +1,9 @@
 import { TestBed } from '@angular/core/testing';
 import { provideRouter, Router } from '@angular/router';
+import { inMemoryStorage, stubSystemTheme } from '@rrd-analyzer/ui-shared/testing';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { AppComponent } from './app.component';
 import { routes } from './app.routes';
-import { inMemoryStorage, stubSystemTheme } from './stores/theme/store/theme-store/theme.store.fixture';
 
 describe('AppComponent', () => {
   beforeEach(() => {

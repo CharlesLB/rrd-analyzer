@@ -1,5 +1,6 @@
 import { DeferBlockBehavior, TestBed } from '@angular/core/testing';
 import { provideRouter, Router, type UrlTree } from '@angular/router';
+import { stubBrowserStorage } from '@rrd-analyzer/ui-shared/testing';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { AnalysisDto } from '../../../../core/gateway/analyzer.dto';
 import { analysisDtoFixture, analyzerGatewayStub, FIXTURE_UNTIL_MILLISECONDS, provideGatewayStub } from '../../../../core/gateway/analyzer.gateway.fixture';
@@ -7,7 +8,6 @@ import { BrowserGateway } from '../../../../core/gateway/browser-gateway/browser
 import { countOf, elementOf, textOf, textsOf, typeInto } from '../../../../shared/utils/component-fixture/component-fixture.fixture';
 import { BuildStore } from '../../../../stores/build/store/build-store/build.store';
 import { LibraryStore } from '../../../../stores/library/store/library-store/library.store';
-import { stubBrowserStorage } from '../../../../stores/theme/store/theme-store/theme.store.fixture';
 import { ToastStore } from '../../../../stores/toast/store/toast-store/toast.store';
 import { LibraryPageComponent } from './library-page.component';
 
