@@ -1,7 +1,7 @@
 import { TestBed } from '@angular/core/testing';
+import { ThemeStore } from '@rrd-analyzer/ui-shared';
+import { stubBrowserStorage } from '@rrd-analyzer/ui-shared/testing';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { ThemeStore } from '../../../stores/theme/store/theme-store/theme.store';
-import { stubBrowserStorage } from '../../../stores/theme/store/theme-store/theme.store.fixture';
 import { elementOf } from '../../utils/component-fixture/component-fixture.fixture';
 import { ThemeToggleComponent } from './theme-toggle.component';
 

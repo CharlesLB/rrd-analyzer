@@ -35,6 +35,13 @@ packages/
 ├── shared/                        the workspace's text: the i18n catalogue and its helpers
 │   └── src/i18n/                  the Messages contract, the English catalogue, plural/format
 │
+├── ui-shared/                     the Angular pieces both apps run: the theme store, the
+│   │                              media-query signal and the script that applies the stored
+│   │                              theme before Angular loads; compiled by each app from source
+│   ├── src/public-api.ts          what the apps import
+│   ├── src/testing.ts             the browser-storage and system-theme fixtures their specs use
+│   └── assets/theme-boot.js       copied next to each app's index.html by its angular.json
+│
 ├── ui-analyzer/                   the app's interface, Angular: standalone OnPush components, signals;
 │   │                              one code base built for the desktop window and for the browser
 │   ├── src/app/modules/<feature>/ a screen whole: pages, components and the models only it reads
@@ -348,7 +355,7 @@ what Biome does not cover: semantic blank lines through `@stylistic`, and the
 Unit tests are Vitest for the TypeScript packages and `go test -race` for the daemon, and `pnpm test`
 fails below 100% coverage in every package. The TypeScript packages count statements, branches,
 functions and lines (`coverageThresholds` in each `angular.json`, `thresholds` in
-`packages/shared/vitest.config.ts`); the daemon counts statements across packages through
+the `vitest.config.ts` of `packages/shared` and `packages/ui-shared`); the daemon counts statements across packages through
 `tools/check-go-coverage.sh`, which lists every statement no test runs as file:line. The only
 exclusions sit beside each threshold and are entry points: `main.ts`, `main.server.ts` and the
 bootstrap configs, and each binary's `main.go` plus the js/wasm glue. A gap is closed with a test,

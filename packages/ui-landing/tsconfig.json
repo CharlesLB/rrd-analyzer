@@ -13,7 +13,9 @@
     "target": "ES2022",
     "module": "preserve",
     "paths": {
-      "@rrd-analyzer/shared": ["../shared/src/public-api.ts"]
+      "@rrd-analyzer/shared": ["../shared/src/public-api.ts"],
+      "@rrd-analyzer/ui-shared": ["../ui-shared/src/public-api.ts"],
+      "@rrd-analyzer/ui-shared/testing": ["../ui-shared/src/testing.ts"]
     }
   },
   "angularCompilerOptions": {

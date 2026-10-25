@@ -1,6 +1,6 @@
 import { TestBed } from '@angular/core/testing';
+import { inMemoryStorage } from '@rrd-analyzer/ui-shared/testing';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { inMemoryStorage } from '../../../theme/store/theme-store/theme.store.fixture';
 import { SettingsStore } from './settings.store';
 
 const SETTINGS_STORAGE_KEY = 'rrd-analyzer.settings';

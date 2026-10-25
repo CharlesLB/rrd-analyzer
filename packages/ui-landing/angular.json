@@ -30,6 +30,10 @@
               {
                 "glob": "**/*",
                 "input": "public"
+              },
+              {
+                "glob": "theme-boot.js",
+                "input": "node_modules/@rrd-analyzer/ui-shared/assets"
               }
             ],
             "styles": ["src/styles.scss"],

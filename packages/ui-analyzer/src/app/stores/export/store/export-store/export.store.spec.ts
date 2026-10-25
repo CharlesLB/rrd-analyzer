@@ -1,5 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { MILLISECONDS_PER_HOUR } from '@rrd-analyzer/shared';
+import { ThemeStore } from '@rrd-analyzer/ui-shared';
+import { stubBrowserStorage } from '@rrd-analyzer/ui-shared/testing';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { PlottedChartDto } from '../../../../core/gateway/analyzer.dto';
 import type { AnalyzerGateway } from '../../../../core/gateway/analyzer.gateway';
@@ -14,8 +16,6 @@ import { SERIES_COLORS, THEME_COLORS } from '../../../../shared/constants/colors
 import { removeClipboard, stubClipboard } from '../../../../shared/utils/clipboard-image/clipboard-image.fixture';
 import { stubCanvasEncoding, stubImageLoading } from '../../../../shared/utils/svg-raster/svg-raster.fixture';
 import { InsightsStore } from '../../../insights/store/insights-store/insights.store';
-import { ThemeStore } from '../../../theme/store/theme-store/theme.store';
-import { stubBrowserStorage } from '../../../theme/store/theme-store/theme.store.fixture';
 import { TimeWindowStore } from '../../../time-window/store/time-window-store/time-window.store';
 import { ToastStore } from '../../../toast/store/toast-store/toast.store';
 import { SeriesDataStore } from '../../../workspace/store/series-data-store/series-data.store';

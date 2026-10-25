@@ -3,9 +3,9 @@ import { Title } from '@angular/platform-browser';
 import { provideRouter } from '@angular/router';
 import { RouterTestingHarness } from '@angular/router/testing';
 import { messagesFor } from '@rrd-analyzer/shared';
+import { stubBrowserStorage } from '@rrd-analyzer/ui-shared/testing';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { analyzerGatewayStub, provideGatewayStub } from '../../core/gateway/analyzer.gateway.fixture';
-import { stubBrowserStorage } from '../../stores/theme/store/theme-store/theme.store.fixture';
 import { libraryRoutes } from './library.routes';
 import { LibraryPageComponent } from './pages/library-page/library-page.component';
 

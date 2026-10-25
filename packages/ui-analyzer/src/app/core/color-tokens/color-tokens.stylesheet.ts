@@ -1,5 +1,5 @@
+import { MEDIA_QUERIES } from '@rrd-analyzer/ui-shared';
 import { THEME_COLORS, THEMELESS_COLORS } from '../../shared/constants/colors';
-import { MEDIA_QUERIES } from '../../shared/constants/media-queries';
 
 type ColorTokens = Readonly<Record<string, string>>;
 

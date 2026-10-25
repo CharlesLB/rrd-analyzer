@@ -31,6 +31,7 @@
     "@angular/router": "^22.1.0",
     "@angular/ssr": "22.1.6",
     "@rrd-analyzer/shared": "workspace:*",
+    "@rrd-analyzer/ui-shared": "workspace:*",
     "rxjs": "~7.8.0",
     "tslib": "^2.3.0"
   },

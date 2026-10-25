@@ -1,13 +1,13 @@
 import { ChangeDetectionStrategy, Component, computed, DOCUMENT, effect, inject, input, signal, untracked, viewChild, viewChildren } from '@angular/core';
 import { Router } from '@angular/router';
 import { formatMessage } from '@rrd-analyzer/shared';
+import { useMediaQuery } from '@rrd-analyzer/ui-shared';
 import * as R from 'remeda';
 import { AnchoredMenuComponent } from '../../../../shared/components/anchored-menu/anchored-menu.component';
 import { ColorPaletteComponent } from '../../../../shared/components/color-palette/color-palette.component';
 import { currentViewport } from '../../../../shared/utils/anchored-popover/anchored-popover.util';
 import { formatShortTimestamp } from '../../../../shared/utils/date-format/date-format.util';
 import { carriesFiles, firstDroppedFileOf, hasLeftTarget } from '../../../../shared/utils/drag-transfer/drag-transfer.util';
-import { useMediaQuery } from '../../../../shared/utils/media-query/media-query.util';
 import { type ExportMenuRequest, placeExportMenu } from '../../../../stores/export/models/export-menu/export-menu';
 import { ExportStore } from '../../../../stores/export/store/export-store/export.store';
 import { I18nStore } from '../../../../stores/i18n/store/i18n-store/i18n.store';

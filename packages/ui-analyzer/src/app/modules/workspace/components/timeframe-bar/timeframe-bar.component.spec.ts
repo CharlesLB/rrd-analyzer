@@ -1,7 +1,7 @@
 import { TestBed } from '@angular/core/testing';
+import { stubBrowserStorage } from '@rrd-analyzer/ui-shared/testing';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { elementOf, renderWithInputs } from '../../../../shared/utils/component-fixture/component-fixture.fixture';
-import { stubBrowserStorage } from '../../../../stores/theme/store/theme-store/theme.store.fixture';
 import { TimeframeBarComponent } from './timeframe-bar.component';
 
 const renderBar = () => renderWithInputs(TimeframeBarComponent, {});

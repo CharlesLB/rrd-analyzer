@@ -1,8 +1,8 @@
 import { TestBed } from '@angular/core/testing';
 import { messagesFor } from '@rrd-analyzer/shared';
+import { stubBrowserStorage } from '@rrd-analyzer/ui-shared/testing';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { elementOf, textOf } from '../../../../shared/utils/component-fixture/component-fixture.fixture';
-import { stubBrowserStorage } from '../../../../stores/theme/store/theme-store/theme.store.fixture';
 import { LibraryTopBarComponent } from './library-top-bar.component';
 
 describe('LibraryTopBarComponent', () => {

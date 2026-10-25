@@ -1,11 +1,11 @@
 import { computed, inject, Service, signal } from '@angular/core';
 import { formatMessage, formatPlural } from '@rrd-analyzer/shared';
+import { ThemeStore } from '@rrd-analyzer/ui-shared';
 import * as R from 'remeda';
 import { canCopyImages, copyImage } from '../../../../shared/utils/clipboard-image/clipboard-image.util';
 import { PNG_MIME_TYPE } from '../../../../shared/utils/svg-raster/svg-raster.util';
 import { I18nStore } from '../../../i18n/store/i18n-store/i18n.store';
 import { InsightsStore } from '../../../insights/store/insights-store/insights.store';
-import { ThemeStore } from '../../../theme/store/theme-store/theme.store';
 import { TimeWindowStore } from '../../../time-window/store/time-window-store/time-window.store';
 import { ToastStore } from '../../../toast/store/toast-store/toast.store';
 import { chartIdsOf } from '../../../workspace/models/plotted-chart/plotted-chart';
