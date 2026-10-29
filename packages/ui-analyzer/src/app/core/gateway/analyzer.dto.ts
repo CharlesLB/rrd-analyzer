@@ -185,6 +185,55 @@ export type BuildDto = {
   readonly commit: string;
   readonly date: string;
   readonly summary: string;
+  readonly sharesSessions: boolean;
+};
+
+type SharedFileStatusDto = {
+  readonly name: string;
+  readonly path: string;
+  readonly online: boolean;
+};
+
+type SharedLogStatusDto = {
+  readonly name: string;
+  readonly online: boolean;
+};
+
+export type SessionStatusDto = {
+  readonly analysisId: string;
+  readonly sessionId: string;
+  readonly link: string;
+  readonly revision: number;
+  readonly expiresAtMilliseconds: number;
+  readonly files: readonly SharedFileStatusDto[];
+  readonly log: SharedLogStatusDto | null;
+};
+
+export type PublishedLogDto = {
+  readonly name: string;
+  readonly content?: string;
+  readonly view: unknown;
+};
+
+export type SessionPublicationDto = {
+  readonly log: PublishedLogDto | null;
+};
+
+type JoinedLogDto = {
+  readonly fileId: string;
+  readonly name: string;
+  readonly content: string;
+  readonly view: unknown;
+};
+
+export type JoinedSessionDto = {
+  readonly sessionId: string;
+  readonly analysisId: string;
+  readonly revision: number;
+  readonly expiresAtMilliseconds: number;
+  readonly liveUrl: string;
+  readonly changed: boolean;
+  readonly log: JoinedLogDto | null;
 };
 
 type SampleAnalysisLogDto = {

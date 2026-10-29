@@ -3,11 +3,21 @@ import { provideRouter, Router, type UrlTree } from '@angular/router';
 import { stubBrowserStorage } from '@rrd-analyzer/ui-shared/testing';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { AnalysisDto } from '../../../../core/gateway/analyzer.dto';
-import { analysisDtoFixture, analyzerGatewayStub, FIXTURE_UNTIL_MILLISECONDS, provideGatewayStub } from '../../../../core/gateway/analyzer.gateway.fixture';
+import {
+  analysisDtoFixture,
+  analyzerGatewayStub,
+  FIXTURE_UNTIL_MILLISECONDS,
+  joinedSessionDtoFixture,
+  provideGatewayStub,
+  sessionStatusDtoFixture,
+} from '../../../../core/gateway/analyzer.gateway.fixture';
 import { BrowserGateway } from '../../../../core/gateway/browser-gateway/browser.gateway';
+import { LiveUpdatesChannel } from '../../../../core/live-updates/live-updates.channel';
 import { countOf, elementOf, textOf, textsOf, typeInto } from '../../../../shared/utils/component-fixture/component-fixture.fixture';
 import { BuildStore } from '../../../../stores/build/store/build-store/build.store';
 import { LibraryStore } from '../../../../stores/library/store/library-store/library.store';
+import { SharedSessionStore } from '../../../../stores/sharing/store/shared-session-store/shared-session.store';
+import { SharingStore } from '../../../../stores/sharing/store/sharing-store/sharing.store';
 import { ToastStore } from '../../../../stores/toast/store/toast-store/toast.store';
 import { LibraryPageComponent } from './library-page.component';
 
@@ -235,6 +245,28 @@ describe('LibraryPageComponent', () => {
     fixture.destroy();
 
     await vi.waitFor(() => expect(gateway.deleteAnalysis).toHaveBeenCalledWith('a2'));
+  });
+
+  it('in a build that shares no sessions, marks no analysis local or online', async () => {
+    const fixture = await renderPage();
+
+    expect(countOf(fixture, '.analysis-row-share')).toBe(0);
+  });
+
+  it('in a build that shares sessions, marks each analysis local, online with its minutes left, or opened from a live link', async () => {
+    TestBed.overrideProvider(LiveUpdatesChannel, { useValue: { watch: vi.fn().mockReturnValue(() => undefined) } });
+    const gateway = TestBed.inject(BrowserGateway);
+    vi.mocked(gateway.fetchBuild).mockResolvedValue({ version: '1.4.0', commit: 'none', date: 'unknown', summary: '1.4.0', sharesSessions: true });
+    vi.mocked(gateway.listSessions).mockResolvedValue([sessionStatusDtoFixture({ analysisId: 'a1', expiresAtMilliseconds: Date.now() + 42 * 60_000 })]);
+    vi.mocked(gateway.joinSession).mockResolvedValue(joinedSessionDtoFixture({ analysisId: 'a3' }));
+    vi.mocked(gateway.listAnalyses).mockResolvedValue([...ANALYSES, analysisDtoFixture({ id: 'a3', name: 'Shared with me' })]);
+    await TestBed.inject(SharedSessionStore).join('session-3', 'key');
+
+    const fixture = await renderPage();
+    await TestBed.inject(SharingStore).load();
+    fixture.detectChanges();
+
+    expect(textsOf(fixture, '.analysis-row-share')).toEqual(['Online · 42 min', 'Local', 'Live link']);
   });
 
   it('shows the version the daemon was built as in the corner of the page', async () => {

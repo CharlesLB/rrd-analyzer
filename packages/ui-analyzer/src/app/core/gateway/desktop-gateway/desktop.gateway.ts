@@ -13,9 +13,12 @@ import type {
   ExportRequestDto,
   InsightsReportDto,
   InsightsRequestDto,
+  JoinedSessionDto,
   PickedFileDto,
   SampleAnalysisDto,
   SeriesColorDto,
+  SessionPublicationDto,
+  SessionStatusDto,
   SourcesExportDto,
   WindowDto,
   WindowRequestDto,
@@ -48,7 +51,13 @@ const DESKTOP_METHODS = {
   SEARCH_HISTORY: 'SearchHistory',
   REMEMBER_SEARCH: 'RememberSearch',
   FORGET_SEARCH: 'ForgetSearch',
+  LIST_SESSIONS: 'ListSessions',
+  START_SESSION: 'StartSession',
+  PUBLISH_SESSION: 'PublishSession',
+  END_SESSION: 'EndSession',
 } as const;
+
+const JOINING_IS_FOR_THE_BROWSER = 'a live session is opened from its link in the browser edition, never in the desktop window';
 
 const ABORT_EVENT = 'abort';
 const NO_PATH_FROM_A_PAGE_DROP = '';
@@ -174,6 +183,34 @@ export class DesktopGateway implements AnalyzerGateway {
     runtime.OnFileDrop((_horizontalPosition, _verticalPosition, paths) => handler(paths), true);
 
     return () => runtime.OnFileDropOff();
+  }
+
+  public async listSessions(): Promise<readonly SessionStatusDto[]> {
+    return await this._call<readonly SessionStatusDto[]>(DESKTOP_METHODS.LIST_SESSIONS);
+  }
+
+  public async startSession(analysisId: string, publication: SessionPublicationDto): Promise<SessionStatusDto> {
+    return await this._call<SessionStatusDto>(DESKTOP_METHODS.START_SESSION, analysisId, publication);
+  }
+
+  public async publishSession(analysisId: string, publication: SessionPublicationDto): Promise<SessionStatusDto> {
+    return await this._call<SessionStatusDto>(DESKTOP_METHODS.PUBLISH_SESSION, analysisId, publication);
+  }
+
+  public async endSession(analysisId: string): Promise<void> {
+    await this._call<null>(DESKTOP_METHODS.END_SESSION, analysisId);
+  }
+
+  public async joinSession(): Promise<JoinedSessionDto> {
+    throw new Error(JOINING_IS_FOR_THE_BROWSER);
+  }
+
+  public async refreshSession(): Promise<JoinedSessionDto> {
+    throw new Error(JOINING_IS_FOR_THE_BROWSER);
+  }
+
+  public async forgetSession(): Promise<void> {
+    throw new Error(JOINING_IS_FOR_THE_BROWSER);
   }
 
   private async _call<TResponse>(method: string, ...parameters: readonly unknown[]): Promise<TResponse> {

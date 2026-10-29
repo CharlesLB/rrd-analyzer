@@ -19,6 +19,7 @@ import { LogsStore } from '../../../../stores/logs/store/logs-store/logs.store';
 import { logFileFixture } from '../../../../stores/logs/store/logs-store/logs.store.fixture';
 import { SampleAnalysisStore } from '../../../../stores/sample-analysis/store/sample-analysis-store/sample-analysis.store';
 import { SettingsStore } from '../../../../stores/settings/store/settings-store/settings.store';
+import { LiveSessionStore } from '../../../../stores/sharing/store/live-session-store/live-session.store';
 import { TimeWindowStore } from '../../../../stores/time-window/store/time-window-store/time-window.store';
 import { chartIdOf } from '../../../../stores/workspace/models/plotted-chart/plotted-chart';
 import { CanvasDragStore } from '../../../../stores/workspace/store/canvas-drag-store/canvas-drag.store';
@@ -67,6 +68,7 @@ describe('WorkspacePageComponent', () => {
         InsightsStore,
         LogsStore,
         ExportStore,
+        LiveSessionStore,
       ],
     });
   });

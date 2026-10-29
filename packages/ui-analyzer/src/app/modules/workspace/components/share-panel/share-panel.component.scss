@@ -1,0 +1,154 @@
+@use 'mixins';
+
+.share-panel {
+  width: 560px;
+  max-width: 100%;
+  max-height: 86vh;
+  display: flex;
+  flex-direction: column;
+  @include mixins.popover-surface;
+
+  &-scrim {
+    @include mixins.modal-scrim;
+  }
+
+  &-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 16px 18px;
+    border-bottom: 1px solid var(--line);
+  }
+
+  &-pulse {
+    flex: none;
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    background: var(--ok);
+  }
+
+  &-heading {
+    flex: 1;
+    min-width: 0;
+  }
+
+  &-title {
+    font-size: 16px;
+    font-weight: 600;
+  }
+
+  &-expiry {
+    font-size: 12.5px;
+    color: var(--tx2);
+    margin-top: 2px;
+  }
+
+  &-close {
+    @include mixins.icon-button(var(--tx), 0 4px);
+  }
+
+  &-body {
+    padding: 14px 18px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+    min-height: 0;
+  }
+
+  &-label {
+    @include mixins.caption-text;
+
+    & {
+      margin-top: 6px;
+    }
+  }
+
+  &-link {
+    display: flex;
+    gap: 8px;
+
+    &-field {
+      flex: 1;
+      min-width: 0;
+      font-family: var(--font-monospace);
+      font-size: 12px;
+      @include mixins.text-input(9px, 7px 9px);
+    }
+
+    &-copy {
+      @include mixins.primary-button;
+    }
+  }
+
+  &-files {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    border: 1px solid var(--line);
+    border-radius: 9px;
+    overflow: hidden;
+  }
+
+  &-file {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 7px 10px;
+    font-size: 13px;
+
+    & + & {
+      border-top: 1px solid var(--line);
+    }
+
+    &-name {
+      flex: 1;
+      min-width: 0;
+      @include mixins.text-ellipsis;
+    }
+  }
+
+  &-state {
+    flex: none;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--mut);
+    border: 1px solid var(--line2);
+    border-radius: 6px;
+    padding: 1px 6px;
+
+    &-online {
+      color: var(--accT);
+      border-color: var(--accLine);
+      background: var(--accBg);
+    }
+  }
+
+  &-footer {
+    display: flex;
+    justify-content: flex-end;
+    padding: 12px 18px;
+    border-top: 1px solid var(--line);
+    background: var(--surf);
+  }
+
+  &-end {
+    @include mixins.outline-button(9px, 6px 14px, 13px, var(--danger));
+
+    & {
+      border-color: var(--line2);
+    }
+
+    &:hover {
+      border-color: var(--danger);
+    }
+
+    &:disabled {
+      opacity: 0.6;
+      cursor: progress;
+    }
+  }
+}

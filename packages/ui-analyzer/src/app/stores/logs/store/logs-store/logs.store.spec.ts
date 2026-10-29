@@ -479,6 +479,90 @@ describe('LogsStore', () => {
     expect(store.centerOnSelected()).toBe(false);
   });
 
+  it('openLog, with no logs loaded, describes nothing', () => {
+    expect(store.openLog()).toBeNull();
+  });
+
+  it('openLog, for logs placed and then recoloured and filtered, names the file read and describes the mapping, the colours, the hidden types and the track', async () => {
+    const file = logFileFixture();
+    await showLogs(file);
+    store.chooseColor('error', '#112233');
+    store.toggleType('info');
+
+    const openLog = store.openLog();
+
+    expect(openLog?.file).toBe(file);
+    expect(openLog?.view).toEqual({
+      mapping: store.appliedMapping(),
+      chosenColors: new Map([['error', '#112233']]),
+      hiddenTypes: new Set(['info']),
+      isShown: true,
+    });
+  });
+
+  it('openLog, for logs read but not yet placed, describes no mapping', async () => {
+    await store.load(logFileFixture());
+
+    expect(store.openLog()?.view.mapping).toBeNull();
+  });
+
+  it('applyView, with no logs loaded, applies nothing', () => {
+    const applied = store.applyView({ mapping: null, chosenColors: new Map(), hiddenTypes: new Set(), isShown: true });
+
+    expect(applied).toBe(false);
+    expect(store.isShown()).toBe(false);
+  });
+
+  it('applyView, for logs just read, places them by the mapping given and shows them with its colours and filters', async () => {
+    await store.load(logFileFixture());
+    const mapping = store.draftMapping();
+    store.chooseField(LOG_ROLES.MESSAGE, 'service');
+
+    const applied = store.applyView({ mapping, chosenColors: new Map([['warn', '#445566']]), hiddenTypes: new Set(['info']), isShown: false });
+
+    expect(applied).toBe(true);
+    expect(store.status()).toBe('ready');
+    expect(store.appliedMapping()).toEqual(mapping);
+    expect(store.chosenColors()).toEqual(new Map([['warn', '#445566']]));
+    expect(store.hiddenTypes()).toEqual(new Set(['info']));
+    expect(store.isShown()).toBe(false);
+  });
+
+  it('applyView, for logs already placed by the same mapping, keeps the placed entries and only changes how they are shown', async () => {
+    await showLogs();
+    const placed = store.entries();
+
+    const applied = store.applyView({ mapping: store.appliedMapping(), chosenColors: new Map(), hiddenTypes: new Set(['fatal']), isShown: true });
+
+    expect(applied).toBe(true);
+    expect(store.entries()).toBe(placed);
+    expect(store.hiddenTypes()).toEqual(new Set(['fatal']));
+  });
+
+  it('applyView, with no mapping, leaves the logs unplaced and still applies how they are shown', async () => {
+    await store.load(logFileFixture());
+
+    const applied = store.applyView({ mapping: null, chosenColors: new Map(), hiddenTypes: new Set(), isShown: false });
+
+    expect(applied).toBe(true);
+    expect(store.status()).toBe('setup');
+    expect(store.isShown()).toBe(false);
+  });
+
+  it('applyView, with a mapping these logs cannot be placed by, places nothing and says it could not', async () => {
+    await store.load(logFileFixture());
+
+    const applied = store.applyView({
+      mapping: { [LOG_ROLES.TIMESTAMP]: 'service', [LOG_ROLES.TYPE]: 'lvl', [LOG_ROLES.MESSAGE]: UNMAPPED },
+      chosenColors: new Map(),
+      hiddenTypes: new Set(),
+      isShown: true,
+    });
+
+    expect(applied).toBe(false);
+    expect(store.status()).toBe('setup');
+  });
+
   it('remove, for loaded logs, clears the file, the mapping, the colours and the filters, and says which file went', async () => {
     await showLogs();
     store.chooseColor('error', '#123456');

@@ -90,6 +90,18 @@ $ease-pop: cubic-bezier(0.2, 0.9, 0.25, 1.05);
   cursor: pointer;
 }
 
+@mixin modal-scrim {
+  position: fixed;
+  inset: 0;
+  background: var(--scrim);
+  z-index: 60;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  animation: om-fade 0.22s ease both;
+}
+
 @mixin dashed-accent-box($radius) {
   border: 1.5px dashed var(--accLine);
   border-radius: $radius;

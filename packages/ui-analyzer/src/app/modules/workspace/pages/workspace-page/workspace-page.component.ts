@@ -8,6 +8,7 @@ import { ColorPaletteComponent } from '../../../../shared/components/color-palet
 import { currentViewport } from '../../../../shared/utils/anchored-popover/anchored-popover.util';
 import { formatShortTimestamp } from '../../../../shared/utils/date-format/date-format.util';
 import { carriesFiles, firstDroppedFileOf, hasLeftTarget } from '../../../../shared/utils/drag-transfer/drag-transfer.util';
+import { useTickingClock } from '../../../../shared/utils/ticking-clock/ticking-clock.util';
 import { type ExportMenuRequest, placeExportMenu } from '../../../../stores/export/models/export-menu/export-menu';
 import { ExportStore } from '../../../../stores/export/store/export-store/export.store';
 import { I18nStore } from '../../../../stores/i18n/store/i18n-store/i18n.store';
@@ -19,6 +20,11 @@ import { SampleAnalysisStore } from '../../../../stores/sample-analysis/store/sa
 import { SEARCH_FIELDS } from '../../../../stores/search-history/models/search-field/search-field';
 import { SearchHistoryStore } from '../../../../stores/search-history/store/search-history-store/search-history.store';
 import { SettingsStore } from '../../../../stores/settings/store/settings-store/settings.store';
+import { LOG_HANDOVERS, type LogHandover } from '../../../../stores/sharing/models/followed-session/followed-session';
+import { minutesLeftOf } from '../../../../stores/sharing/models/live-session/live-session';
+import { LiveSessionStore } from '../../../../stores/sharing/store/live-session-store/live-session.store';
+import { SharedSessionStore } from '../../../../stores/sharing/store/shared-session-store/shared-session.store';
+import { SharingStore } from '../../../../stores/sharing/store/sharing-store/sharing.store';
 import { ABSOLUTE_OUTCOMES } from '../../../../stores/time-window/models/absolute-time/absolute-time';
 import { TimeWindowStore } from '../../../../stores/time-window/store/time-window-store/time-window.store';
 import { COLOR_MENU_WIDTH, type ColorMenuRequest, placeColorMenu } from '../../../../stores/workspace/models/color-menu/color-menu';
@@ -49,10 +55,14 @@ import { InsightsPanelComponent } from '../../components/insights-panel/insights
 import { InsightsTriggerComponent } from '../../components/insights-trigger/insights-trigger.component';
 import { LibraryStripComponent } from '../../components/library-strip/library-strip.component';
 import { LibraryStripCardComponent } from '../../components/library-strip-card/library-strip-card.component';
+import { LiveSessionBannerComponent } from '../../components/live-session-banner/live-session-banner.component';
 import { LogDetailPanelComponent } from '../../components/log-detail-panel/log-detail-panel.component';
 import { LogSetupPanelComponent } from '../../components/log-setup-panel/log-setup-panel.component';
 import { LogTrackComponent } from '../../components/log-track/log-track.component';
 import { LogsTriggerComponent } from '../../components/logs-trigger/logs-trigger.component';
+import { SharePanelComponent } from '../../components/share-panel/share-panel.component';
+import { ShareTriggerComponent } from '../../components/share-trigger/share-trigger.component';
+import { ShareWarningDialogComponent } from '../../components/share-warning-dialog/share-warning-dialog.component';
 import { TimeNavComponent } from '../../components/time-nav/time-nav.component';
 import { TimeframeBarComponent } from '../../components/timeframe-bar/timeframe-bar.component';
 import { TimeframeEditorComponent } from '../../components/timeframe-editor/timeframe-editor.component';
@@ -73,6 +83,13 @@ import { SHORTCUT_COMBINATIONS, shortcutLabelOf, usesAppleKeys } from '../../mod
 const MENU_ROUTE = '/';
 const TIMEFRAME_POPOVER_WIDTH = 432;
 const TIMEFRAME_POPOVER_MINIMUM_LEFT = 12;
+const CLOCK_TICK_MILLISECONDS = 15_000;
+const NOT_FOLLOWED = 0;
+
+type Opened = {
+  analysisId: string;
+  followedRevision: number;
+};
 
 @Component({
   selector: 'app-workspace-page',
@@ -91,10 +108,14 @@ const TIMEFRAME_POPOVER_MINIMUM_LEFT = 12;
     InsightsTriggerComponent,
     LibraryStripCardComponent,
     LibraryStripComponent,
+    LiveSessionBannerComponent,
     LogDetailPanelComponent,
     LogSetupPanelComponent,
     LogsTriggerComponent,
     LogTrackComponent,
+    SharePanelComponent,
+    ShareTriggerComponent,
+    ShareWarningDialogComponent,
     TimeframeBarComponent,
     TimeNavComponent,
     TimelineStripComponent,
@@ -124,6 +145,9 @@ export class WorkspacePageComponent {
   private readonly _panels = viewChildren(ChartPanelComponent);
   private readonly _searchHistory = inject(SearchHistoryStore);
   private readonly _sampleAnalysis = inject(SampleAnalysisStore);
+  private readonly _sharing = inject(SharingStore);
+  private readonly _sharedSession = inject(SharedSessionStore);
+  private readonly _opened: Opened = { analysisId: '', followedRevision: NOT_FOLLOWED };
 
   protected readonly texts = inject(I18nStore).texts;
   protected readonly colorMenuWidth = COLOR_MENU_WIDTH;
@@ -136,6 +160,8 @@ export class WorkspacePageComponent {
   protected readonly logs = inject(LogsStore);
   protected readonly canvasExport = inject(ExportStore);
   protected readonly settings = inject(SettingsStore);
+  protected readonly liveSession = inject(LiveSessionStore);
+  protected readonly nowMilliseconds = useTickingClock(CLOCK_TICK_MILLISECONDS);
   protected readonly libraryFilterHistory = computed(() => this._searchHistory.histories()[SEARCH_FIELDS.CHART_LIBRARY]);
   protected readonly isCompact = useMediaQuery(COMPACT_LAYOUT_QUERY);
 
@@ -194,6 +220,26 @@ export class WorkspacePageComponent {
     const cursor = this.timeWindow.cursor();
 
     return cursor === null ? '' : formatShortTimestamp(instantAt(this.timeWindow.window(), cursor.fraction));
+  });
+
+  protected readonly shareMinutesLeft = computed(() => {
+    const session = this.liveSession.session();
+
+    return session === null ? null : minutesLeftOf(session.expiresAtMilliseconds, this.nowMilliseconds());
+  });
+
+  private readonly _followed = computed(() => {
+    const followed = this._sharedSession.followed();
+
+    return followed !== null && followed.analysisId === this.analysisId() ? followed : null;
+  });
+
+  private readonly _followedRevision = computed(() => this._followed()?.revision ?? NOT_FOLLOWED);
+
+  protected readonly followMinutesLeft = computed(() => {
+    const followed = this._followed();
+
+    return followed === null ? null : minutesLeftOf(followed.expiresAtMilliseconds, this.nowMilliseconds());
   });
 
   protected readonly logEntryCount = computed(() => (this.logs.status() === LOG_STATUSES.READY ? this.logs.entries().length : null));
@@ -263,14 +309,19 @@ export class WorkspacePageComponent {
 
   public constructor() {
     void this._searchHistory.load(SEARCH_FIELDS.CHART_LIBRARY);
+    void this._sharing.load();
 
     effect(() => {
       const analysisId = this.analysisId();
+      const followedRevision = this._followedRevision();
 
-      untracked(() => {
-        this.logs.clear();
-        void this._open(analysisId);
-      });
+      untracked(() => this._openOrFollow(analysisId, followedRevision));
+    });
+
+    effect(() => {
+      const endedAnalysisId = this._sharedSession.endedAnalysisId();
+
+      untracked(() => this._leaveIfEnded(endedAnalysisId));
     });
   }
 
@@ -381,6 +432,32 @@ export class WorkspacePageComponent {
     this._shortcutHandlers[action]();
   }
 
+  private _openOrFollow(analysisId: string, followedRevision: number): void {
+    const isAnotherAnalysis = this._opened.analysisId !== analysisId;
+
+    if (!isAnotherAnalysis && followedRevision <= this._opened.followedRevision) {
+      return;
+    }
+
+    this._opened.analysisId = analysisId;
+    this._opened.followedRevision = followedRevision;
+
+    if (isAnotherAnalysis) {
+      this.logs.clear();
+    }
+
+    void this._open(analysisId);
+  }
+
+  private _leaveIfEnded(endedAnalysisId: string | null): void {
+    if (endedAnalysisId === null || endedAnalysisId !== this.analysisId()) {
+      return;
+    }
+
+    this._sharedSession.acknowledgeEnd();
+    void this.backToMenu();
+  }
+
   private async _open(analysisId: string): Promise<void> {
     await this.workspace.open(analysisId);
 
@@ -389,6 +466,32 @@ export class WorkspacePageComponent {
     if (sampleLog !== null && this.analysisId() === analysisId && (await this.logs.load(sampleLog))) {
       this.logs.confirmSetup();
     }
+
+    await this._takeOverLog(this._sharedSession.logToOpenWith(analysisId));
+  }
+
+  private async _takeOverLog(handover: LogHandover | null): Promise<void> {
+    if (handover === null) {
+      return;
+    }
+
+    if (handover.kind === LOG_HANDOVERS.REMOVED) {
+      this.logs.clear();
+
+      return;
+    }
+
+    if (handover.kind === LOG_HANDOVERS.OPENED && !(await this.logs.load(handover.file))) {
+      return;
+    }
+
+    if (handover.view === null) {
+      this.logs.confirmSetup();
+
+      return;
+    }
+
+    this.logs.applyView(handover.view);
   }
 
   private _cancelDrag(): void {

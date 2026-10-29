@@ -1,0 +1,55 @@
+:host {
+  display: contents;
+}
+
+.share-trigger {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  flex: none;
+  height: 32px;
+  background: var(--bg2);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  color: var(--tx);
+  font-size: 13px;
+  padding: 0 11px;
+  cursor: pointer;
+  white-space: nowrap;
+
+  &:hover {
+    border-color: var(--accLine);
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: progress;
+  }
+
+  &-live {
+    background: var(--accBg);
+    border-color: var(--accLine);
+
+    &:hover {
+      border-color: var(--acc);
+    }
+  }
+
+  &-glyph {
+    color: var(--accT);
+    font-size: 14px;
+    line-height: 1;
+  }
+
+  &-label {
+    font-weight: 600;
+  }
+
+  &-pulse {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--ok);
+    animation: om-pulse 1.6s ease-in-out infinite;
+  }
+}

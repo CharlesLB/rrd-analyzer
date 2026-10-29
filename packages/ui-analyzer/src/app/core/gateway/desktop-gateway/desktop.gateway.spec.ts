@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import type { InsightsReportDto, InsightsRequestDto, PickedFileDto, WindowRequestDto } from '../analyzer.dto';
+import type { InsightsReportDto, InsightsRequestDto, PickedFileDto, SessionPublicationDto, WindowRequestDto } from '../analyzer.dto';
 import { insightsReportDtoFixture } from '../analyzer.gateway.fixture';
 import { DesktopGateway } from './desktop.gateway';
 
@@ -20,6 +20,7 @@ const SERIES_COLOR = { seriesId: 's1', label: 'cpu', color: '#1d80ac' };
 const WINDOW_REQUEST: WindowRequestDto = { analysisId: 'a1', seriesIds: ['s1'], fromMilliseconds: 0, untilMilliseconds: 60_000, columns: 300 };
 const EXPORT_REQUEST = { analysisId: 'a1', seriesIds: ['s1'], fromMilliseconds: 0, untilMilliseconds: 60_000 };
 const INSIGHTS_REQUEST: InsightsRequestDto = { analysisId: 'a1', scope: 'all', fromMilliseconds: 0, untilMilliseconds: 60_000, seriesIds: ['s1'] };
+const PUBLICATION: SessionPublicationDto = { log: null };
 
 const ANSWERING_DELEGATIONS: readonly Delegation[] = [
   { method: 'Build', call: async (gateway) => await gateway.fetchBuild(), parameters: [] },
@@ -39,6 +40,9 @@ const ANSWERING_DELEGATIONS: readonly Delegation[] = [
   { method: 'SearchHistory', call: async (gateway) => await gateway.fetchSearchHistory('charts'), parameters: ['charts'] },
   { method: 'RememberSearch', call: async (gateway) => await gateway.rememberSearch('charts', 'cpu'), parameters: ['charts', 'cpu'] },
   { method: 'ForgetSearch', call: async (gateway) => await gateway.forgetSearch('charts', 'cpu'), parameters: ['charts', 'cpu'] },
+  { method: 'ListSessions', call: async (gateway) => await gateway.listSessions(), parameters: [] },
+  { method: 'StartSession', call: async (gateway) => await gateway.startSession('a1', PUBLICATION), parameters: ['a1', PUBLICATION] },
+  { method: 'PublishSession', call: async (gateway) => await gateway.publishSession('a1', PUBLICATION), parameters: ['a1', PUBLICATION] },
 ];
 
 const WRITING_DELEGATIONS: readonly Delegation[] = [
@@ -46,6 +50,7 @@ const WRITING_DELEGATIONS: readonly Delegation[] = [
   { method: 'SaveCanvas', call: async (gateway) => await gateway.saveCanvas('a1', CANVAS), parameters: ['a1', CANVAS] },
   { method: 'SaveLibraryOrder', call: async (gateway) => await gateway.saveLibraryOrder('a1', LIBRARY_ORDER), parameters: ['a1', LIBRARY_ORDER] },
   { method: 'SaveSeriesColor', call: async (gateway) => await gateway.saveSeriesColor('a1', SERIES_COLOR), parameters: ['a1', SERIES_COLOR] },
+  { method: 'EndSession', call: async (gateway) => await gateway.endSession('a1'), parameters: ['a1'] },
 ];
 
 const bindDesktop = (methods: BoundMethods): void => {
@@ -83,6 +88,14 @@ describe('DesktopGateway', () => {
       expect(answered).toBeUndefined();
     },
   );
+
+  it.each([
+    { name: 'joinSession', call: async (gateway: DesktopGateway) => await gateway.joinSession() },
+    { name: 'refreshSession', call: async (gateway: DesktopGateway) => await gateway.refreshSession() },
+    { name: 'forgetSession', call: async (gateway: DesktopGateway) => await gateway.forgetSession() },
+  ])('DesktopGateway $name refuses, since a live session is only ever followed from its link in the browser edition', async ({ call }) => {
+    await expect(call(new DesktopGateway())).rejects.toThrow('a live session is opened from its link in the browser edition, never in the desktop window');
+  });
 
   it('DesktopGateway fetchSampleAnalysis offers no sample, since the desktop app opens the analyses kept on disk', async () => {
     bindDesktop({});

@@ -6,6 +6,7 @@ import type { LogFileSummary } from '../log-state/log-state';
 import type { LogTimeline } from '../log-timeline/log-timeline';
 
 export type LoadedLogs = {
+  readonly source: File;
   readonly records: readonly LogRecord[];
   readonly notes: readonly string[];
   readonly fields: readonly LogField[];

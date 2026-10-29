@@ -1,0 +1,90 @@
+@use 'mixins';
+
+.share-warning-dialog {
+  width: 520px;
+  max-width: 100%;
+  display: flex;
+  flex-direction: column;
+  @include mixins.popover-surface;
+
+  &-scrim {
+    @include mixins.modal-scrim;
+  }
+
+  &-header {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 16px 18px;
+    border-bottom: 1px solid var(--line);
+  }
+
+  &-heading {
+    flex: 1;
+    min-width: 0;
+  }
+
+  &-title {
+    font-size: 16px;
+    font-weight: 600;
+  }
+
+  &-helper {
+    font-size: 13px;
+    color: var(--tx2);
+    margin-top: 3px;
+  }
+
+  &-close {
+    @include mixins.icon-button(var(--tx), 0 4px);
+  }
+
+  &-points {
+    margin: 0;
+    padding: 14px 18px 14px 36px;
+    display: flex;
+    flex-direction: column;
+    gap: 9px;
+    font-size: 13px;
+    line-height: 1.45;
+    color: var(--tx);
+  }
+
+  &-point {
+    &-key {
+      color: var(--danger);
+    }
+  }
+
+  &-footer {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 9px;
+    padding: 12px 18px;
+    border-top: 1px solid var(--line);
+    background: var(--surf);
+  }
+
+  &-cancel {
+    @include mixins.outline-button(9px, 6px 14px, 13px, var(--tx2));
+
+    & {
+      border-color: var(--line2);
+    }
+
+    &:hover {
+      border-color: var(--acc);
+      color: var(--tx);
+    }
+  }
+
+  &-confirm {
+    @include mixins.primary-button;
+
+    &:disabled {
+      opacity: 0.6;
+      cursor: progress;
+    }
+  }
+}

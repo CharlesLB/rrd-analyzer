@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { InsightsRequestDto, PickedFileDto, WindowRequestDto } from '../analyzer.dto';
+import type { InsightsRequestDto, PickedFileDto, SessionPublicationDto, WindowRequestDto } from '../analyzer.dto';
 import { insightsReportDtoFixture } from '../analyzer.gateway.fixture';
+import { GatewayRequestError, statusOfFailure } from '../gateway-request-error/gateway-request-error';
 import { ApiGateway, type ApiTransport } from './api.gateway';
 
 type Exchange = {
@@ -25,6 +26,7 @@ const LIBRARY_ORDER = [{ seriesId: 's1', label: 'cpu' }];
 const SERIES_COLOR = { seriesId: 's1', label: 'cpu', color: '#1d80ac' };
 const WINDOW_REQUEST: WindowRequestDto = { analysisId: 'a1', seriesIds: ['s1'], fromMilliseconds: 0, untilMilliseconds: 60_000, columns: 300 };
 const INSIGHTS_REQUEST: InsightsRequestDto = { analysisId: 'a1', scope: 'all', fromMilliseconds: 0, untilMilliseconds: 60_000, seriesIds: ['s1'] };
+const PUBLICATION: SessionPublicationDto = { log: { name: 'service.ndjson', content: '{}', view: { isShown: true } } };
 
 const ANSWERING_EXCHANGES: readonly Exchange[] = [
   { name: 'fetchBuild', call: async (gateway) => await gateway.fetchBuild(), method: 'GET', path: '/api/build' },
@@ -81,6 +83,34 @@ const ANSWERING_EXCHANGES: readonly Exchange[] = [
     path: '/api/search-history/charts/forget',
     body: { term: 'cpu' },
   },
+  { name: 'listSessions', call: async (gateway) => await gateway.listSessions(), method: 'GET', path: '/api/sessions' },
+  {
+    name: 'startSession',
+    call: async (gateway) => await gateway.startSession('a1', PUBLICATION),
+    method: 'POST',
+    path: '/api/analyses/a1/session',
+    body: PUBLICATION,
+  },
+  {
+    name: 'publishSession',
+    call: async (gateway) => await gateway.publishSession('a1', PUBLICATION),
+    method: 'PUT',
+    path: '/api/analyses/a1/session',
+    body: PUBLICATION,
+  },
+  {
+    name: 'joinSession',
+    call: async (gateway) => await gateway.joinSession('session/1', 'key-1'),
+    method: 'POST',
+    path: '/api/shared-sessions',
+    body: { sessionId: 'session/1', key: 'key-1' },
+  },
+  {
+    name: 'refreshSession',
+    call: async (gateway) => await gateway.refreshSession('session/1'),
+    method: 'POST',
+    path: '/api/shared-sessions/session%2F1/refresh',
+  },
 ];
 
 const WRITING_EXCHANGES: readonly Exchange[] = [
@@ -106,6 +136,8 @@ const WRITING_EXCHANGES: readonly Exchange[] = [
     path: '/api/analyses/a1/series-color',
     body: SERIES_COLOR,
   },
+  { name: 'endSession', call: async (gateway) => await gateway.endSession('a1'), method: 'DELETE', path: '/api/analyses/a1/session' },
+  { name: 'forgetSession', call: async (gateway) => await gateway.forgetSession('s-1'), method: 'DELETE', path: '/api/shared-sessions/s-1' },
 ];
 
 class TransportedGateway extends ApiGateway {
@@ -171,6 +203,17 @@ describe('ApiGateway', () => {
     const send = vi.fn<ApiTransport['send']>().mockResolvedValue(new Response('analysis not found', { status: 404 }));
 
     await expect(gatewayOver(send).deleteAnalysis('missing')).rejects.toThrow('DELETE /api/analyses/missing failed: 404 analysis not found');
+  });
+
+  it('ApiGateway, when a route refuses, fails with the status the route answered, so a caller can tell a session that ended from one it could not reach', async () => {
+    const send = vi.fn<ApiTransport['send']>().mockResolvedValue(new Response('sharing: the session has ended', { status: 404 }));
+
+    const failure = await gatewayOver(send)
+      .refreshSession('s-1')
+      .catch((error: unknown) => error);
+
+    expect(failure).toBeInstanceOf(GatewayRequestError);
+    expect(statusOfFailure(failure)).toBe(404);
   });
 
   it('ApiGateway describeSources has no paths to describe in a page, so it describes nothing', async () => {

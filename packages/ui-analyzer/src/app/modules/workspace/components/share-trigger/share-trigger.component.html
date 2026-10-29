@@ -1,0 +1,25 @@
+@if (live(); as live) {
+  <button class="share-trigger share-trigger-live" type="button" [title]="live.tip" [attr.aria-label]="live.tip" (click)="requested.emit()">
+    <span class="share-trigger-pulse"></span>
+    @if (isCompact()) {
+      <span class="share-trigger-label">{{ texts().sharing.liveLabel }}</span>
+    } @else {
+      <span class="share-trigger-label">{{ live.label }}</span>
+    }
+  </button>
+} @else {
+  <button
+    class="share-trigger"
+    type="button"
+    [disabled]="isBusy()"
+    [attr.aria-busy]="isBusy()"
+    [title]="texts().sharing.shareTip"
+    [attr.aria-label]="texts().sharing.shareLabel"
+    (click)="requested.emit()"
+  >
+    <span class="share-trigger-glyph">{{ glyphs.SHARE }}</span>
+    @if (!isCompact()) {
+      <span class="share-trigger-label">{{ texts().sharing.shareLabel }}</span>
+    }
+  </button>
+}

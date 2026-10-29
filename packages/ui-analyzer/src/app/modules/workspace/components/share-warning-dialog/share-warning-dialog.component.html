@@ -1,0 +1,35 @@
+<div class="share-warning-dialog-scrim" appDismissOnScrim (dismissed)="close()">
+  <div class="share-warning-dialog" appFocusTrap role="alertdialog" aria-modal="true" [attr.aria-labelledby]="titleId">
+    <div class="share-warning-dialog-header">
+      <div class="share-warning-dialog-heading">
+        <div class="share-warning-dialog-title" [id]="titleId">{{ texts().sharing.warning.title }}</div>
+        <div class="share-warning-dialog-helper">{{ texts().sharing.warning.helper }}</div>
+      </div>
+      <button
+        class="share-warning-dialog-close"
+        type="button"
+        [title]="texts().sharing.warning.close"
+        [attr.aria-label]="texts().sharing.warning.close"
+        (click)="close()"
+      >
+        {{ glyphs.CLOSE }}
+      </button>
+    </div>
+
+    <ul class="share-warning-dialog-points">
+      <li class="share-warning-dialog-point">{{ uploads() }}</li>
+      <li class="share-warning-dialog-point">{{ texts().sharing.warning.followsChanges }}</li>
+      <li class="share-warning-dialog-point">{{ texts().sharing.warning.erasure }}</li>
+      <li class="share-warning-dialog-point share-warning-dialog-point-key">{{ texts().sharing.warning.keyInLink }}</li>
+    </ul>
+
+    <div class="share-warning-dialog-footer">
+      <button #cancelButton class="share-warning-dialog-cancel" type="button" [disabled]="isBusy()" (click)="close()">
+        {{ texts().sharing.warning.cancel }}
+      </button>
+      <button class="share-warning-dialog-confirm" type="button" [disabled]="isBusy()" [attr.aria-busy]="isBusy()" (click)="confirmed.emit()">
+        {{ confirmLabel() }}
+      </button>
+    </div>
+  </div>
+</div>

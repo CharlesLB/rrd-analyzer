@@ -42,6 +42,15 @@
     (panelToggled)="insights.togglePanel()"
     (shownToggled)="insights.toggleShown()"
   />
+  @if (liveSession.canShare()) {
+    <app-share-trigger
+      timeframeBarShare
+      [minutesLeft]="shareMinutesLeft()"
+      [isBusy]="liveSession.isBusy()"
+      [isCompact]="isCompact()"
+      (requested)="liveSession.requestShare()"
+    />
+  }
   <app-view-settings
     timeframeBarSettings
     [thumbnailFill]="settings.thumbnailFill()"
@@ -75,6 +84,11 @@
     }
   </ng-container>
 </app-timeframe-bar>
+
+@let followedMinutesLeft = followMinutesLeft();
+@if (followedMinutesLeft !== null) {
+  <app-live-session-banner [minutesLeft]="followedMinutesLeft" />
+}
 
 <div class="workspace-body">
   @if (workspace.openingFailure(); as failure) {
@@ -332,4 +346,33 @@
   <div class="workspace-drop" role="status">
     <span class="workspace-drop-hint">{{ texts().logs.dropHint }}</span>
   </div>
+}
+
+@defer (when liveSession.isWarningOpen(); prefetch on idle) {
+  @if (liveSession.isWarningOpen()) {
+    <app-share-warning-dialog
+      [fileCount]="workspace.sourceFileCount()"
+      [hasLog]="liveSession.hasLog()"
+      [isBusy]="liveSession.isBusy()"
+      (confirmed)="liveSession.confirm()"
+      (closed)="liveSession.closeLayer()"
+    />
+  }
+} @error {
+  <div class="workspace-layer-failure">{{ texts().workspace.shareUnavailable }}</div>
+}
+
+@defer (when liveSession.isPanelOpen(); prefetch on idle) {
+  @if (liveSession.isPanelOpen() && liveSession.session(); as session) {
+    <app-share-panel
+      [session]="session"
+      [nowMilliseconds]="nowMilliseconds()"
+      [isBusy]="liveSession.isBusy()"
+      (copyRequested)="liveSession.copyLink()"
+      (endRequested)="liveSession.end()"
+      (closed)="liveSession.closeLayer()"
+    />
+  }
+} @error {
+  <div class="workspace-layer-failure">{{ texts().workspace.shareUnavailable }}</div>
 }
