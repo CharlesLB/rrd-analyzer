@@ -11,6 +11,7 @@ import (
 	"io"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/CharlesLB/rrd-analyzer/packages/daemon/internal/sharing/domain"
@@ -22,6 +23,12 @@ const (
 	_statePath     = "/state"
 	_filesSegment  = "/files/"
 	_chunksSegment = "/chunks/"
+	_liveSuffix    = "/live"
+
+	// _webSocketScheme is what turns the service's http or https address into the ws or wss one a
+	// socket opens.
+	_httpScheme      = "http"
+	_webSocketScheme = "ws"
 
 	_authorizationHeader = "Authorization"
 	_bearerPrefix        = "Bearer "
@@ -108,7 +115,7 @@ func (host *HostClient) PutState(callerContext context.Context, credentials doma
 	var revision revisionBody
 	if err := host.exchangeJSON(callerContext, exchange{
 		method:       http.MethodPut,
-		path:         _sessionsPath + credentials.SessionID + _statePath,
+		path:         sessionPath(credentials.SessionID) + _statePath,
 		ownerToken:   credentials.OwnerToken,
 		body:         sealed,
 		succeedsWith: http.StatusOK,
@@ -122,7 +129,7 @@ func (host *HostClient) PutState(callerContext context.Context, credentials doma
 // State reads the sealed state, and where the session stands from the two headers the service
 // sends beside it.
 func (host *HostClient) State(callerContext context.Context, sessionID string) (domain.SealedState, error) {
-	answered, err := host.exchange(callerContext, exchange{method: http.MethodGet, path: _sessionsPath + sessionID + _statePath, succeedsWith: http.StatusOK})
+	answered, err := host.exchange(callerContext, exchange{method: http.MethodGet, path: sessionPath(sessionID) + _statePath, succeedsWith: http.StatusOK})
 	if err != nil {
 		return domain.SealedState{}, err
 	}
@@ -151,7 +158,7 @@ func (host *HostClient) Chunk(callerContext context.Context, sessionID string, f
 
 func (host *HostClient) Status(callerContext context.Context, sessionID string) (domain.Revision, error) {
 	var revision revisionBody
-	if err := host.exchangeJSON(callerContext, exchange{method: http.MethodGet, path: _sessionsPath + sessionID, succeedsWith: http.StatusOK}, &revision); err != nil {
+	if err := host.exchangeJSON(callerContext, exchange{method: http.MethodGet, path: sessionPath(sessionID), succeedsWith: http.StatusOK}, &revision); err != nil {
 		return domain.Revision{}, err
 	}
 
@@ -161,12 +168,16 @@ func (host *HostClient) Status(callerContext context.Context, sessionID string) 
 func (host *HostClient) End(callerContext context.Context, credentials domain.Credentials) error {
 	_, err := host.exchange(callerContext, exchange{
 		method:       http.MethodDelete,
-		path:         _sessionsPath + credentials.SessionID,
+		path:         sessionPath(credentials.SessionID),
 		ownerToken:   credentials.OwnerToken,
 		succeedsWith: http.StatusNoContent,
 	})
 
 	return err
+}
+
+func (host *HostClient) LiveURL(sessionID string) string {
+	return _webSocketScheme + strings.TrimPrefix(host.baseURL, _httpScheme) + sessionPath(sessionID) + _liveSuffix
 }
 
 func (host *HostClient) exchangeJSON(callerContext context.Context, sent exchange, target any) error {
@@ -246,6 +257,10 @@ func revisionOf(revision revisionBody) domain.Revision {
 	return domain.Revision{Number: revision.Revision, ExpiresAt: time.UnixMilli(revision.ExpiresAtMilliseconds)}
 }
 
+func sessionPath(sessionID string) string {
+	return _sessionsPath + sessionID
+}
+
 func chunkPath(sessionID string, fileID string, index int) string {
-	return _sessionsPath + sessionID + _filesSegment + fileID + _chunksSegment + strconv.Itoa(index)
+	return sessionPath(sessionID) + _filesSegment + fileID + _chunksSegment + strconv.Itoa(index)
 }

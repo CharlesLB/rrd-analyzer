@@ -56,8 +56,7 @@ func liveAnalysis(t *testing.T, operations *surface.Operations) (surface.Analysi
 }
 
 func TestSessions_AnOwnersWholeSession_GoesThroughTheSurface(t *testing.T) {
-	service := sharetest.NewServer()
-	t.Cleanup(service.Close)
+	service := sharetest.Started(t)
 
 	operations := sharingOperations(t, service, sharingInfra.NewMemoryRegistry())
 	created, started := liveAnalysis(t, operations)
@@ -86,8 +85,7 @@ func TestSessions_AnOwnersWholeSession_GoesThroughTheSurface(t *testing.T) {
 }
 
 func TestSessions_WhereNoFileCanBeKeptInMemory_FollowingIsUnavailable(t *testing.T) {
-	service := sharetest.NewServer()
-	t.Cleanup(service.Close)
+	service := sharetest.Started(t)
 
 	operations := sharingOperations(t, service, sharingInfra.NewMemoryRegistry())
 	callerContext := context.Background()
@@ -104,8 +102,7 @@ func TestSessions_WhereNoFileCanBeKeptInMemory_FollowingIsUnavailable(t *testing
 }
 
 func TestDeleteAnalysis_ALiveAnalysis_EndsItsSessionFirst(t *testing.T) {
-	service := sharetest.NewServer()
-	t.Cleanup(service.Close)
+	service := sharetest.Started(t)
 
 	operations := sharingOperations(t, service, sharingInfra.NewMemoryRegistry())
 	created, started := liveAnalysis(t, operations)
@@ -120,8 +117,7 @@ func TestDeleteAnalysis_ALiveAnalysis_EndsItsSessionFirst(t *testing.T) {
 }
 
 func TestDeleteAnalysis_ARegistryThatCannotSayWhatIsLive_KeepsTheAnalysis(t *testing.T) {
-	service := sharetest.NewServer()
-	t.Cleanup(service.Close)
+	service := sharetest.Started(t)
 
 	operations := sharingOperations(t, service, unreadableRegistry{MemoryRegistry: sharingInfra.NewMemoryRegistry()})
 

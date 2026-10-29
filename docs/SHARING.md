@@ -168,13 +168,20 @@ type JoinedSession = {
   expiresAtMilliseconds: number;
   liveUrl: string;     // wss://…/api/sessions/{sessionId}/live
   changed: boolean;    // a refresh that found nothing newer answers false
-  log: null | { fileId: string; name: string; content: string; view: unknown };
+  log: null | {
+    fileId: string;
+    name: string;
+    content?: string;   // left out when it is the log (same fileId) the previous answer carried
+    view: unknown;
+  };
 };
 ```
 
 A publication with no `content` for a log the session does not hold yet, or whose name differs
 from the one published, is a `400`, and so is a `view` that is not JSON. Starting an analysis that
 is already live publishes onto the same session, so the link already handed out keeps working.
+A join carries the log's `content`, and a refresh carries it only when the log is a new one: the
+frontend holds the text of the one before, and the core keeps no copy of it.
 
 ## Deploying the share service
 

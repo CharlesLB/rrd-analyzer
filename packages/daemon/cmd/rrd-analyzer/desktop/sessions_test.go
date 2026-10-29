@@ -30,8 +30,7 @@ func sharingAPIOver(t *testing.T, service *sharetest.Server) *API {
 }
 
 func TestAPI_ALiveSession_IsStartedPublishedAndEndedThroughTheBindings(t *testing.T) {
-	service := sharetest.NewServer()
-	t.Cleanup(service.Close)
+	service := sharetest.Started(t)
 
 	api := sharingAPIOver(t, service)
 	created := createdOver(t, api, writtenDump(t, "cpu.xml"))

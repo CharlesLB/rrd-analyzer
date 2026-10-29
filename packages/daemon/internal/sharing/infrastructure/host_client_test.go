@@ -23,8 +23,7 @@ const (
 func hostOver(t *testing.T) (*sharingInfra.HostClient, *sharetest.Server) {
 	t.Helper()
 
-	server := sharetest.NewServer()
-	t.Cleanup(server.Close)
+	server := sharetest.Started(t)
 
 	return sharingInfra.NewHostClient(server.URL()), server
 }
@@ -275,5 +274,24 @@ func TestHostClient_AWrite_CarriesTheOwnersTokenAndASealedBody(t *testing.T) {
 
 	if authorization != "Bearer token" || contentType != "application/octet-stream" {
 		t.Errorf("sent Authorization %q and Content-Type %q, want the bearer token and raw bytes", authorization, contentType)
+	}
+}
+
+func TestHostClient_LiveURL_IsTheSessionsSocketOnTheServicesHost(t *testing.T) {
+	tests := []struct {
+		name        string
+		giveAddress string
+		wantURL     string
+	}{
+		{name: "an http service", giveAddress: "http://127.0.0.1:8787", wantURL: "ws://127.0.0.1:8787/api/sessions/session/live"},
+		{name: "an https service", giveAddress: "https://share.example", wantURL: "wss://share.example/api/sessions/session/live"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := sharingInfra.NewHostClient(tt.giveAddress).LiveURL("session"); got != tt.wantURL {
+				t.Errorf("live URL = %q, want %q", got, tt.wantURL)
+			}
+		})
 	}
 }

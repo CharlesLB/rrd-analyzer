@@ -156,6 +156,33 @@ func (service *Service) SaveSeriesColor(callerContext context.Context, analysisI
 	return nil
 }
 
+// SaveSeriesColors replaces every color an analysis gives its series, each normalised the way a
+// person's pick is, and the default ones left out. A shared analysis takes its owner's colors this
+// way, whole rather than one at a time: the owner may have given a series its default color back,
+// and only replacing the list drops it.
+func (service *Service) SaveSeriesColors(callerContext context.Context, analysisID string, colors []analysisDomain.SeriesColor) error {
+	picked := make([]analysisDomain.SeriesColor, 0, len(colors))
+	for _, color := range colors {
+		normalised, err := normalisedColor(color.Color)
+		if err != nil {
+			return fmt.Errorf("%q: %w", color.Color, err)
+		}
+
+		if normalised == defaultColor {
+			continue
+		}
+
+		color.Color = normalised
+		picked = append(picked, color)
+	}
+
+	if err := service.store.SaveSeriesColors(callerContext, analysisID, picked); err != nil {
+		return fmt.Errorf("record the series colors: %w", err)
+	}
+
+	return nil
+}
+
 // Rename gives an analysis the name a person typed over it, trimmed. A blank name is refused rather
 // than replaced by a placeholder: the person cleared it, and only they can say what it should be.
 func (service *Service) Rename(callerContext context.Context, analysisID string, name string) (analysisDomain.Analysis, error) {

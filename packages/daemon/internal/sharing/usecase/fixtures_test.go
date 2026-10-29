@@ -25,12 +25,15 @@ import (
 const (
 	ownedAnalysis  = "owned"
 	sourcePrefix   = "RRD "
-	linkRoute      = "/app/#/shared/"
 	nonceBytes     = 12
 	logName        = "service.ndjson"
 	logContent     = `{"time":"2026-03-12T09:30:00Z","level":"error"}`
 	logView        = `{"mapping":{"time":"time"}}`
 	sourcesOfOwner = 2
+
+	// releaseHeadStart is how long a refresh caught downloading waits for a release begun beside it,
+	// which is long enough for one that does not wait for the refresh to be over.
+	releaseHeadStart = 200 * time.Millisecond
 )
 
 var (
@@ -235,20 +238,27 @@ func (registry *failingRegistry) Save(callerContext context.Context, session dom
 	return registry.MemoryRegistry.Save(callerContext, session)
 }
 
-func (registry *failingRegistry) Renew(callerContext context.Context, analysisID string, revision domain.Revision) error {
+func (registry *failingRegistry) Renew(callerContext context.Context, analysisID string, sessionID string, revision domain.Revision) error {
 	if err := registry.refusal(renewRegistryOperation); err != nil {
 		return err
 	}
 
-	return registry.MemoryRegistry.Renew(callerContext, analysisID, revision)
+	return registry.MemoryRegistry.Renew(callerContext, analysisID, sessionID, revision)
 }
 
-func (registry *failingRegistry) Forget(callerContext context.Context, analysisID string) error {
+func (registry *failingRegistry) Forget(callerContext context.Context, analysisID string, sessionID string) error {
 	if err := registry.refusal(forgetRegistryOperation); err != nil {
 		return err
 	}
 
-	return registry.MemoryRegistry.Forget(callerContext, analysisID)
+	return registry.MemoryRegistry.Forget(callerContext, analysisID, sessionID)
+}
+
+// forgetOwned forgets the session the registry keeps for an analysis, the way a session never
+// started leaves it.
+func (registry *failingRegistry) forgetOwned(analysisID string) {
+	session, _ := registry.Get(context.Background(), analysisID)
+	_ = registry.Forget(context.Background(), analysisID, session.SessionID)
 }
 
 // scriptedHost is a share service whose calls a test can answer itself; every call it does not
@@ -348,8 +358,7 @@ type party struct {
 func newWorld(t *testing.T) *world {
 	t.Helper()
 
-	server := sharetest.NewServer()
-	t.Cleanup(server.Close)
+	server := sharetest.Started(t)
 
 	host := &scriptedHost{Host: sharingInfra.NewHostClient(server.URL())}
 	content := diskReader{cpuSource.Path: []byte("RRD cpu"), memorySource.Path: []byte("RRD memory"), diskSource.Path: []byte("RRD disk")}
@@ -415,7 +424,7 @@ func (shared *world) started(t *testing.T) domain.Status {
 func (shared *world) joined(t *testing.T, status domain.Status) domain.Joined {
 	t.Helper()
 
-	sessionID, key := halvesOf(t, status.Link)
+	sessionID, key := sharetest.HalvesOf(status.Link)
 
 	joined, err := shared.viewer.service.Join(context.Background(), sessionID, key)
 	if err != nil {
@@ -425,27 +434,13 @@ func (shared *world) joined(t *testing.T, status domain.Status) domain.Joined {
 	return joined
 }
 
-// halvesOf splits a link the way the web app's route does.
-func halvesOf(t *testing.T, link string) (string, string) {
-	t.Helper()
-
-	_, route, found := strings.Cut(link, linkRoute)
-	sessionID, key, separated := strings.Cut(route, "/")
-
-	if !found || !separated {
-		t.Fatalf("link %q does not end in %s{session}/{key}", link, linkRoute)
-	}
-
-	return sessionID, key
-}
-
 // keyOf decodes the key half of a link, for a test that seals a state of its own.
 func keyOf(t *testing.T, link string) []byte {
 	t.Helper()
 
-	_, encoded := halvesOf(t, link)
+	_, encoded := sharetest.HalvesOf(link)
 
-	key, err := decodeKey(encoded)
+	key, err := base64.RawURLEncoding.DecodeString(encoded)
 	if err != nil {
 		t.Fatalf("decode the key: %v", err)
 	}
@@ -453,12 +448,9 @@ func keyOf(t *testing.T, link string) []byte {
 	return key
 }
 
-func decodeKey(encoded string) ([]byte, error) {
-	return base64.RawURLEncoding.DecodeString(encoded)
-}
-
-// sealedWith seals plaintext the way the protocol does, for a state a test writes itself.
-func sealedWith(t *testing.T, key []byte, additionalData string, plaintext []byte) []byte {
+// sessionCipher is the AES-GCM a session's blobs are sealed with, written from docs/SHARING.md rather
+// than taken from the code under test, for a test that seals or opens a state itself.
+func sessionCipher(t *testing.T, key []byte) cipher.AEAD {
 	t.Helper()
 
 	block, err := aes.NewCipher(key)
@@ -471,26 +463,28 @@ func sealedWith(t *testing.T, key []byte, additionalData string, plaintext []byt
 		t.Fatalf("gcm: %v", err)
 	}
 
+	return aead
+}
+
+// stateAdditionalData is the place a session's state is sealed at.
+func stateAdditionalData(sessionID string) []byte {
+	return []byte("rrd-analyzer/1/" + sessionID + "/state")
+}
+
+// sealedState seals a state a test writes itself, the way the owner does.
+func sealedState(t *testing.T, key []byte, sessionID string, plaintext []byte) []byte {
+	t.Helper()
+
 	nonce := make([]byte, nonceBytes)
 
-	return aead.Seal(nonce, nonce, plaintext, []byte(additionalData))
+	return sessionCipher(t, key).Seal(nonce, nonce, plaintext, stateAdditionalData(sessionID))
 }
 
 // openedState opens a sealed state the way a viewer does, for a test that rewrites it.
 func openedState(t *testing.T, key []byte, sessionID string, sealed []byte) domain.State {
 	t.Helper()
 
-	block, err := aes.NewCipher(key)
-	if err != nil {
-		t.Fatalf("cipher: %v", err)
-	}
-
-	aead, err := cipher.NewGCM(block)
-	if err != nil {
-		t.Fatalf("gcm: %v", err)
-	}
-
-	plaintext, err := aead.Open(nil, sealed[:nonceBytes], sealed[nonceBytes:], []byte("rrd-analyzer/1/"+sessionID+"/state"))
+	plaintext, err := sessionCipher(t, key).Open(nil, sealed[:nonceBytes], sealed[nonceBytes:], stateAdditionalData(sessionID))
 	if err != nil {
 		t.Fatalf("open the state: %v", err)
 	}

@@ -72,7 +72,7 @@ func (registry *MemoryRegistry) Save(callerContext context.Context, session doma
 	return nil
 }
 
-func (registry *MemoryRegistry) Renew(callerContext context.Context, analysisID string, revision domain.Revision) error {
+func (registry *MemoryRegistry) Renew(callerContext context.Context, analysisID string, sessionID string, revision domain.Revision) error {
 	if err := callerContext.Err(); err != nil {
 		return fmt.Errorf("renew live session: %w", err)
 	}
@@ -80,7 +80,7 @@ func (registry *MemoryRegistry) Renew(callerContext context.Context, analysisID 
 	registry.mutex.Lock()
 	defer registry.mutex.Unlock()
 
-	if session, isLive := registry.byAnalysis[analysisID]; isLive {
+	if session, isLive := registry.liveAs(analysisID, sessionID); isLive {
 		session.Revision, session.ExpiresAt = revision.Number, revision.ExpiresAt
 		registry.byAnalysis[analysisID] = session
 	}
@@ -88,7 +88,7 @@ func (registry *MemoryRegistry) Renew(callerContext context.Context, analysisID 
 	return nil
 }
 
-func (registry *MemoryRegistry) Forget(callerContext context.Context, analysisID string) error {
+func (registry *MemoryRegistry) Forget(callerContext context.Context, analysisID string, sessionID string) error {
 	if err := callerContext.Err(); err != nil {
 		return fmt.Errorf("forget live session: %w", err)
 	}
@@ -96,10 +96,20 @@ func (registry *MemoryRegistry) Forget(callerContext context.Context, analysisID
 	registry.mutex.Lock()
 	defer registry.mutex.Unlock()
 
-	delete(registry.byAnalysis, analysisID)
-	registry.order = slices.DeleteFunc(registry.order, func(listed string) bool { return listed == analysisID })
+	if _, isLive := registry.liveAs(analysisID, sessionID); isLive {
+		delete(registry.byAnalysis, analysisID)
+		registry.order = slices.DeleteFunc(registry.order, func(listed string) bool { return listed == analysisID })
+	}
 
 	return nil
+}
+
+// liveAs is the session kept for an analysis when it is still the session named, the way Store's
+// statements match both columns.
+func (registry *MemoryRegistry) liveAs(analysisID string, sessionID string) (domain.OwnedSession, bool) {
+	session, isLive := registry.byAnalysis[analysisID]
+
+	return session, isLive && session.SessionID == sessionID
 }
 
 func copyOf(session domain.OwnedSession) domain.OwnedSession {

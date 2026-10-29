@@ -12,7 +12,9 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"strconv"
+	"strings"
 	"sync"
+	"testing"
 	"time"
 )
 
@@ -26,10 +28,15 @@ const (
 	_contentTypeHeader   = "Content-Type"
 	_jsonContentType     = "application/json"
 	_chunkSeparator      = "/"
+	_linkSeparator       = "/"
 	_decimal             = 10
 
 	// DefaultSessionBytes is the most a session holds across its chunks, as the Worker keeps it.
 	DefaultSessionBytes = 256 << 20
+
+	// LinkRoute is where the web app the service serves opens a session from its link, spelled here
+	// rather than taken from the code that writes links, so a test of that code checks it.
+	LinkRoute = "/app/#/shared/"
 )
 
 // _expiresAt is when every session ends: one instant, so a test can compare it.
@@ -69,6 +76,25 @@ func NewServer() *Server {
 	server.served = httptest.NewServer(routes)
 
 	return server
+}
+
+// Started is a server that closes when the test that started it ends.
+func Started(t testing.TB) *Server {
+	t.Helper()
+
+	server := NewServer()
+	t.Cleanup(server.Close)
+
+	return server
+}
+
+// HalvesOf splits a link the way the web app's route does, into the session and its key. A link
+// that is not under LinkRoute has neither, and a join with the empty halves is refused.
+func HalvesOf(link string) (string, string) {
+	_, route, _ := strings.Cut(link, LinkRoute)
+	sessionID, key, _ := strings.Cut(route, _linkSeparator)
+
+	return sessionID, key
 }
 
 // URL is the address the service answers at, the way SHARE_SERVICE_URL names it.

@@ -26,31 +26,32 @@ func (service *Service) Start(callerContext context.Context, analysisID string, 
 
 	defer service.owned.lock(analysisID)()
 
-	session, err := service.registry.Get(callerContext, analysisID)
+	analysis, err := service.library.Analysis(callerContext, analysisID)
+	if err != nil {
+		return domain.Status{}, err
+	}
+
+	session, err := service.ownedSession(callerContext, analysisID)
 	if err == nil {
-		status, err := service.publish(callerContext, session, publication)
+		status, err := service.publish(callerContext, session, analysis, publication)
 		if !errors.Is(err, domain.ErrSessionEnded) {
 			return status, err
 		}
 	} else if !errors.Is(err, domain.ErrNotLive) {
-		return domain.Status{}, fmt.Errorf("look for the live session of %q: %w", analysisID, err)
-	}
-
-	return service.startAnew(callerContext, analysisID, publication)
-}
-
-func (service *Service) startAnew(callerContext context.Context, analysisID string, publication domain.Publication) (domain.Status, error) {
-	if _, err := service.library.Analysis(callerContext, analysisID); err != nil {
 		return domain.Status{}, err
 	}
 
+	return service.startAnew(callerContext, analysis, publication)
+}
+
+func (service *Service) startAnew(callerContext context.Context, analysis analysisDomain.Analysis, publication domain.Publication) (domain.Status, error) {
 	created, err := service.host.Create(callerContext)
 	if err != nil {
 		return domain.Status{}, fmt.Errorf("start a live session: %w", err)
 	}
 
 	session := domain.OwnedSession{
-		AnalysisID: analysisID,
+		AnalysisID: analysis.ID,
 		SessionID:  created.Credentials.SessionID,
 		OwnerToken: created.Credentials.OwnerToken,
 		Key:        service.newKey(),
@@ -61,7 +62,7 @@ func (service *Service) startAnew(callerContext context.Context, analysisID stri
 		return domain.Status{}, fmt.Errorf("remember the live session: %w", err)
 	}
 
-	status, err := service.publish(callerContext, session, publication)
+	status, err := service.publish(callerContext, session, analysis, publication)
 	if err != nil {
 		return domain.Status{}, errors.Join(err, service.discard(callerContext, session))
 	}
@@ -78,30 +79,30 @@ func (service *Service) Publish(callerContext context.Context, analysisID string
 
 	defer service.owned.lock(analysisID)()
 
-	session, err := service.registry.Get(callerContext, analysisID)
+	session, err := service.ownedSession(callerContext, analysisID)
 	if err != nil {
-		return domain.Status{}, fmt.Errorf("find the live session of %q: %w", analysisID, err)
+		return domain.Status{}, err
 	}
 
-	return service.publish(callerContext, session, publication)
+	analysis, err := service.library.Analysis(callerContext, analysisID)
+	if err != nil {
+		return domain.Status{}, err
+	}
+
+	return service.publish(callerContext, session, analysis, publication)
 }
 
 // publish forgets a session the service says has ended, whichever step found out.
-func (service *Service) publish(callerContext context.Context, session domain.OwnedSession, publication domain.Publication) (domain.Status, error) {
-	status, err := service.publishOnto(callerContext, session, publication)
+func (service *Service) publish(callerContext context.Context, session domain.OwnedSession, analysis analysisDomain.Analysis, publication domain.Publication) (domain.Status, error) {
+	status, err := service.publishOnto(callerContext, session, analysis, publication)
 	if errors.Is(err, domain.ErrSessionEnded) {
-		return domain.Status{}, errors.Join(err, service.forget(callerContext, session.AnalysisID))
+		return domain.Status{}, errors.Join(err, service.forget(callerContext, session))
 	}
 
 	return status, err
 }
 
-func (service *Service) publishOnto(callerContext context.Context, session domain.OwnedSession, publication domain.Publication) (domain.Status, error) {
-	analysis, err := service.library.Analysis(callerContext, session.AnalysisID)
-	if err != nil {
-		return domain.Status{}, err
-	}
-
+func (service *Service) publishOnto(callerContext context.Context, session domain.OwnedSession, analysis analysisDomain.Analysis, publication domain.Publication) (domain.Status, error) {
 	sealing, err := newSealer(session.Key, service.entropy)
 	if err != nil {
 		return domain.Status{}, err
@@ -131,9 +132,9 @@ func (service *Service) Status(callerContext context.Context, analysisID string)
 		return domain.Status{}, err
 	}
 
-	session, err := service.registry.Get(callerContext, analysisID)
+	session, err := service.ownedSession(callerContext, analysisID)
 	if err != nil {
-		return domain.Status{}, fmt.Errorf("find the live session of %q: %w", analysisID, err)
+		return domain.Status{}, err
 	}
 
 	return service.currentStatusOf(callerContext, session)
@@ -182,14 +183,14 @@ func (service *Service) currentStatusOf(callerContext context.Context, session d
 
 	revision, err := service.host.Status(callerContext, session.SessionID)
 	if errors.Is(err, domain.ErrSessionEnded) {
-		return domain.Status{}, errors.Join(err, service.forget(callerContext, session.AnalysisID))
+		return domain.Status{}, errors.Join(err, service.forget(callerContext, session))
 	}
 
 	if err != nil {
 		return domain.Status{}, fmt.Errorf("ask after the live session of %q: %w", analysis.Name, err)
 	}
 
-	if err := service.registry.Renew(callerContext, session.AnalysisID, revision); err != nil {
+	if err := service.registry.Renew(callerContext, session.AnalysisID, session.SessionID, revision); err != nil {
 		return domain.Status{}, fmt.Errorf("record where the live session of %q stands: %w", analysis.Name, err)
 	}
 
@@ -207,16 +208,16 @@ func (service *Service) End(callerContext context.Context, analysisID string) er
 
 	defer service.owned.lock(analysisID)()
 
-	session, err := service.registry.Get(callerContext, analysisID)
+	session, err := service.ownedSession(callerContext, analysisID)
 	if err != nil {
-		return fmt.Errorf("find the live session of %q: %w", analysisID, err)
+		return err
 	}
 
 	if err := service.host.End(callerContext, credentialsOf(session)); err != nil && !errors.Is(err, domain.ErrSessionEnded) {
 		return fmt.Errorf("end the live session of %q: %w", analysisID, err)
 	}
 
-	return service.forget(callerContext, analysisID)
+	return service.forget(callerContext, session)
 }
 
 // Release lets go of everything live about an analysis that is about to be deleted: a session it
@@ -224,22 +225,30 @@ func (service *Service) End(callerContext context.Context, analysisID string) er
 // files. It works in a build with no share service too, which can still hold a session an earlier
 // build started.
 func (service *Service) Release(callerContext context.Context, analysisID string) error {
-	if followed, isFollowed := service.followed.takeByAnalysis(analysisID); isFollowed {
-		service.forgetKept(followed.files)
-	}
+	service.releaseFollowed(analysisID)
 
 	defer service.owned.lock(analysisID)()
 
-	session, err := service.registry.Get(callerContext, analysisID)
+	session, err := service.ownedSession(callerContext, analysisID)
 	if errors.Is(err, domain.ErrNotLive) {
 		return nil
 	}
 
 	if err != nil {
-		return fmt.Errorf("find the live session of %q: %w", analysisID, err)
+		return err
 	}
 
 	return service.discard(callerContext, session)
+}
+
+// ownedSession is the live session this app owns for an analysis, or ErrNotLive.
+func (service *Service) ownedSession(callerContext context.Context, analysisID string) (domain.OwnedSession, error) {
+	session, err := service.registry.Get(callerContext, analysisID)
+	if err != nil {
+		return domain.OwnedSession{}, fmt.Errorf("find the live session of %q: %w", analysisID, err)
+	}
+
+	return session, nil
 }
 
 // discard ends a session as far as the service can be reached, and forgets it whatever the service
@@ -249,12 +258,12 @@ func (service *Service) discard(callerContext context.Context, session domain.Ow
 		_ = service.host.End(callerContext, credentialsOf(session))
 	}
 
-	return service.forget(callerContext, session.AnalysisID)
+	return service.forget(callerContext, session)
 }
 
-func (service *Service) forget(callerContext context.Context, analysisID string) error {
-	if err := service.registry.Forget(callerContext, analysisID); err != nil {
-		return fmt.Errorf("forget the live session of %q: %w", analysisID, err)
+func (service *Service) forget(callerContext context.Context, session domain.OwnedSession) error {
+	if err := service.registry.Forget(callerContext, session.AnalysisID, session.SessionID); err != nil {
+		return fmt.Errorf("forget the live session of %q: %w", session.AnalysisID, err)
 	}
 
 	return nil
@@ -298,12 +307,6 @@ type ownerRun struct {
 	sealing sealer
 }
 
-// uploadedBlob is a file as the service now holds it.
-type uploadedBlob struct {
-	fileID     string
-	chunkCount int
-}
-
 func (run *ownerRun) uploadSources(callerContext context.Context, files []analysisDomain.SourceFile) error {
 	for _, file := range files {
 		if isOnline(run.session, file) {
@@ -315,18 +318,12 @@ func (run *ownerRun) uploadSources(callerContext context.Context, files []analys
 			return err
 		}
 
-		uploaded, err := run.upload(callerContext, content)
+		uploaded, err := run.upload(callerContext, file.Name, content)
 		if err != nil {
 			return fmt.Errorf("publish %q: %w", file.Name, err)
 		}
 
-		run.session.Files = append(run.session.Files, domain.OnlineFile{
-			Identity:   file.Identity(),
-			FileID:     uploaded.fileID,
-			Name:       file.Name,
-			Size:       int64(len(content)),
-			ChunkCount: uploaded.chunkCount,
-		})
+		run.session.Files = append(run.session.Files, domain.OnlineFile{Identity: file.Identity(), Blob: uploaded})
 
 		if err := run.service.registry.Save(callerContext, run.session); err != nil {
 			return fmt.Errorf("record %q online: %w", file.Name, err)
@@ -354,18 +351,19 @@ func (service *Service) readSource(callerContext context.Context, file analysisD
 	return content, nil
 }
 
-func (run *ownerRun) upload(callerContext context.Context, content []byte) (uploadedBlob, error) {
-	fileID := run.service.newIdentifier()
-	chunkCount := chunkCountOf(len(content))
+// upload seals a file chunk by chunk under a new identifier, and answers with the blob the service
+// now holds.
+func (run *ownerRun) upload(callerContext context.Context, name string, content []byte) (domain.Blob, error) {
+	blob := domain.Blob{FileID: run.service.newIdentifier(), Name: name, Size: int64(len(content)), ChunkCount: chunkCountOf(len(content))}
 
-	for index := range chunkCount {
-		sealed := run.sealing.seal(chunkAdditionalData(run.session.SessionID, fileID, index), chunkAt(content, index))
-		if err := run.service.host.PutChunk(callerContext, credentialsOf(run.session), fileID, index, sealed); err != nil {
-			return uploadedBlob{}, err
+	for index := range blob.ChunkCount {
+		sealed := run.sealing.seal(chunkAdditionalData(run.session.SessionID, blob.FileID, index), chunkAt(content, index))
+		if err := run.service.host.PutChunk(callerContext, credentialsOf(run.session), blob.FileID, index, sealed); err != nil {
+			return domain.Blob{}, err
 		}
 	}
 
-	return uploadedBlob{fileID: fileID, chunkCount: chunkCount}, nil
+	return blob, nil
 }
 
 // uploadLog brings the session's log in line with the publication's, and answers with what the
@@ -383,33 +381,33 @@ func (run *ownerRun) uploadLog(callerContext context.Context, published *domain.
 	}
 
 	if published.Content != nil {
-		if err := run.holdLog(callerContext, published.Name, *published.Content); err != nil {
+		if err := run.holdLog(callerContext, published.Name, []byte(*published.Content)); err != nil {
 			return nil, err
 		}
 	} else if run.session.Log == nil || run.session.Log.Name != published.Name {
 		return nil, domain.ErrLogContentMissing
 	}
 
-	online := run.session.Log
-
-	return &domain.StateLog{FileID: online.FileID, Name: online.Name, Size: online.Size, ChunkCount: online.ChunkCount, View: view}, nil
+	return &domain.StateLog{Blob: run.session.Log.Blob, View: view}, nil
 }
 
-// holdLog uploads a log unless the session already holds one of the same name and content.
-func (run *ownerRun) holdLog(callerContext context.Context, name string, content string) error {
-	sum := sha256.Sum256([]byte(content))
+// holdLog uploads a log unless the session already holds one of the same name and content. The log
+// comes as bytes because both the digest and the upload read it so, and a log of tens of megabytes
+// is converted from the frontend's text once.
+func (run *ownerRun) holdLog(callerContext context.Context, name string, content []byte) error {
+	sum := sha256.Sum256(content)
 	digest := hex.EncodeToString(sum[:])
 
 	if run.session.Log != nil && run.session.Log.Name == name && run.session.Log.Digest == digest {
 		return nil
 	}
 
-	uploaded, err := run.upload(callerContext, []byte(content))
+	uploaded, err := run.upload(callerContext, name, content)
 	if err != nil {
 		return fmt.Errorf("publish the log %q: %w", name, err)
 	}
 
-	run.session.Log = &domain.OnlineLog{FileID: uploaded.fileID, Name: name, Size: int64(len(content)), ChunkCount: uploaded.chunkCount, Digest: digest}
+	run.session.Log = &domain.OnlineLog{Blob: uploaded, Digest: digest}
 
 	if err := run.service.registry.Save(callerContext, run.session); err != nil {
 		return fmt.Errorf("record the log %q online: %w", name, err)
@@ -466,16 +464,15 @@ func (run *ownerRun) putState(callerContext context.Context, analysis analysisDo
 	return nil
 }
 
-func stateFilesOf(session domain.OwnedSession, files []analysisDomain.SourceFile) []domain.StateFile {
-	byIdentity := make(map[string]domain.OnlineFile, len(session.Files))
+func stateFilesOf(session domain.OwnedSession, files []analysisDomain.SourceFile) []domain.Blob {
+	byIdentity := make(map[string]domain.Blob, len(session.Files))
 	for _, online := range session.Files {
-		byIdentity[online.Identity] = online
+		byIdentity[online.Identity] = online.Blob
 	}
 
-	stateFiles := make([]domain.StateFile, 0, len(files))
+	stateFiles := make([]domain.Blob, 0, len(files))
 	for _, file := range files {
-		online := byIdentity[file.Identity()]
-		stateFiles = append(stateFiles, domain.StateFile{FileID: online.FileID, Name: online.Name, Size: online.Size, ChunkCount: online.ChunkCount})
+		stateFiles = append(stateFiles, byIdentity[file.Identity()])
 	}
 
 	return stateFiles

@@ -38,24 +38,31 @@ type OwnedSession struct {
 	Log        *OnlineLog
 }
 
-// OnlineFile is a source the session holds. Identity is the source's identity in the analysis
-// (SourceFile.Identity), which is how a publication tells a file already online from a new one.
-type OnlineFile struct {
-	Identity   string `json:"identity"`
+// Blob is a file as the service holds it: the identifier its chunks are stored under, the name it
+// had, how many bytes it holds and how many chunks they were cut into. The types that embed it keep
+// its fields at their own level in JSON, which is how the state and the registry write them.
+type Blob struct {
 	FileID     string `json:"fileId"`
 	Name       string `json:"name"`
 	Size       int64  `json:"size"`
 	ChunkCount int    `json:"chunkCount"`
 }
 
+// OnlineFile is a source the session holds. Identity is the source's identity in the analysis
+// (SourceFile.Identity), which is how a publication tells a file already online from a new one. It
+// stands before the embedded blob, against the usual order, because that is where the registry's
+// JSON has it.
+type OnlineFile struct {
+	Identity string `json:"identity"`
+	Blob
+}
+
 // OnlineLog is the log the session holds. A log has no path, so it is recognised by its name and
 // the SHA-256 of its content, written in hexadecimal.
 type OnlineLog struct {
-	FileID     string `json:"fileId"`
-	Name       string `json:"name"`
-	Size       int64  `json:"size"`
-	ChunkCount int    `json:"chunkCount"`
-	Digest     string `json:"digest"`
+	Blob
+
+	Digest string `json:"digest"`
 }
 
 // Credentials is what writing to a session takes.
@@ -97,7 +104,7 @@ type Arrangement struct {
 type State struct {
 	Format                  int                             `json:"format"`
 	Name                    string                          `json:"name"`
-	Files                   []StateFile                     `json:"files"`
+	Files                   []Blob                          `json:"files"`
 	Canvas                  []analysisDomain.CanvasChart    `json:"canvas"`
 	LibraryOrder            []analysisDomain.ChartReference `json:"libraryOrder"`
 	SeriesColors            []analysisDomain.SeriesColor    `json:"seriesColors"`
@@ -105,21 +112,12 @@ type State struct {
 	PublishedAtMilliseconds int64                           `json:"publishedAtMilliseconds"`
 }
 
-type StateFile struct {
-	FileID     string `json:"fileId"`
-	Name       string `json:"name"`
-	Size       int64  `json:"size"`
-	ChunkCount int    `json:"chunkCount"`
-}
-
 // StateLog is the log of a state, and View the frontend's own description of how it is read and
 // shown, carried without being read.
 type StateLog struct {
-	FileID     string          `json:"fileId"`
-	Name       string          `json:"name"`
-	Size       int64           `json:"size"`
-	ChunkCount int             `json:"chunkCount"`
-	View       json.RawMessage `json:"view"`
+	Blob
+
+	View json.RawMessage `json:"view"`
 }
 
 // Publication is what the frontend adds to a publication that only it holds: the log a person
@@ -171,9 +169,12 @@ type Joined struct {
 	Log                   *JoinedLog `json:"log"`
 }
 
+// JoinedLog is the log of a joined session. Content is left out when the log is the one the
+// previous answer for this session carried, which the frontend already holds: a refresh comes every
+// time the owner changes anything, and the same tens of megabytes would cross the bridge each time.
 type JoinedLog struct {
 	FileID  string          `json:"fileId"`
 	Name    string          `json:"name"`
-	Content string          `json:"content"`
+	Content string          `json:"content,omitempty"`
 	View    json.RawMessage `json:"view"`
 }

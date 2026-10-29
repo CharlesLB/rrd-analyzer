@@ -19,8 +19,6 @@ import (
 	"github.com/CharlesLB/rrd-analyzer/packages/daemon/internal/sharing/sharetest"
 )
 
-const sharedLinkRoute = "/app/#/shared/"
-
 // sharingServer serves the surface publishing to the share service at serviceURL, and following
 // sessions into keeper when there is one.
 func sharingServer(t *testing.T, serviceURL string, keeper sharingDomain.FileKeeper) http.Handler {
@@ -77,8 +75,7 @@ func writtenSource(t *testing.T) string {
 }
 
 func TestSessionRoutes_AnOwnerAndAViewer_SpeakTheContractOfDocsSharing(t *testing.T) {
-	service := sharetest.NewServer()
-	t.Cleanup(service.Close)
+	service := sharetest.Started(t)
 
 	owner := sharingServer(t, service.URL()+"/", nil)
 	viewer := sharingServer(t, service.URL(), memoryfiles.New())
@@ -92,8 +89,8 @@ func TestSessionRoutes_AnOwnerAndAViewer_SpeakTheContractOfDocsSharing(t *testin
 	}
 
 	link, _ := started["link"].(string)
-	if !strings.HasPrefix(link, service.URL()+sharedLinkRoute) {
-		t.Errorf("link = %q, want it under %s%s without a doubled slash", link, service.URL(), sharedLinkRoute)
+	if !strings.HasPrefix(link, service.URL()+sharetest.LinkRoute) {
+		t.Errorf("link = %q, want it under %s%s without a doubled slash", link, service.URL(), sharetest.LinkRoute)
 	}
 
 	for _, call := range []struct{ method, path, body string }{
@@ -105,7 +102,7 @@ func TestSessionRoutes_AnOwnerAndAViewer_SpeakTheContractOfDocsSharing(t *testin
 		}
 	}
 
-	sessionID, key, _ := strings.Cut(strings.TrimPrefix(link, service.URL()+sharedLinkRoute), "/")
+	sessionID, key := sharetest.HalvesOf(link)
 	joinBody, _ := json.Marshal(map[string]string{"sessionId": sessionID, "key": key})
 
 	status, joined := exchanged(t, viewer, http.MethodPost, "/api/shared-sessions", string(joinBody))
@@ -118,11 +115,15 @@ func TestSessionRoutes_AnOwnerAndAViewer_SpeakTheContractOfDocsSharing(t *testin
 		t.Errorf("joined log = %v, want the owner's log", joined["log"])
 	}
 
+	status, refreshed := exchanged(t, viewer, http.MethodPost, "/api/shared-sessions/"+sessionID+"/refresh", "")
+	if log, _ := refreshed["log"].(map[string]any); status != http.StatusOK || log["name"] != "service.log" || slices.Contains(fieldNames(log), "content") {
+		t.Errorf("refresh = %d with log %v, want 200 naming the log joined without its content", status, refreshed["log"])
+	}
+
 	viewerCalls := []struct {
 		method, path string
 		wantStatus   int
 	}{
-		{method: http.MethodPost, path: "/api/shared-sessions/" + sessionID + "/refresh", wantStatus: http.StatusOK},
 		{method: http.MethodDelete, path: "/api/shared-sessions/" + sessionID, wantStatus: http.StatusNoContent},
 		{method: http.MethodPost, path: "/api/shared-sessions/" + sessionID + "/refresh", wantStatus: http.StatusNotFound},
 	}
@@ -150,8 +151,7 @@ func TestSessionRoutes_AnOwnerAndAViewer_SpeakTheContractOfDocsSharing(t *testin
 }
 
 func TestSessionRoutes_WhatABuildCannotDo_IsSaidInTheStatus(t *testing.T) {
-	service := sharetest.NewServer()
-	t.Cleanup(service.Close)
+	service := sharetest.Started(t)
 
 	unconfigured := sharingServer(t, "", nil)
 	desktopLike := sharingServer(t, service.URL(), nil)
@@ -184,8 +184,7 @@ func TestSessionRoutes_WhatABuildCannotDo_IsSaidInTheStatus(t *testing.T) {
 }
 
 func TestBuildRoute_SaysWhetherTheBuildSharesSessions(t *testing.T) {
-	service := sharetest.NewServer()
-	t.Cleanup(service.Close)
+	service := sharetest.Started(t)
 
 	tests := []struct {
 		name       string

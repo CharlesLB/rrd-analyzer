@@ -25,20 +25,18 @@ func TestFilesReadBackWhatWasKept(t *testing.T) {
 	}
 }
 
-func TestFilesKeepACopySoTheCallerMayReuseItsBuffer(t *testing.T) {
+func TestFilesKeepTheBufferHandedOverRatherThanACopy(t *testing.T) {
 	files := memoryfiles.New()
 	buffer := []byte("first")
 	path := files.Keep("cpu.rrd", buffer)
-
-	copy(buffer, "xxxxx")
 
 	content, err := files.Read(context.Background(), path)
 	if err != nil {
 		t.Fatalf("read: %v", err)
 	}
 
-	if !bytes.Equal(content, []byte("first")) {
-		t.Fatalf("want the content as it was kept, got %q", content)
+	if !bytes.Equal(content, buffer) || &content[0] != &buffer[0] {
+		t.Fatalf("want the very buffer handed over, got a copy holding %q", content)
 	}
 }
 

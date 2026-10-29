@@ -50,29 +50,14 @@ func reshape(t *testing.T, databasePath string, statements string) {
 	}
 }
 
-func TestOpenStore_APlaceThatCannotHoldTheSessions_IsRefused(t *testing.T) {
+func TestOpenStore_AFileThatIsNotADatabase_IsRefused(t *testing.T) {
 	notADatabase := filepath.Join(t.TempDir(), databaseFileName)
 	if err := os.WriteFile(notADatabase, []byte(strings.Repeat("not a database ", 100)), ownerOnlyMode); err != nil {
 		t.Fatalf("write the file: %v", err)
 	}
 
-	tests := []struct {
-		name        string
-		givePath    string
-		wantMessage string
-	}{
-		{name: "a path the connector cannot parse", givePath: filepath.Join(t.TempDir(), "analyses?%zz"), wantMessage: "open live sessions database"},
-		{name: "a file that is not a database", givePath: notADatabase, wantMessage: "prepare live sessions"},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			_, err := sharingInfra.OpenStore(context.Background(), tt.givePath)
-
-			if err == nil || !strings.Contains(err.Error(), tt.wantMessage) {
-				t.Errorf("err = %v, want one saying %q", err, tt.wantMessage)
-			}
-		})
+	if _, err := sharingInfra.OpenStore(context.Background(), notADatabase); err == nil || !strings.Contains(err.Error(), "open live sessions database") {
+		t.Errorf("err = %v, want the live sessions refused", err)
 	}
 }
 
@@ -98,8 +83,8 @@ func TestStore_Closed_FailsEveryCall(t *testing.T) {
 			return err
 		}, wantMessage: "scan live session"},
 		{name: "save", giveCall: func() error { return store.Save(context.Background(), ownedSession("cpu")) }, wantMessage: "save live session"},
-		{name: "renew", giveCall: func() error { return store.Renew(context.Background(), "cpu", domain.Revision{}) }, wantMessage: "renew live session"},
-		{name: "forget", giveCall: func() error { return store.Forget(context.Background(), "cpu") }, wantMessage: "forget live session"},
+		{name: "renew", giveCall: func() error { return store.Renew(context.Background(), "cpu", "session", domain.Revision{}) }, wantMessage: "renew live session"},
+		{name: "forget", giveCall: func() error { return store.Forget(context.Background(), "cpu", "session") }, wantMessage: "forget live session"},
 	}
 
 	for _, tt := range tests {

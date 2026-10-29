@@ -2,7 +2,6 @@ package usecase
 
 import (
 	"encoding/base64"
-	"strings"
 
 	"github.com/CharlesLB/rrd-analyzer/packages/daemon/internal/sharing/domain"
 )
@@ -17,13 +16,6 @@ const (
 	// browser never sends to a server.
 	_linkRoute     = "/app/#/shared/"
 	_linkSeparator = "/"
-
-	// _liveRoute is the share service's WebSocket for a session, and _webSocketScheme what turns the
-	// service's http or https address into the ws or wss one a socket opens.
-	_sessionsRoute   = "/api/sessions/"
-	_liveSuffix      = "/live"
-	_httpScheme      = "http"
-	_webSocketScheme = "ws"
 )
 
 var _encoding = base64.RawURLEncoding
@@ -44,10 +36,6 @@ func (service *Service) newKey() []byte {
 
 func (service *Service) linkOf(sessionID string, key []byte) string {
 	return service.serviceURL + _linkRoute + sessionID + _linkSeparator + _encoding.EncodeToString(key)
-}
-
-func (service *Service) liveURLOf(sessionID string) string {
-	return _webSocketScheme + strings.TrimPrefix(service.serviceURL, _httpScheme) + _sessionsRoute + sessionID + _liveSuffix
 }
 
 // keyOfLink checks the two halves of a link the frontend split, and answers with the key. Anything

@@ -6,7 +6,6 @@ import (
 	"context"
 	"encoding/json"
 	"net/http"
-	"strings"
 	"testing"
 	"time"
 
@@ -20,7 +19,6 @@ const (
 		`<rra><cf>AVERAGE</cf><pdp_per_row>1</pdp_per_row><database>` +
 		`<row><v>1.0e+00</v></row><row><v>2.0e+00</v></row><row><v>3.0e+00</v></row>` +
 		`</database></rra></rrd>`
-	sharedRoute = "/app/#/shared/"
 )
 
 func sharingEdition(t *testing.T, serviceURL string) *Edition {
@@ -54,8 +52,7 @@ func served(t *testing.T, edition *Edition, method string, path string, body any
 }
 
 func TestEdition_ATabFollowingAnotherTabsSession_ChartsTheSameFile(t *testing.T) {
-	service := sharetest.NewServer()
-	t.Cleanup(service.Close)
+	service := sharetest.Started(t)
 
 	owner := sharingEdition(t, service.URL())
 	viewer := sharingEdition(t, service.URL())
@@ -75,8 +72,7 @@ func TestEdition_ATabFollowingAnotherTabsSession_ChartsTheSameFile(t *testing.T)
 		t.Fatalf("start = %d, want %d", status, http.StatusCreated)
 	}
 
-	_, halves, _ := strings.Cut(started.Link, sharedRoute)
-	sessionID, key, _ := strings.Cut(halves, "/")
+	sessionID, key := sharetest.HalvesOf(started.Link)
 
 	var joined struct {
 		AnalysisID string `json:"analysisId"`

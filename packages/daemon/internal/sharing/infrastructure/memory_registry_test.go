@@ -30,8 +30,8 @@ func TestMemoryRegistry_ACallerThatGaveUp_FailsEveryCall(t *testing.T) {
 			return err
 		}},
 		{name: "save", giveCall: func() error { return registry.Save(callerContext, domain.OwnedSession{AnalysisID: "cpu"}) }},
-		{name: "renew", giveCall: func() error { return registry.Renew(callerContext, "cpu", domain.Revision{}) }},
-		{name: "forget", giveCall: func() error { return registry.Forget(callerContext, "cpu") }},
+		{name: "renew", giveCall: func() error { return registry.Renew(callerContext, "cpu", "session", domain.Revision{}) }},
+		{name: "forget", giveCall: func() error { return registry.Forget(callerContext, "cpu", "session") }},
 	}
 
 	for _, tt := range tests {
@@ -48,8 +48,8 @@ func TestMemoryRegistry_ASessionSavedOrHandedBack_IsACopy(t *testing.T) {
 	session := domain.OwnedSession{
 		AnalysisID: "cpu",
 		Key:        []byte("key"),
-		Files:      []domain.OnlineFile{{FileID: "file-1"}},
-		Log:        &domain.OnlineLog{Name: "service.ndjson"},
+		Files:      []domain.OnlineFile{{Blob: domain.Blob{FileID: "file-1"}}},
+		Log:        &domain.OnlineLog{Blob: domain.Blob{Name: "service.ndjson"}},
 	}
 
 	if err := registry.Save(context.Background(), session); err != nil {

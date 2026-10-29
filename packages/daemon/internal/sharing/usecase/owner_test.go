@@ -10,6 +10,7 @@ import (
 
 	analysisDomain "github.com/CharlesLB/rrd-analyzer/packages/daemon/internal/analysis/domain"
 	"github.com/CharlesLB/rrd-analyzer/packages/daemon/internal/sharing/domain"
+	"github.com/CharlesLB/rrd-analyzer/packages/daemon/internal/sharing/sharetest"
 )
 
 func TestStart_AnAnalysis_PutsEveryFileOnlineBehindALinkToTheWebApp(t *testing.T) {
@@ -23,7 +24,7 @@ func TestStart_AnAnalysis_PutsEveryFileOnlineBehindALinkToTheWebApp(t *testing.T
 		t.Errorf("status = %+v, want revision 1 with both files and the log online", status)
 	}
 
-	if !strings.HasPrefix(status.Link, shared.server.URL()+linkRoute+status.SessionID+"/") || status.ExpiresAtMilliseconds != shared.server.ExpiresAt().UnixMilli() {
+	if !strings.HasPrefix(status.Link, shared.server.URL()+sharetest.LinkRoute+status.SessionID+"/") || status.ExpiresAtMilliseconds != shared.server.ExpiresAt().UnixMilli() {
 		t.Errorf("link = %q ending at %d, want the web app's route on the service, ending when the service says", status.Link, status.ExpiresAtMilliseconds)
 	}
 }
@@ -278,7 +279,7 @@ func TestStatus_WhatStopsAStatus_IsReported(t *testing.T) {
 		wantErr   error
 	}{
 		{name: "an analysis never shared", giveWorld: func(shared *world, _ domain.Status) {
-			_ = shared.owner.registry.Forget(context.Background(), ownedAnalysis)
+			shared.owner.registry.forgetOwned(ownedAnalysis)
 		}, wantErr: domain.ErrNotLive},
 		{name: "a session the service ended", giveWorld: func(shared *world, status domain.Status) {
 			shared.server.Expire(status.SessionID)
@@ -405,7 +406,7 @@ func TestEnd_WhatStopsAnEnd_IsReported(t *testing.T) {
 		wantErr   error
 	}{
 		{name: "an analysis not live", giveWorld: func(shared *world) {
-			_ = shared.owner.registry.Forget(context.Background(), ownedAnalysis)
+			shared.owner.registry.forgetOwned(ownedAnalysis)
 		}, wantErr: domain.ErrNotLive},
 		{name: "a service that cannot be reached", giveWorld: func(shared *world) {
 			shared.host.end = func() error { return errHostRefused }

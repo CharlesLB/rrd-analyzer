@@ -13,6 +13,9 @@ import (
 // A session the service no longer holds is ErrSessionEnded on every call that names one; anything
 // the service refuses for size is ErrTooLarge, a refusal to start one more session is
 // ErrServiceBusy, and every other failure, a service unreachable among them, is ErrServiceFailed.
+//
+// LiveURL is the address of the WebSocket that announces a session's new revisions. The frontend
+// opens it, so it is only named here, beside the other routes of the service.
 type Host interface {
 	Create(callerContext context.Context) (CreatedSession, error)
 	PutChunk(callerContext context.Context, credentials Credentials, fileID string, index int, sealed []byte) error
@@ -21,6 +24,7 @@ type Host interface {
 	Chunk(callerContext context.Context, sessionID string, fileID string, index int) ([]byte, error)
 	Status(callerContext context.Context, sessionID string) (Revision, error)
 	End(callerContext context.Context, credentials Credentials) error
+	LiveURL(sessionID string) string
 }
 
 // Registry is the live sessions this app owns, one at most per analysis. Get reports ErrNotLive for
@@ -29,12 +33,17 @@ type Host interface {
 // Renew writes only where a session stands. The status a frontend polls for runs beside a
 // publication still uploading, and saving the whole session it read before the upload began would
 // undo the files the publication marked online since.
+//
+// Renew and Forget name the session as well as its analysis, and leave alone an analysis whose
+// session is another by then. A status runs without the analysis' lock, so a start that replaced an
+// ended session meanwhile would otherwise have its new session forgotten, or the old one's revision
+// written onto it.
 type Registry interface {
 	List(callerContext context.Context) ([]OwnedSession, error)
 	Get(callerContext context.Context, analysisID string) (OwnedSession, error)
 	Save(callerContext context.Context, session OwnedSession) error
-	Renew(callerContext context.Context, analysisID string, revision Revision) error
-	Forget(callerContext context.Context, analysisID string) error
+	Renew(callerContext context.Context, analysisID string, sessionID string, revision Revision) error
+	Forget(callerContext context.Context, analysisID string, sessionID string) error
 }
 
 // Library is the analysis library as a live session reads and rebuilds it. A viewer's analysis is
@@ -62,7 +71,8 @@ type SourceFormat interface {
 }
 
 // FileKeeper keeps the files a viewer downloads in memory, under paths an analysis can name, and
-// lets go of them when the session ends. Only the browser edition has one.
+// lets go of them when the session ends. Only the browser edition has one. Keep takes the content
+// over rather than copying it: a viewer hands it a buffer of its own and never touches it again.
 type FileKeeper interface {
 	Keep(name string, content []byte) string
 	Forget(path string)

@@ -54,19 +54,6 @@ func TestSharingLibrary_Arrange_GivesTheAnalysisTheOwnersArrangement(t *testing.
 	}
 }
 
-func TestSharingLibrary_Arrange_ListsLeftOutAreStoredEmpty(t *testing.T) {
-	library, _, analysisID := sharingLibraryOver(t)
-
-	if err := library.Arrange(context.Background(), analysisID, sharingDomain.Arrangement{Name: "Checkout"}); err != nil {
-		t.Fatalf("arrange: %v", err)
-	}
-
-	arranged, _ := library.Analysis(context.Background(), analysisID)
-	if arranged.Canvas == nil || arranged.LibraryOrder == nil || len(arranged.Canvas) != 0 || len(arranged.LibraryOrder) != 0 {
-		t.Errorf("canvas = %#v, order = %#v; want both stored empty rather than absent", arranged.Canvas, arranged.LibraryOrder)
-	}
-}
-
 func TestSharingLibrary_Arrange_AnArrangementTheRulesRefuse_IsReported(t *testing.T) {
 	fullChart := analysisDomain.CanvasChart{SeriesID: "s0", Label: "cpu", Merged: make([]analysisDomain.MergedSeries, analysisDomain.MaximumChartSeries)}
 

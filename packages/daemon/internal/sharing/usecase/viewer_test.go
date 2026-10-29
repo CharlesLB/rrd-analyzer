@@ -8,9 +8,11 @@ import (
 	"reflect"
 	"strings"
 	"testing"
+	"time"
 
 	analysisDomain "github.com/CharlesLB/rrd-analyzer/packages/daemon/internal/analysis/domain"
 	"github.com/CharlesLB/rrd-analyzer/packages/daemon/internal/sharing/domain"
+	"github.com/CharlesLB/rrd-analyzer/packages/daemon/internal/sharing/sharetest"
 )
 
 func TestJoin_ALink_RebuildsTheOwnersAnalysisInTheTab(t *testing.T) {
@@ -73,13 +75,13 @@ func TestRefresh_ANewRevision_AppendsTheNewFilesAndTakesTheNewArrangement(t *tes
 		t.Errorf("refreshed = %+v over %+v, want revision 2 with the disk appended and the new name", refreshed, viewed)
 	}
 
-	if refreshed.Log.Content != logContent || string(refreshed.Log.View) != `{}` {
-		t.Errorf("log = %+v, want the same content under the new view", refreshed.Log)
+	if refreshed.Log.FileID != joined.Log.FileID || refreshed.Log.Content != "" || string(refreshed.Log.View) != `{}` {
+		t.Errorf("log = %+v, want the log joined under the new view, its content left out", refreshed.Log)
 	}
 
 	unchanged, err := shared.viewer.service.Refresh(context.Background(), joined.SessionID)
-	if err != nil || unchanged.Changed || unchanged.Revision != 2 {
-		t.Errorf("refresh again = %+v, %v; want nothing newer", unchanged, err)
+	if err != nil || unchanged.Changed || unchanged.Revision != 2 || unchanged.Log.FileID != joined.Log.FileID || unchanged.Log.Content != "" {
+		t.Errorf("refresh again = %+v, %v; want nothing newer, the log named without its content", unchanged, err)
 	}
 }
 
@@ -187,10 +189,46 @@ func TestRelease_AFollowedAnalysisAboutToBeDeleted_LetsGoOfItsFiles(t *testing.T
 	}
 }
 
+func TestRelease_AnAnalysisDeletedWhileARefreshKeepsItsFiles_LeavesNoFileBehind(t *testing.T) {
+	shared := newWorld(t)
+	joined := shared.joined(t, shared.started(t))
+	shared.owner.library.grow(ownedAnalysis, diskSource)
+	publish(shared)
+
+	released := make(chan error, 1)
+	shared.host.chunk = func(_ string, _ int, sealed []byte) ([]byte, error) {
+		go func() { released <- shared.viewer.service.Release(context.Background(), joined.AnalysisID) }()
+
+		select {
+		case err := <-released:
+			released <- err
+		case <-time.After(releaseHeadStart):
+		}
+
+		return sealed, nil
+	}
+
+	if _, err := shared.viewer.service.Refresh(context.Background(), joined.SessionID); err != nil {
+		t.Fatalf("refresh: %v", err)
+	}
+
+	if err := <-released; err != nil {
+		t.Fatalf("release: %v", err)
+	}
+
+	if held := keptPaths(shared.keeper, onlyViewedAnalysis(t, shared.viewer.library)); len(held) != 0 {
+		t.Errorf("the tab still holds %v, want every file let go of, the one the refresh kept among them", held)
+	}
+
+	if _, err := shared.viewer.service.Refresh(context.Background(), joined.SessionID); !errors.Is(err, domain.ErrNotFollowed) {
+		t.Errorf("refresh after release = %v, want %v", err, domain.ErrNotFollowed)
+	}
+}
+
 func TestJoin_ALinkThatIsNotOne_IsRefusedBeforeAnythingIsAsked(t *testing.T) {
 	shared := newWorld(t)
 	status := shared.started(t)
-	sessionID, key := halvesOf(t, status.Link)
+	sessionID, key := sharetest.HalvesOf(status.Link)
 
 	tests := []struct {
 		name          string
@@ -215,49 +253,49 @@ func TestJoin_ALinkThatIsNotOne_IsRefusedBeforeAnythingIsAsked(t *testing.T) {
 func TestJoin_WhatStopsAJoin_LeavesNothingHalfBuilt(t *testing.T) {
 	tests := []struct {
 		name      string
-		giveWorld func(t *testing.T, shared *world, status domain.Status) (string, string)
+		giveWorld func(shared *world, status domain.Status) (string, string)
 		wantErr   error
 	}{
-		{name: "a key that does not open the state", giveWorld: func(t *testing.T, _ *world, status domain.Status) (string, string) {
-			sessionID, _ := halvesOf(t, status.Link)
+		{name: "a key that does not open the state", giveWorld: func(_ *world, status domain.Status) (string, string) {
+			sessionID, _ := sharetest.HalvesOf(status.Link)
 
 			return sessionID, "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
 		}, wantErr: domain.ErrKeyRefused},
-		{name: "a session that ended", giveWorld: func(t *testing.T, shared *world, status domain.Status) (string, string) {
+		{name: "a session that ended", giveWorld: func(shared *world, status domain.Status) (string, string) {
 			shared.server.Expire(status.SessionID)
 
-			return halvesOf(t, status.Link)
+			return sharetest.HalvesOf(status.Link)
 		}, wantErr: domain.ErrSessionEnded},
-		{name: "a state too short to have been sealed", giveWorld: func(t *testing.T, shared *world, status domain.Status) (string, string) {
+		{name: "a state too short to have been sealed", giveWorld: func(shared *world, status domain.Status) (string, string) {
 			shared.host.state = func(held domain.SealedState) (domain.SealedState, error) {
 				held.Sealed = held.Sealed[:nonceBytes]
 
 				return held, nil
 			}
 
-			return halvesOf(t, status.Link)
+			return sharetest.HalvesOf(status.Link)
 		}, wantErr: domain.ErrKeyRefused},
-		{name: "a chunk the service lost", giveWorld: func(t *testing.T, shared *world, status domain.Status) (string, string) {
+		{name: "a chunk the service lost", giveWorld: func(shared *world, status domain.Status) (string, string) {
 			shared.host.chunk = func(string, int, []byte) ([]byte, error) { return nil, domain.ErrSessionEnded }
 
-			return halvesOf(t, status.Link)
+			return sharetest.HalvesOf(status.Link)
 		}, wantErr: domain.ErrSessionEnded},
-		{name: "a library that cannot create the analysis", giveWorld: func(t *testing.T, shared *world, status domain.Status) (string, string) {
+		{name: "a library that cannot create the analysis", giveWorld: func(shared *world, status domain.Status) (string, string) {
 			shared.viewer.library.failing = createOperation
 
-			return halvesOf(t, status.Link)
+			return sharetest.HalvesOf(status.Link)
 		}, wantErr: errLibraryUnavailable},
-		{name: "a library that cannot arrange it", giveWorld: func(t *testing.T, shared *world, status domain.Status) (string, string) {
+		{name: "a library that cannot arrange it", giveWorld: func(shared *world, status domain.Status) (string, string) {
 			shared.viewer.library.failing = arrangeOperation
 
-			return halvesOf(t, status.Link)
+			return sharetest.HalvesOf(status.Link)
 		}, wantErr: errLibraryUnavailable},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			shared := newWorld(t)
-			sessionID, key := tt.giveWorld(t, shared, shared.started(t))
+			sessionID, key := tt.giveWorld(shared, shared.started(t))
 
 			if _, err := shared.viewer.service.Join(context.Background(), sessionID, key); !errors.Is(err, tt.wantErr) {
 				t.Errorf("err = %v, want %v", err, tt.wantErr)
@@ -289,7 +327,7 @@ func joinedOverState(t *testing.T, plaintext func(state domain.State) []byte) (*
 
 	shared.host.state = func(held domain.SealedState) (domain.SealedState, error) {
 		return domain.SealedState{
-			Sealed:   sealedWith(t, key, "rrd-analyzer/1/"+status.SessionID+"/state", plaintext(state)),
+			Sealed:   sealedState(t, key, status.SessionID, plaintext(state)),
 			Revision: domain.Revision{Number: held.Revision.Number + 1, ExpiresAt: held.Revision.ExpiresAt},
 		}, nil
 	}
@@ -435,7 +473,7 @@ func onlySessionOf(shared *world) string {
 }
 
 func TestRefresh_AChunkSealedForAnotherFile_IsTheServiceFailing(t *testing.T) {
-	var stateFiles []domain.StateFile
+	var stateFiles []domain.Blob
 
 	shared, joined := joinedOverState(t, func(state domain.State) []byte {
 		stateFiles = state.Files

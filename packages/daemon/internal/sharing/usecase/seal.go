@@ -52,12 +52,16 @@ func (sealing sealer) seal(additionalData []byte, plaintext []byte) []byte {
 
 // open answers with the plaintext, and with false for a blob this key did not seal at this place.
 // Which error that is depends on what was being opened, so the caller names it.
+//
+// The blob is opened in place: the plaintext is written over the ciphertext and shares its memory,
+// so the sealed bytes are not to be read again. Nothing reads a blob once it is opened, and a chunk
+// of eight mebibytes is not held twice in a tab that has little memory to spare.
 func (sealing sealer) open(additionalData []byte, sealed []byte) ([]byte, bool) {
 	if len(sealed) < _nonceBytes+sealing.aead.Overhead() {
 		return nil, false
 	}
 
-	plaintext, err := sealing.aead.Open(nil, sealed[:_nonceBytes], sealed[_nonceBytes:], additionalData)
+	plaintext, err := sealing.aead.Open(sealed[_nonceBytes:_nonceBytes], sealed[:_nonceBytes], sealed[_nonceBytes:], additionalData)
 
 	return plaintext, err == nil
 }

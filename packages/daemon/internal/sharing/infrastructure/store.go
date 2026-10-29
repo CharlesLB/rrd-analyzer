@@ -41,8 +41,8 @@ CREATE TABLE IF NOT EXISTS live_sessions (
 			 ON CONFLICT(analysis_id) DO UPDATE SET session_id = excluded.session_id, owner_token = excluded.owner_token,
 			                                        session_key = excluded.session_key, revision = excluded.revision,
 			                                        expires_at = excluded.expires_at, files = excluded.files, log = excluded.log`
-	renewSession  = `UPDATE live_sessions SET revision = ?, expires_at = ? WHERE analysis_id = ?`
-	forgetSession = `DELETE FROM live_sessions WHERE analysis_id = ?`
+	renewSession  = `UPDATE live_sessions SET revision = ?, expires_at = ? WHERE analysis_id = ? AND session_id = ?`
+	forgetSession = `DELETE FROM live_sessions WHERE analysis_id = ? AND session_id = ?`
 )
 
 // Store keeps the live sessions this app owns in the SQLite file the library lives in, so a desktop
@@ -52,13 +52,9 @@ type Store struct {
 }
 
 func OpenStore(callerContext context.Context, path string) (*Store, error) {
-	handle, err := sqlitedb.Open(path)
+	handle, err := sqlitedb.OpenWithSchema(callerContext, path, schema)
 	if err != nil {
 		return nil, fmt.Errorf("open live sessions database: %w", err)
-	}
-
-	if _, err := handle.ExecContext(callerContext, schema); err != nil {
-		return nil, errors.Join(fmt.Errorf("prepare live sessions in %q: %w", path, err), handle.Close())
 	}
 
 	return &Store{handle: handle}, nil
@@ -121,16 +117,16 @@ func (store *Store) Save(callerContext context.Context, session domain.OwnedSess
 	return nil
 }
 
-func (store *Store) Renew(callerContext context.Context, analysisID string, revision domain.Revision) error {
-	if _, err := store.handle.ExecContext(callerContext, renewSession, revision.Number, revision.ExpiresAt.UnixMilli(), analysisID); err != nil {
+func (store *Store) Renew(callerContext context.Context, analysisID string, sessionID string, revision domain.Revision) error {
+	if _, err := store.handle.ExecContext(callerContext, renewSession, revision.Number, revision.ExpiresAt.UnixMilli(), analysisID, sessionID); err != nil {
 		return fmt.Errorf("renew live session: %w", err)
 	}
 
 	return nil
 }
 
-func (store *Store) Forget(callerContext context.Context, analysisID string) error {
-	if _, err := store.handle.ExecContext(callerContext, forgetSession, analysisID); err != nil {
+func (store *Store) Forget(callerContext context.Context, analysisID string, sessionID string) error {
+	if _, err := store.handle.ExecContext(callerContext, forgetSession, analysisID, sessionID); err != nil {
 		return fmt.Errorf("forget live session: %w", err)
 	}
 
