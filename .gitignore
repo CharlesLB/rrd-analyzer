@@ -17,6 +17,9 @@ packages/ui-analyzer/e2e/report/
 packages/ui-analyzer/e2e/.artifacts/
 packages/ui-analyzer/wailsjs/
 
+# Wrangler's local state: the miniflare databases and buckets of `wrangler dev`
+.wrangler/
+
 # The browser edition's WebAssembly runtime, built by tools/build-browser-runtime.sh
 packages/ui-analyzer/browser-runtime/
 packages/ui-analyzer/package.json.md5

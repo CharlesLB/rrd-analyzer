@@ -1,0 +1,29 @@
+{
+  "name": "@rrd-analyzer/share-service",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "The Cloudflare Worker that keeps live sessions: encrypted blobs in R2, one Durable Object per session, and the static site",
+  "scripts": {
+    "start": "wrangler dev --port 8787",
+    "deploy": "wrangler deploy",
+    "test": "vitest",
+    "test:ci": "vitest run --coverage",
+    "lint": "biome check .",
+    "lint:fix": "biome check --write .",
+    "format": "biome format --write .",
+    "format:check": "biome format .",
+    "typecheck": "tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "remeda": "^2.45.0"
+  },
+  "devDependencies": {
+    "@cloudflare/vitest-plugin": "1.4.10",
+    "@cloudflare/workers-types": "^5.20261028.1",
+    "@vitest/coverage-istanbul": "4.1.11",
+    "typescript": "~6.0.2",
+    "vitest": "^4.1.11",
+    "wrangler": "^4.155.0"
+  }
+}
