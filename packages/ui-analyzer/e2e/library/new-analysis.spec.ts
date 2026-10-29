@@ -32,8 +32,8 @@ test.beforeEach(async ({ page }) => {
 
 test.describe('new analysis dialog', () => {
   test('new analysis dialog opened from the card starts empty, with Create not yet ready and a hint asking for a source', async ({ page }) => {
-    await expect(page.locator('.new-analysis-dialog-title')).toHaveText('New analysis');
-    await expect(page.locator('.new-analysis-dialog-helper')).toHaveText('Files are read locally, so the originals are never modified.');
+    await expect(newAnalysisDialog(page).locator('.modal-dialog-title')).toHaveText('New analysis');
+    await expect(newAnalysisDialog(page).locator('.modal-dialog-helper')).toHaveText('Files are read locally, so the originals are never modified.');
     await expect(page.locator('.new-analysis-dialog-label')).toHaveText(['Analysis name', 'RRD sources']);
     await expect(nameInput(page)).toHaveAttribute('placeholder', 'e.g. Orders API · production');
     await expect(page.locator('.source-drop-zone-title')).toHaveText('Drop .rrd or .xml files here');
@@ -269,12 +269,14 @@ test.describe('new analysis dialog', () => {
     await expect(newAnalysisDialog(page)).toHaveCount(0);
 
     await page.locator('.new-analysis-card').click();
-    await page.locator('.new-analysis-dialog-close').click();
+    await newAnalysisDialog(page).locator('.modal-dialog-close').click();
 
     await expect(newAnalysisDialog(page)).toHaveCount(0);
 
     await page.locator('.new-analysis-card').click();
-    await page.locator('.new-analysis-dialog-scrim').click({ position: { x: 8, y: 8 } });
+    await newAnalysisDialog(page)
+      .locator('.modal-dialog-scrim')
+      .click({ position: { x: 8, y: 8 } });
 
     await expect(newAnalysisDialog(page)).toHaveCount(0);
     await expect(analysisRows(page)).toHaveCount(0);
@@ -291,7 +293,9 @@ test.describe('new analysis dialog', () => {
     await expect(nameInput(page)).toHaveValue('Half done');
     await expect(sourceNames(page)).toHaveText(['atlas_prod.rrd']);
 
-    await page.locator('.new-analysis-dialog-scrim').click({ position: { x: 8, y: 8 } });
+    await newAnalysisDialog(page)
+      .locator('.modal-dialog-scrim')
+      .click({ position: { x: 8, y: 8 } });
     await page.locator('.new-analysis-card').click();
 
     await expect(nameInput(page)).toHaveValue('Half done');
@@ -304,7 +308,7 @@ test.describe('new analysis dialog', () => {
     await createButton(page).focus();
     await page.keyboard.press('Tab');
 
-    await expect(page.locator('.new-analysis-dialog-close')).toBeFocused();
+    await expect(newAnalysisDialog(page).locator('.modal-dialog-close')).toBeFocused();
 
     await page.keyboard.press('Shift+Tab');
 
@@ -356,7 +360,7 @@ test.describe('new analysis dialog', () => {
   });
 
   test('new analysis dialog stays open when clicked inside, away from its buttons', async ({ page }) => {
-    await page.locator('.new-analysis-dialog-helper').click();
+    await newAnalysisDialog(page).locator('.modal-dialog-helper').click();
     await page.locator('.pending-source-list-empty').click();
 
     await expect(newAnalysisDialog(page)).toBeVisible();

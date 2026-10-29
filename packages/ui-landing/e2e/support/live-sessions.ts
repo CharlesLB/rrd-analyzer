@@ -1,4 +1,5 @@
 import { type BrowserContext, expect, type Locator, type Page, type Request, type WebSocketRoute } from '@playwright/test';
+import { type RequestRecording, recordRequests, sendsSomething } from './browser-app';
 
 const SERVICE_HOST = '127.0.0.1';
 export const SHARE_SERVICE_PORT = 4302;
@@ -13,32 +14,17 @@ const API_PATH = '/api/';
 const SHARED_LINK_MARKER = '#/shared/';
 const LINK_SEPARATOR = '/';
 const CHUNK_PATH = /\/files\/[\w-]+\/chunks\/\d+$/;
-const READING_METHOD = 'GET';
 const CLIPBOARD_PERMISSIONS = ['clipboard-read', 'clipboard-write'];
 
-type RequestRecording = {
-  readonly requests: readonly Request[];
-};
+const isServiceCall = (request: Request): boolean => new URL(request.url()).pathname.startsWith(API_PATH);
 
-export const recordServiceCalls = (context: BrowserContext): RequestRecording => {
-  const requests: Request[] = [];
-
-  context.on('request', (request) => {
-    if (new URL(request.url()).pathname.startsWith(API_PATH)) {
-      requests.push(request);
-    }
-  });
-
-  return { requests };
-};
+export const recordServiceCalls = (context: BrowserContext): RequestRecording => recordRequests(context, isServiceCall);
 
 export const sentBodies = (recording: RequestRecording): readonly Buffer[] =>
-  recording.requests.filter((request) => request.method() !== READING_METHOD).flatMap((request) => request.postDataBuffer() ?? []);
+  recording.requests.filter(sendsSomething).flatMap((request) => request.postDataBuffer() ?? []);
 
 export const uploadedChunkPaths = (recording: RequestRecording): readonly string[] =>
-  recording.requests
-    .filter((request) => request.method() !== READING_METHOD && CHUNK_PATH.test(request.url()))
-    .map((request) => new URL(request.url()).pathname);
+  recording.requests.filter((request) => sendsSomething(request) && CHUNK_PATH.test(request.url())).map((request) => new URL(request.url()).pathname);
 
 export const sessionIdOf = (link: string): string => link.slice(link.indexOf(SHARED_LINK_MARKER) + SHARED_LINK_MARKER.length).split(LINK_SEPARATOR)[0] ?? '';
 

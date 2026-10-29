@@ -97,7 +97,7 @@ test.describe('journey: sharing live from the browser', () => {
 
       expect(await answersOf(page, SHARE_SERVICE_URL, held)).toEqual(held.map(() => SESSION_HELD));
 
-      await page.locator('.share-panel-close').click();
+      await sharePanel(page).locator('.modal-dialog-close').click();
 
       await expect(shareTrigger(page)).toHaveText('Online · 60 min');
 
@@ -212,8 +212,8 @@ test.describe('journey: a live session left idle', () => {
 
       const created = await shareLive(page);
 
-      await expect(page.locator('.share-panel-expiry')).toHaveText('Erased 1 minute after the last activity');
-      await page.locator('.share-panel-close').click();
+      await expect(sharePanel(page).locator('.modal-dialog-helper')).toHaveText('Erased 1 minute after the last activity');
+      await sharePanel(page).locator('.modal-dialog-close').click();
 
       return created;
     });

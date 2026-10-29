@@ -6,7 +6,7 @@ import { emptyDump } from '../support/new-analysis-dialog';
 import { addSourcesFromMenu, giveThePickedFilesTheirPaths } from '../support/picked-files';
 import { sourcesNamed, type WrittenSource, writeRrdFixtures } from '../support/rrd-fixtures';
 import {
-  answerOfTheService,
+  answersOfTheService,
   chunkPaths,
   liveSessionsOfTheDaemon,
   openedState,
@@ -125,7 +125,7 @@ test.describe('journey: sharing live from the desktop', () => {
     });
 
     await test.step('adds a file while the server cannot be reached: the change is not sent, and the panel marks that file local', async () => {
-      await page.locator('.share-panel-close').click();
+      await sharePanel(page).locator('.modal-dialog-close').click();
       await giveThePickedFilesTheirPaths(page, dumps.written);
       await failRequests(page, SESSION_PATTERN, PUT_METHOD);
 
@@ -147,7 +147,7 @@ test.describe('journey: sharing live from the desktop', () => {
 
     await test.step('once the server answers again, the next change sends the file, and every file is online', async () => {
       await page.unroute(SESSION_PATTERN);
-      await page.locator('.share-panel-close').click();
+      await sharePanel(page).locator('.modal-dialog-close').click();
 
       const publication = page.waitForResponse(isPublication);
 
@@ -175,7 +175,7 @@ test.describe('journey: sharing live from the desktop', () => {
       const sessionPaths = [sessionPath(shared.link.sessionId), statePath(shared.link.sessionId), ...chunkPaths(shared.link.sessionId, shared.files)];
 
       expect(sessionPaths).toHaveLength(5);
-      expect(await Promise.all(sessionPaths.map(async (path) => await answerOfTheService(page, path)))).toEqual(sessionPaths.map(() => SESSION_HELD));
+      expect(await answersOfTheService(page, sessionPaths)).toEqual(sessionPaths.map(() => SESSION_HELD));
 
       await page.locator('.share-panel-end').click();
 
@@ -183,7 +183,7 @@ test.describe('journey: sharing live from the desktop', () => {
       await expect(sharePanel(page)).toHaveCount(0);
       await expect(shareTrigger(page)).toContainText('Share live');
 
-      expect(await Promise.all(sessionPaths.map(async (path) => await answerOfTheService(page, path)))).toEqual(sessionPaths.map(() => SESSION_GONE));
+      expect(await answersOfTheService(page, sessionPaths)).toEqual(sessionPaths.map(() => SESSION_GONE));
 
       await backToLibrary(page);
 

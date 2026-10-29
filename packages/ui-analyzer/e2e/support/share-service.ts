@@ -1,6 +1,7 @@
 import { createDecipheriv } from 'node:crypto';
 import type { Locator, Page } from '@playwright/test';
 import { DAEMON_URL } from './daemon';
+import { analysisRow } from './library';
 
 const SHARE_SERVICE_HOST = '127.0.0.1';
 export const SHARE_SERVICE_PORT = 34190;
@@ -42,8 +43,7 @@ export const sharedFileNames = (page: Page): Locator => page.locator('.share-pan
 
 export const sharedFileStates = (page: Page): Locator => page.locator('.share-panel-state');
 
-export const shareMark = (page: Page, analysisName: string): Locator =>
-  page.locator('app-analysis-row').filter({ hasText: analysisName }).locator('.analysis-row-share');
+export const shareMark = (page: Page, analysisName: string): Locator => analysisRow(page, analysisName).locator('.analysis-row-share');
 
 export const sessionLinkOf = (link: string): SessionLink => {
   const [sessionId = '', key = ''] = link.slice(link.indexOf(SHARED_LINK_MARKER) + SHARED_LINK_MARKER.length).split(LINK_SEPARATOR);
@@ -53,7 +53,8 @@ export const sessionLinkOf = (link: string): SessionLink => {
 
 export const liveSessionsOfTheDaemon = async (page: Page): Promise<unknown> => await (await page.request.get(`${DAEMON_URL}/api/sessions`)).json();
 
-export const answerOfTheService = async (page: Page, path: string): Promise<number> => (await page.request.get(`${SHARE_SERVICE_URL}${path}`)).status();
+export const answersOfTheService = async (page: Page, paths: readonly string[]): Promise<readonly number[]> =>
+  await Promise.all(paths.map(async (path) => (await page.request.get(`${SHARE_SERVICE_URL}${path}`)).status()));
 
 export const sessionPath = (sessionId: string): string => `/api/sessions/${sessionId}`;
 

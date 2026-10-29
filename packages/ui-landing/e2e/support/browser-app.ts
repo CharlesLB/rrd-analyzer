@@ -1,4 +1,4 @@
-import { expect, type Locator, type Page, type Request } from '@playwright/test';
+import { type BrowserContext, expect, type Locator, type Page, type Request } from '@playwright/test';
 
 const BROWSER_APP_PATH = '/app/';
 export const SAMPLE_ANALYSIS = 'Sample API · production';
@@ -36,14 +36,25 @@ export const createAnalysisFrom = async (page: Page, fileName: string, content: 
   await page.locator('.new-analysis-dialog-create').click();
 };
 
-type RequestRecording = {
+export type RequestRecording = {
   readonly requests: readonly Request[];
 };
 
-export const recordRequests = (page: Page): RequestRecording => {
-  const requests: Request[] = [];
+type RequestEmitter = {
+  readonly on: (event: 'request', listener: (request: Request) => void) => unknown;
+};
 
-  page.on('request', (request) => requests.push(request));
+const everyRequest = (): boolean => true;
+
+export const recordRequests = (source: Page | BrowserContext, isRecorded: (request: Request) => boolean = everyRequest): RequestRecording => {
+  const requests: Request[] = [];
+  const emitter: RequestEmitter = source;
+
+  emitter.on('request', (request) => {
+    if (isRecorded(request)) {
+      requests.push(request);
+    }
+  });
 
   return { requests };
 };
