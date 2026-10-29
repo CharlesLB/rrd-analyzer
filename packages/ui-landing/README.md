@@ -8,13 +8,15 @@ site is a folder of static files.
 
 ## What the browser app keeps
 
-Nothing outside the tab. The Go core (RRD parsing, series, insights, exports) runs in a web worker
-of the page, the files a person opens are read there and kept in that worker's memory, and the
-library lives in the same memory. Closing or reloading the tab erases all of it; nothing is ever
-sent anywhere, and the server only answers GET requests for static files. The app says so in a bar
-across its top, the landing page says so beside its demo, and both point at the desktop app for
-anyone who wants to work offline and keep their analyses. The `site` end-to-end suite checks that
-opening a file sends no request at all.
+Nothing outside the tab, unless the person shares an analysis live. The Go core (RRD parsing,
+series, insights, exports) runs in a web worker of the page, the files a person opens are read there
+and kept in that worker's memory, and the library lives in the same memory. Closing or reloading the
+tab erases all of it, and nothing is sent anywhere until someone asks for a live link: then the
+analysis is encrypted in the tab and published to the share service the same Worker runs, and erased
+from it one hour after the last activity (see [docs/SHARING.md](../../docs/SHARING.md)). The app says
+so in a bar across its top, the landing page says so beside its demo, and both point at the desktop
+app for anyone who wants to work offline and keep their analyses. The `site` end-to-end suite checks
+that opening a file sends no request at all.
 
 It opens on a sample analysis, so there is something to explore before opening a file: two weeks of a
 made-up HTTP API that the core generates in the tab from fixed seeds, as rrdtool dumps kept like any

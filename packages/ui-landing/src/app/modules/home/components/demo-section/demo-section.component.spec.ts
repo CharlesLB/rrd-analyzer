@@ -31,7 +31,11 @@ describe('DemoSectionComponent', () => {
 
     const points = textsOf(fixture, '.demo-section-privacy-body').join(' ');
 
-    expect(textsOf(fixture, '.demo-section-privacy-title')).toEqual(['Nothing leaves your computer', 'Gone when you close the tab', 'Prefer it offline?']);
+    expect(textsOf(fixture, '.demo-section-privacy-title')).toEqual([
+      'Nothing leaves your computer unless you share it',
+      'Gone when you close the tab',
+      'Prefer it offline?',
+    ]);
     expect(points).toContain('nothing is saved on our servers');
     expect(points).toContain('erased as soon as you close or reload it');
   });

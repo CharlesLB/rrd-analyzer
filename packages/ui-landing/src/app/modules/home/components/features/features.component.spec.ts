@@ -43,6 +43,6 @@ describe('FeaturesComponent', () => {
     fixture.detectChanges();
 
     expect(countOf(fixture, '.features-highlight')).toBe(4);
-    expect(textOf(fixture, '.features-highlight-title')).toBe('Local only');
+    expect(textOf(fixture, '.features-highlight-title')).toBe('Local first');
   });
 });
