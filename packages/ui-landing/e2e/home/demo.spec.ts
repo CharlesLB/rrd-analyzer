@@ -31,7 +31,7 @@ test.describe('live demo', () => {
 
     const privacy = page.locator('.demo-section-privacy');
 
-    await expect(privacy).toContainText('Nothing is uploaded, and nothing is saved on our servers.');
+    await expect(privacy).toContainText('Nothing is uploaded, and nothing is saved on our servers, until you ask for a live link');
     await expect(privacy).toContainText('erased as soon as you close or reload it');
     await expect(privacy).toContainText('The desktop app works 100% offline');
   });
