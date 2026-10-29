@@ -7,7 +7,9 @@ const SETTINGS: ServiceSettings = {
   maximumStateBytes: 1,
   maximumSessionBytes: 1,
   maximumSessionFiles: 1,
+  maximumSessionChunks: 2,
   inactivityMilliseconds: 1,
+  renewalStepMilliseconds: 1,
   allowedOrigins: ['http://127.0.0.1:4210'],
 };
 

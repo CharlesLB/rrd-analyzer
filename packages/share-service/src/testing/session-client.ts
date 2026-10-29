@@ -1,13 +1,10 @@
-import { SELF } from 'cloudflare:test';
+import { env, SELF } from 'cloudflare:test';
+import { sessionPrefixOf } from '../blob-keys/blob-keys';
+import type { LiveSession } from '../live-session/live-session';
 
 export type CreatedSession = {
   readonly sessionId: string;
   readonly ownerToken: string;
-  readonly expiresAtMilliseconds: number;
-};
-
-export type SessionTimingBody = {
-  readonly revision: number;
   readonly expiresAtMilliseconds: number;
 };
 
@@ -20,6 +17,8 @@ export const ALLOWED_ORIGIN = 'http://127.0.0.1:4210';
 export const FILE_ID = 'AAAAAAAAAAAAAAAAAAAAAA';
 export const OTHER_FILE_ID = 'BBBBBBBBBBBBBBBBBBBBBB';
 export const UNKNOWN_SESSION_ID = 'ZZZZZZZZZZZZZZZZZZZZZZ';
+export const UNKNOWN_SESSION: CreatedSession = { sessionId: UNKNOWN_SESSION_ID, ownerToken: 'token', expiresAtMilliseconds: 0 };
+export const SESSIONS_PATH = '/api/sessions';
 
 const addressSequence = { lastIssuedNumber: 0 };
 
@@ -31,45 +30,53 @@ const nextClientAddress = (): string => {
 
 export const urlOf = (path: string): string => `${SERVICE_ORIGIN}${path}`;
 
+export const sessionPathOf = (sessionId: string): string => `${SESSIONS_PATH}/${sessionId}`;
+
+export const statePathOf = (sessionId: string): string => `${sessionPathOf(sessionId)}/state`;
+
+export const livePathOf = (sessionId: string): string => `${sessionPathOf(sessionId)}/live`;
+
+export const chunkPathOf = (sessionId: string, fileId: string, index: number): string => `${sessionPathOf(sessionId)}/files/${fileId}/chunks/${index}`;
+
+export const liveSessionOf = (sessionId: string): DurableObjectStub<LiveSession> => env.LIVE_SESSIONS.get(env.LIVE_SESSIONS.idFromName(sessionId));
+
+export const blobKeysOf = async (sessionId: string): Promise<readonly string[]> =>
+  (await env.SESSION_BLOBS.list({ prefix: sessionPrefixOf(sessionId) })).objects.map((object) => object.key);
+
 export const bytesOf = (length: number, fill = 7): Uint8Array => new Uint8Array(length).fill(fill);
 
 export const bearer = (token: string): Record<string, string> => ({ Authorization: `Bearer ${token}` });
 
 export const createSession = async (clientAddress: string = nextClientAddress()): Promise<CreatedSession> => {
-  const response = await SELF.fetch(urlOf('/api/sessions'), { method: 'POST', headers: { 'CF-Connecting-IP': clientAddress } });
+  const response = await SELF.fetch(urlOf(SESSIONS_PATH), { method: 'POST', headers: { 'CF-Connecting-IP': clientAddress } });
 
   return await response.json<CreatedSession>();
 };
 
-export const putChunk = async (session: CreatedSession, fileId: string, index: number, content: Uint8Array): Promise<Response> =>
-  await SELF.fetch(urlOf(`/api/sessions/${session.sessionId}/files/${fileId}/chunks/${index}`), {
-    method: 'PUT',
-    headers: bearer(session.ownerToken),
-    body: content,
-  });
+export const putChunk = async (session: CreatedSession, fileId: string, index: number, content: BodyInit): Promise<Response> =>
+  await SELF.fetch(urlOf(chunkPathOf(session.sessionId, fileId, index)), { method: 'PUT', headers: bearer(session.ownerToken), body: content });
 
 export const getChunk = async (sessionId: string, fileId: string, index: number): Promise<Response> =>
-  await SELF.fetch(urlOf(`/api/sessions/${sessionId}/files/${fileId}/chunks/${index}`));
+  await SELF.fetch(urlOf(chunkPathOf(sessionId, fileId, index)));
 
 export const putState = async (session: CreatedSession, content: Uint8Array): Promise<Response> =>
-  await SELF.fetch(urlOf(`/api/sessions/${session.sessionId}/state`), { method: 'PUT', headers: bearer(session.ownerToken), body: content });
+  await SELF.fetch(urlOf(statePathOf(session.sessionId)), { method: 'PUT', headers: bearer(session.ownerToken), body: content });
 
-export const getState = async (sessionId: string): Promise<Response> => await SELF.fetch(urlOf(`/api/sessions/${sessionId}/state`));
+export const getState = async (sessionId: string): Promise<Response> => await SELF.fetch(urlOf(statePathOf(sessionId)));
 
-export const getStatus = async (sessionId: string): Promise<Response> => await SELF.fetch(urlOf(`/api/sessions/${sessionId}`));
+export const getStatus = async (sessionId: string): Promise<Response> => await SELF.fetch(urlOf(sessionPathOf(sessionId)));
 
 export const deleteSession = async (session: CreatedSession, ownerToken: string = session.ownerToken): Promise<Response> =>
-  await SELF.fetch(urlOf(`/api/sessions/${session.sessionId}`), { method: 'DELETE', headers: bearer(ownerToken) });
+  await SELF.fetch(urlOf(sessionPathOf(session.sessionId)), { method: 'DELETE', headers: bearer(ownerToken) });
 
 export type LiveChannel = {
   readonly socket: WebSocket;
-  readonly messages: unknown[];
   readonly nextMessage: () => Promise<unknown>;
   readonly closed: Promise<number>;
 };
 
 export const openLiveChannel = async (sessionId: string): Promise<LiveChannel> => {
-  const response = await SELF.fetch(urlOf(`/api/sessions/${sessionId}/live`), { headers: { Upgrade: 'websocket', Origin: ALLOWED_ORIGIN } });
+  const response = await SELF.fetch(urlOf(livePathOf(sessionId)), { headers: { Upgrade: 'websocket', Origin: ALLOWED_ORIGIN } });
   const socket = response.webSocket;
 
   if (socket === null) {
@@ -109,5 +116,5 @@ export const openLiveChannel = async (sessionId: string): Promise<LiveChannel> =
     });
   };
 
-  return { socket, messages, nextMessage, closed };
+  return { socket, nextMessage, closed };
 };

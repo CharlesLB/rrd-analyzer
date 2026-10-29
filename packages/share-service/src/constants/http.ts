@@ -33,7 +33,6 @@ export const MEDIA_TYPES = {
 export const WEBSOCKET_UPGRADE = 'websocket';
 
 export const HTTP_STATUSES = {
-  OK: 200,
   CREATED: 201,
   NO_CONTENT: 204,
   SWITCHING_PROTOCOLS: 101,

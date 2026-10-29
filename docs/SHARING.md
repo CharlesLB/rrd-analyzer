@@ -97,7 +97,8 @@ chunks and state are raw bytes (`application/octet-stream`).
 
 Revisions count from `1`, the first state published. Uploading a chunk that already exists
 replaces it. Limits, all refused with `413`: a chunk of more than `8 MiB + 28` bytes, a state of more
-than `4 MiB`, a session holding more than `256 MiB` across its chunks, or more than `256` files.
+than `4 MiB`, a session holding more than `256 MiB` across its chunks, more than `256` files, or more
+chunks than one per file plus the 32 full chunks its bytes can fill (`288`).
 Malformed identifiers or indexes are `400`. Creating sessions is rate limited per client address
 (`429`).
 
@@ -109,7 +110,9 @@ WebSocket messages, all JSON:
 { "kind": "expired" }
 ```
 
-`renewed` is sent when someone opens the link; `expired` is sent just before the socket is closed
+`renewed` is sent when opening the link moves the expiry forward by at least a sixtieth of the
+inactivity window (a minute, for the hour): reads right after the owner's last change leave it where
+that change put it. `expired` is sent just before the socket is closed
 with code `1000` because the session ended. Joining a socket for a session that does not exist
 answers `404` and opens nothing.
 

@@ -1,16 +1,17 @@
 import { FAILURES, failureResponse, finalizedResponse, outcomeResponse } from '../api-response/api-response';
 import { API_ROUTE_KINDS, type ApiRoute, apiRouteOf } from '../api-route/api-route';
-import { chunkKeyOf } from '../blob-keys/blob-keys';
+import { chunkKeyOf, stateKeyOf } from '../blob-keys/blob-keys';
 import { boundedBodyOf } from '../bounded-body/bounded-body';
 import type { ServiceEnvironment } from '../config/service-environment';
 import { HTTP_HEADERS, HTTP_METHODS, HTTP_STATUSES, MEDIA_TYPES, WEBSOCKET_UPGRADE } from '../constants/http';
 import { isCreationAllowed } from '../creation-limit/creation-limit';
 import { crossOriginHeadersOf, isSocketOriginAllowed, preflightResponseOf } from '../cross-origin/cross-origin';
 import { newOwnerToken, newSessionId } from '../identifiers/identifiers';
-import type { LiveSession } from '../live-session/live-session';
+import type { LiveSession, StateUpload } from '../live-session/live-session';
 import { ownerTokenHashOf, presentedOwnerTokenOf } from '../owner-token/owner-token';
 import type { ServiceSettings } from '../service-settings/service-settings';
 import { settingsOf } from '../service-settings/service-settings';
+import type { SessionTiming } from '../session-record/session-record';
 
 type ApiCall = {
   readonly request: Request;
@@ -24,12 +25,23 @@ type MethodHandlers = Readonly<Partial<Record<string, () => Promise<Response>>>>
 
 const ALLOWED_METHODS_SEPARATOR = ', ';
 
-const sessionOf = (environment: ServiceEnvironment, sessionId: string): DurableObjectStub<LiveSession> =>
-  environment.LIVE_SESSIONS.get(environment.LIVE_SESSIONS.idFromName(sessionId));
+const liveSessionOf = (call: ApiCall, sessionId: string): DurableObjectStub<LiveSession> =>
+  call.environment.LIVE_SESSIONS.get(call.environment.LIVE_SESSIONS.idFromName(sessionId));
 
 const presentedOwnerTokenHashOf = async (request: Request): Promise<string> => await ownerTokenHashOf(presentedOwnerTokenOf(request));
 
+const ownerUploadOf = async (call: ApiCall, maximumBytes: number): Promise<StateUpload | null> => {
+  const content = await boundedBodyOf(call.request, maximumBytes);
+
+  return content === null ? null : { ownerTokenHash: await presentedOwnerTokenHashOf(call.request), content };
+};
+
 const noContent = (): Response => new Response(null, { status: HTTP_STATUSES.NO_CONTENT });
+
+const timingResponse = (timing: SessionTiming): Response => Response.json(timing);
+
+const sealedBlobResponse = (blob: R2ObjectBody, headers: Readonly<Record<string, string>> = {}): Response =>
+  new Response(blob.body, { headers: { [HTTP_HEADERS.CONTENT_TYPE]: MEDIA_TYPES.OCTET_STREAM, ...headers } });
 
 const createSession = async (call: ApiCall): Promise<Response> => {
   if (!(await isCreationAllowed(call.environment.SESSION_CREATION_LIMITER, call.request))) {
@@ -38,41 +50,45 @@ const createSession = async (call: ApiCall): Promise<Response> => {
 
   const sessionId = newSessionId();
   const ownerToken = newOwnerToken();
-  const timing = await sessionOf(call.environment, sessionId).create(sessionId, await ownerTokenHashOf(ownerToken));
+  const timing = await liveSessionOf(call, sessionId).create(sessionId, await ownerTokenHashOf(ownerToken));
 
   return Response.json({ sessionId, ownerToken, expiresAtMilliseconds: timing.expiresAtMilliseconds }, { status: HTTP_STATUSES.CREATED });
 };
 
 const readStatus = async (call: ApiCall, route: RouteOf<typeof API_ROUTE_KINDS.SESSION>): Promise<Response> =>
-  outcomeResponse(await sessionOf(call.environment, route.sessionId).status(), (timing) => Response.json(timing));
+  outcomeResponse(await liveSessionOf(call, route.sessionId).status(), timingResponse);
 
 const endSession = async (call: ApiCall, route: RouteOf<typeof API_ROUTE_KINDS.SESSION>): Promise<Response> =>
-  outcomeResponse(await sessionOf(call.environment, route.sessionId).end(await presentedOwnerTokenHashOf(call.request)), noContent);
+  outcomeResponse(await liveSessionOf(call, route.sessionId).end(await presentedOwnerTokenHashOf(call.request)), noContent);
 
 const publishState = async (call: ApiCall, route: RouteOf<typeof API_ROUTE_KINDS.STATE>): Promise<Response> => {
-  const content = await boundedBodyOf(call.request, call.settings.maximumStateBytes);
+  const upload = await ownerUploadOf(call, call.settings.maximumStateBytes);
 
-  if (content === null) {
+  if (upload === null) {
     return failureResponse(FAILURES.PAYLOAD_TOO_LARGE);
   }
 
-  const ownerTokenHash = await presentedOwnerTokenHashOf(call.request);
-
-  return outcomeResponse(await sessionOf(call.environment, route.sessionId).storeState({ ownerTokenHash, content }), (timing) => Response.json(timing));
+  return outcomeResponse(await liveSessionOf(call, route.sessionId).storeState(upload), timingResponse);
 };
 
-const readState = async (call: ApiCall, route: RouteOf<typeof API_ROUTE_KINDS.STATE>): Promise<Response> =>
-  outcomeResponse(
-    await sessionOf(call.environment, route.sessionId).readState(),
-    (published) =>
-      new Response(published.content, {
-        headers: {
-          [HTTP_HEADERS.CONTENT_TYPE]: MEDIA_TYPES.OCTET_STREAM,
-          [HTTP_HEADERS.SESSION_REVISION]: String(published.timing.revision),
-          [HTTP_HEADERS.SESSION_EXPIRES_AT]: String(published.timing.expiresAtMilliseconds),
-        },
-      }),
-  );
+const sealedStateResponse = async (call: ApiCall, sessionId: string, timing: SessionTiming): Promise<Response> => {
+  const sealedState = await call.environment.SESSION_BLOBS.get(stateKeyOf(sessionId));
+
+  if (sealedState === null) {
+    return failureResponse(FAILURES.STATE_NOT_PUBLISHED);
+  }
+
+  return sealedBlobResponse(sealedState, {
+    [HTTP_HEADERS.SESSION_REVISION]: String(timing.revision),
+    [HTTP_HEADERS.SESSION_EXPIRES_AT]: String(timing.expiresAtMilliseconds),
+  });
+};
+
+const readState = async (call: ApiCall, route: RouteOf<typeof API_ROUTE_KINDS.STATE>): Promise<Response> => {
+  const opened = await liveSessionOf(call, route.sessionId).openState();
+
+  return opened.refusal === null ? await sealedStateResponse(call, route.sessionId, opened.value) : failureResponse(opened.refusal);
+};
 
 const openLiveChannel = async (call: ApiCall, route: RouteOf<typeof API_ROUTE_KINDS.LIVE>): Promise<Response> => {
   if (call.request.headers.get(HTTP_HEADERS.UPGRADE)?.toLowerCase() !== WEBSOCKET_UPGRADE) {
@@ -83,30 +99,23 @@ const openLiveChannel = async (call: ApiCall, route: RouteOf<typeof API_ROUTE_KI
     return failureResponse(FAILURES.ORIGIN_FORBIDDEN);
   }
 
-  return await sessionOf(call.environment, route.sessionId).fetch(call.request);
+  return await liveSessionOf(call, route.sessionId).fetch(call.request);
 };
 
 const storeChunk = async (call: ApiCall, route: RouteOf<typeof API_ROUTE_KINDS.CHUNK>): Promise<Response> => {
-  const content = await boundedBodyOf(call.request, call.settings.maximumChunkBytes);
+  const upload = await ownerUploadOf(call, call.settings.maximumChunkBytes);
 
-  if (content === null) {
+  if (upload === null) {
     return failureResponse(FAILURES.PAYLOAD_TOO_LARGE);
   }
 
-  const ownerTokenHash = await presentedOwnerTokenHashOf(call.request);
-  const upload = { ownerTokenHash, fileId: route.fileId, index: route.index, content };
-
-  return outcomeResponse(await sessionOf(call.environment, route.sessionId).storeChunk(upload), noContent);
+  return outcomeResponse(await liveSessionOf(call, route.sessionId).storeChunk({ ...upload, fileId: route.fileId, index: route.index }), noContent);
 };
 
 const readChunk = async (call: ApiCall, route: RouteOf<typeof API_ROUTE_KINDS.CHUNK>): Promise<Response> => {
   const sealedChunk = await call.environment.SESSION_BLOBS.get(chunkKeyOf(route));
 
-  if (sealedChunk === null) {
-    return failureResponse(FAILURES.CHUNK_NOT_FOUND);
-  }
-
-  return new Response(sealedChunk.body, { headers: { [HTTP_HEADERS.CONTENT_TYPE]: MEDIA_TYPES.OCTET_STREAM } });
+  return sealedChunk === null ? failureResponse(FAILURES.CHUNK_NOT_FOUND) : sealedBlobResponse(sealedChunk);
 };
 
 const byMethod = async (request: Request, handlers: MethodHandlers): Promise<Response> => {

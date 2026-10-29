@@ -16,9 +16,25 @@ describe('settingsOf', () => {
       maximumStateBytes: 48,
       maximumSessionBytes: 160,
       maximumSessionFiles: 3,
+      maximumSessionChunks: 6,
       inactivityMilliseconds: 3_600_000,
+      renewalStepMilliseconds: 60_000,
       allowedOrigins: ['http://a.example', 'http://b.example'],
     });
+  });
+
+  it('given the limits, lets a session hold one chunk per file plus as many full chunks as its bytes fill, and renews at most once a sixtieth of the window', () => {
+    const environment = environmentWith({
+      MAXIMUM_SESSION_FILES: 256,
+      MAXIMUM_SESSION_BYTES: 268_435_456,
+      MAXIMUM_CHUNK_BYTES: 8_388_636,
+      INACTIVITY_MILLISECONDS: 15_000,
+    });
+
+    const settings = settingsOf(environment);
+
+    expect(settings.maximumSessionChunks).toBe(288);
+    expect(settings.renewalStepMilliseconds).toBe(250);
   });
 
   it('given no allowed origins, allows none', () => {

@@ -1,10 +1,14 @@
 import { env, runDurableObjectAlarm, runInDurableObject, SELF } from 'cloudflare:test';
 import { describe, expect, it } from 'vitest';
-import type { LiveSession } from '../live-session/live-session';
-import type { SessionRecord } from '../session-record/session-record';
+import { stateKeyOf } from '../blob-keys/blob-keys';
+import { type LiveSession, SESSION_RECORD_KEY } from '../live-session/live-session';
+import type { SessionRecord, SessionTiming } from '../session-record/session-record';
 import {
   ALLOWED_ORIGIN,
+  blobKeysOf,
   bytesOf,
+  type CreatedSession,
+  chunkPathOf,
   createSession,
   deleteSession,
   type ErrorBody,
@@ -12,43 +16,42 @@ import {
   getChunk,
   getState,
   getStatus,
+  livePathOf,
+  liveSessionOf,
   OTHER_FILE_ID,
   openLiveChannel,
   putChunk,
   putState,
-  type SessionTimingBody,
+  SESSIONS_PATH,
+  UNKNOWN_SESSION,
   UNKNOWN_SESSION_ID,
   urlOf,
 } from '../testing/session-client';
 
 const HOUR = 3_600_000;
+const MINUTE = 60_000;
 const THIRD_FILE_ID = 'CCCCCCCCCCCCCCCCCCCCCC';
 const FOURTH_FILE_ID = 'DDDDDDDDDDDDDDDDDDDDDD';
 
 const errorOf = async (response: Response): Promise<string> => (await response.json<ErrorBody>()).error;
 
-const sessionStub = (sessionId: string): DurableObjectStub<LiveSession> => env.LIVE_SESSIONS.get(env.LIVE_SESSIONS.idFromName(sessionId));
-
 const storedRecordOf = async (sessionId: string): Promise<SessionRecord | undefined> =>
-  await runInDurableObject(sessionStub(sessionId), async (_instance, state) => await state.storage.get<SessionRecord>('session'));
+  await runInDurableObject(liveSessionOf(sessionId), async (_instance, state) => await state.storage.get<SessionRecord>(SESSION_RECORD_KEY));
 
 const expireAt = async (sessionId: string, expiresAtMilliseconds: number): Promise<void> => {
-  await runInDurableObject(sessionStub(sessionId), async (_instance, state) => {
-    const record = await state.storage.get<SessionRecord>('session');
+  await runInDurableObject(liveSessionOf(sessionId), async (_instance, state) => {
+    const record = await state.storage.get<SessionRecord>(SESSION_RECORD_KEY);
 
-    await state.storage.put('session', { ...record, expiresAtMilliseconds });
+    await state.storage.put(SESSION_RECORD_KEY, { ...record, expiresAtMilliseconds });
   });
 };
-
-const blobKeysOf = async (sessionId: string): Promise<readonly string[]> =>
-  (await env.SESSION_BLOBS.list({ prefix: `sessions/${sessionId}/` })).objects.map((object) => object.key);
 
 describe('session API, creating a session', () => {
   it('POST /api/sessions, called, answers 201 with an identifier, an owner token and an expiry one hour away', async () => {
     const before = Date.now();
 
-    const response = await SELF.fetch(urlOf('/api/sessions'), { method: 'POST' });
-    const created = await response.json<{ sessionId: string; ownerToken: string; expiresAtMilliseconds: number }>();
+    const response = await SELF.fetch(urlOf(SESSIONS_PATH), { method: 'POST' });
+    const created = await response.json<CreatedSession>();
 
     expect(response.status).toBe(201);
     expect(created.sessionId).toMatch(/^[A-Za-z0-9_-]{22}$/);
@@ -63,7 +66,7 @@ describe('session API, creating a session', () => {
     const attempts = Array.from({ length: 10 }, () => clientAddress);
 
     await Promise.all(attempts.map(async (address) => await createSession(address)));
-    const response = await SELF.fetch(urlOf('/api/sessions'), { method: 'POST', headers: { 'CF-Connecting-IP': clientAddress } });
+    const response = await SELF.fetch(urlOf(SESSIONS_PATH), { method: 'POST', headers: { 'CF-Connecting-IP': clientAddress } });
 
     expect(response.status).toBe(429);
     expect(await errorOf(response)).toBe('rate_limited');
@@ -102,7 +105,7 @@ describe('session API, routing', () => {
   });
 
   it('PATCH /api/sessions, a method the route does not take, answers 405 naming the ones it does', async () => {
-    const response = await SELF.fetch(urlOf('/api/sessions'), { method: 'PATCH' });
+    const response = await SELF.fetch(urlOf(SESSIONS_PATH), { method: 'PATCH' });
 
     expect(response.status).toBe(405);
     expect(response.headers.get('Allow')).toBe('POST');
@@ -126,7 +129,7 @@ describe('session API, chunks', () => {
   it('PUT a chunk, without an owner token, answers 403', async () => {
     const session = await createSession();
 
-    const response = await SELF.fetch(urlOf(`/api/sessions/${session.sessionId}/files/${FILE_ID}/chunks/0`), { method: 'PUT', body: bytesOf(4) });
+    const response = await SELF.fetch(urlOf(chunkPathOf(session.sessionId, FILE_ID, 0)), { method: 'PUT', body: bytesOf(4) });
 
     expect(response.status).toBe(403);
     expect(await errorOf(response)).toBe('owner_token_rejected');
@@ -142,7 +145,7 @@ describe('session API, chunks', () => {
   });
 
   it('PUT a chunk, to a session that never existed, answers 404', async () => {
-    const response = await putChunk({ sessionId: UNKNOWN_SESSION_ID, ownerToken: 'token', expiresAtMilliseconds: 0 }, FILE_ID, 0, bytesOf(4));
+    const response = await putChunk(UNKNOWN_SESSION, FILE_ID, 0, bytesOf(4));
 
     expect(response.status).toBe(404);
   });
@@ -167,11 +170,7 @@ describe('session API, chunks', () => {
       },
     });
 
-    const response = await SELF.fetch(urlOf(`/api/sessions/${session.sessionId}/files/${FILE_ID}/chunks/0`), {
-      method: 'PUT',
-      headers: { Authorization: `Bearer ${session.ownerToken}` },
-      body,
-    });
+    const response = await putChunk(session, FILE_ID, 0, body);
 
     expect(response.status).toBe(413);
   });
@@ -211,6 +210,18 @@ describe('session API, chunks', () => {
     expect(refused.status).toBe(413);
   });
 
+  it('PUT chunks, more of them than the files and the bytes of a session can fill, answers 413 even when they are empty', async () => {
+    const session = await createSession();
+    const ceiling = Array.from({ length: 6 }, (_unused, index) => index);
+
+    await Promise.all(ceiling.map(async (index) => await putChunk(session, FILE_ID, index, bytesOf(0))));
+    const refused = await putChunk(session, FILE_ID, 6, bytesOf(0));
+
+    expect(refused.status).toBe(413);
+    expect(await errorOf(refused)).toBe('session_too_large');
+    expect(await blobKeysOf(session.sessionId)).toHaveLength(6);
+  });
+
   it('GET a chunk, that was never stored, answers 404', async () => {
     const session = await createSession();
 
@@ -229,8 +240,8 @@ describe('session API, state', () => {
     const second = await putState(session, bytesOf(12));
 
     expect(first.status).toBe(200);
-    expect((await first.json<SessionTimingBody>()).revision).toBe(1);
-    expect((await second.json<SessionTimingBody>()).revision).toBe(2);
+    expect((await first.json<SessionTiming>()).revision).toBe(1);
+    expect((await second.json<SessionTiming>()).revision).toBe(2);
   });
 
   it('GET the state, once published, answers the sealed bytes with the revision and expiry headers', async () => {
@@ -238,7 +249,7 @@ describe('session API, state', () => {
     await putState(session, bytesOf(10, 3));
 
     const response = await getState(session.sessionId);
-    const status = await (await getStatus(session.sessionId)).json<SessionTimingBody>();
+    const status = await (await getStatus(session.sessionId)).json<SessionTiming>();
 
     expect(response.status).toBe(200);
     expect(new Uint8Array(await response.arrayBuffer())).toEqual(bytesOf(10, 3));
@@ -264,7 +275,7 @@ describe('session API, state', () => {
   it('GET the state, when its blob is missing from the bucket, answers 409', async () => {
     const session = await createSession();
     await putState(session, bytesOf(10));
-    await env.SESSION_BLOBS.delete(`sessions/${session.sessionId}/state`);
+    await env.SESSION_BLOBS.delete(stateKeyOf(session.sessionId));
 
     const response = await getState(session.sessionId);
 
@@ -312,12 +323,24 @@ describe('session API, activity and expiry', () => {
     expect(record?.expiresAtMilliseconds).toBeGreaterThan(soon + HOUR - 5000);
   });
 
+  it('GET the state, right after the owner published it, leaves the expiry the publication set and tells no viewer anything', async () => {
+    const session = await createSession();
+    const published = await (await putState(session, bytesOf(4))).json<SessionTiming>();
+    const channel = await openLiveChannel(session.sessionId);
+
+    const opened = await getState(session.sessionId);
+    await deleteSession(session);
+
+    expect(opened.headers.get('X-Session-Expires-At')).toBe(String(published.expiresAtMilliseconds));
+    expect(await channel.nextMessage()).toEqual({ kind: 'expired' });
+  });
+
   it('GET the status, of a session about to expire, leaves its expiry where it was', async () => {
     const session = await createSession();
     const soon = Date.now() + 1000;
     await expireAt(session.sessionId, soon);
 
-    const status = await (await getStatus(session.sessionId)).json<SessionTimingBody>();
+    const status = await (await getStatus(session.sessionId)).json<SessionTiming>();
 
     expect(status.expiresAtMilliseconds).toBe(soon);
   });
@@ -340,7 +363,7 @@ describe('session API, activity and expiry', () => {
     await putState(session, bytesOf(4));
     const channel = await openLiveChannel(session.sessionId);
 
-    const ran = await runDurableObjectAlarm(sessionStub(session.sessionId));
+    const ran = await runDurableObjectAlarm(liveSessionOf(session.sessionId));
 
     expect(ran).toBe(true);
     expect(await channel.nextMessage()).toEqual({ kind: 'expired' });
@@ -350,7 +373,7 @@ describe('session API, activity and expiry', () => {
   });
 
   it('the alarm, on an object holding no session, does nothing', async () => {
-    const stub = sessionStub(UNKNOWN_SESSION_ID);
+    const stub = liveSessionOf(UNKNOWN_SESSION_ID);
 
     await runInDurableObject(stub, async (instance: LiveSession) => await instance.alarm());
 
@@ -382,7 +405,7 @@ describe('session API, ending a session', () => {
   });
 
   it('DELETE /api/sessions/{id}, for a session that never existed, answers 404', async () => {
-    const response = await deleteSession({ sessionId: UNKNOWN_SESSION_ID, ownerToken: 'token', expiresAtMilliseconds: 0 });
+    const response = await deleteSession(UNKNOWN_SESSION);
 
     expect(response.status).toBe(404);
   });
@@ -393,14 +416,15 @@ describe('session API, live channel', () => {
     const session = await createSession();
     const channel = await openLiveChannel(session.sessionId);
 
-    const published = await (await putState(session, bytesOf(4))).json<SessionTimingBody>();
+    const published = await (await putState(session, bytesOf(4))).json<SessionTiming>();
 
     expect(await channel.nextMessage()).toEqual({ kind: 'revision', revision: 1, expiresAtMilliseconds: published.expiresAtMilliseconds });
   });
 
-  it('a viewer on the live channel, when someone opens the link, is told the session was renewed', async () => {
+  it('a viewer on the live channel, when someone opens the link of a session a while after its last activity, is told the session was renewed', async () => {
     const session = await createSession();
     await putState(session, bytesOf(4));
+    await expireAt(session.sessionId, Date.now() + HOUR - MINUTE);
     const channel = await openLiveChannel(session.sessionId);
 
     const opened = await getState(session.sessionId);
@@ -421,7 +445,7 @@ describe('session API, live channel', () => {
   it('GET live, without a WebSocket upgrade, answers 426', async () => {
     const session = await createSession();
 
-    const response = await SELF.fetch(urlOf(`/api/sessions/${session.sessionId}/live`));
+    const response = await SELF.fetch(urlOf(livePathOf(session.sessionId)));
 
     expect(response.status).toBe(426);
   });
@@ -429,7 +453,7 @@ describe('session API, live channel', () => {
   it('GET live, from an origin that is not allowed, answers 403', async () => {
     const session = await createSession();
 
-    const response = await SELF.fetch(urlOf(`/api/sessions/${session.sessionId}/live`), {
+    const response = await SELF.fetch(urlOf(livePathOf(session.sessionId)), {
       headers: { Upgrade: 'websocket', Origin: 'https://elsewhere.example' },
     });
 
@@ -438,7 +462,7 @@ describe('session API, live channel', () => {
   });
 
   it('GET live, for a session that never existed, answers 404 and opens nothing', async () => {
-    const response = await SELF.fetch(urlOf(`/api/sessions/${UNKNOWN_SESSION_ID}/live`), { headers: { Upgrade: 'websocket' } });
+    const response = await SELF.fetch(urlOf(livePathOf(UNKNOWN_SESSION_ID)), { headers: { Upgrade: 'websocket' } });
 
     expect(response.status).toBe(404);
     expect(response.webSocket).toBeNull();
@@ -447,7 +471,7 @@ describe('session API, live channel', () => {
 
 describe('session API, cross-origin requests', () => {
   it('OPTIONS, from an allowed origin, answers 204 with the methods, headers and exposed headers', async () => {
-    const response = await SELF.fetch(urlOf('/api/sessions'), { method: 'OPTIONS', headers: { Origin: ALLOWED_ORIGIN } });
+    const response = await SELF.fetch(urlOf(SESSIONS_PATH), { method: 'OPTIONS', headers: { Origin: ALLOWED_ORIGIN } });
 
     expect(response.status).toBe(204);
     expect(response.headers.get('Access-Control-Allow-Origin')).toBe(ALLOWED_ORIGIN);
@@ -457,7 +481,7 @@ describe('session API, cross-origin requests', () => {
   });
 
   it('OPTIONS, from an origin that is not allowed, answers 403 without granting it anything', async () => {
-    const response = await SELF.fetch(urlOf('/api/sessions'), { method: 'OPTIONS', headers: { Origin: 'https://elsewhere.example' } });
+    const response = await SELF.fetch(urlOf(SESSIONS_PATH), { method: 'OPTIONS', headers: { Origin: 'https://elsewhere.example' } });
 
     expect(response.status).toBe(403);
     expect(response.headers.get('Access-Control-Allow-Origin')).toBeNull();

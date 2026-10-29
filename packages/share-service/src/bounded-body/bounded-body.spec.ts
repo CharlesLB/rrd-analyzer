@@ -21,18 +21,34 @@ describe('boundedBodyOf', () => {
     expect(request.bodyUsed).toBe(false);
   });
 
-  it('given a body with no declared length that turns out past the limit, refuses it', async () => {
+  it('given an endless body with no declared length, refuses it once past the limit and stops reading there', async () => {
+    const pulled = { pieces: 0 };
+
     const stream = new ReadableStream<Uint8Array>({
-      start(controller) {
+      pull(controller) {
+        pulled.pieces += 1;
         controller.enqueue(new Uint8Array([1, 2]));
-        controller.enqueue(new Uint8Array([3, 4]));
-        controller.close();
       },
     });
 
     const content = await boundedBodyOf(putOf(stream), 3);
 
     expect(content).toBeNull();
+    expect(pulled.pieces).toBeLessThan(5);
+  });
+
+  it('given a body with no declared length that arrives in pieces within the limit, answers them joined in order', async () => {
+    const stream = new ReadableStream<Uint8Array>({
+      start(controller) {
+        controller.enqueue(new Uint8Array([1, 2]));
+        controller.enqueue(new Uint8Array([3]));
+        controller.close();
+      },
+    });
+
+    const content = await boundedBodyOf(putOf(stream), 3);
+
+    expect(new Uint8Array(content ?? new ArrayBuffer(0))).toEqual(new Uint8Array([1, 2, 3]));
   });
 
   it('given no body at all, answers no bytes', async () => {
