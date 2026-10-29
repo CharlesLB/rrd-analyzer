@@ -8,6 +8,7 @@ import { I18nStore } from '../../../../stores/i18n/store/i18n-store/i18n.store';
 import { LibraryStore } from '../../../../stores/library/store/library-store/library.store';
 import { SEARCH_FIELDS } from '../../../../stores/search-history/models/search-field/search-field';
 import { SearchHistoryStore } from '../../../../stores/search-history/store/search-history-store/search-history.store';
+import { type ShareMark, shareMarkOf } from '../../../../stores/sharing/models/share-mark/share-mark';
 import { SharedSessionStore } from '../../../../stores/sharing/store/shared-session-store/shared-session.store';
 import { SharingStore } from '../../../../stores/sharing/store/sharing-store/sharing.store';
 import { AnalysisRowComponent } from '../../components/analysis-row/analysis-row.component';
@@ -15,7 +16,6 @@ import { LibraryTopBarComponent } from '../../components/library-top-bar/library
 import { NewAnalysisCardComponent } from '../../components/new-analysis-card/new-analysis-card.component';
 import { NewAnalysisDialogComponent } from '../../components/new-analysis-dialog/new-analysis-dialog.component';
 import { analysesNamedLike, isFilterWorthShowing } from '../../models/analysis-filter/analysis-filter';
-import { type ShareMark, shareMarkOf } from '../../models/share-mark/share-mark';
 
 const WORKSPACE_ROUTE = '/workspace';
 const NONE_MISSING: readonly string[] = [];

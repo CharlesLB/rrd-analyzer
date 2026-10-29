@@ -5,14 +5,16 @@ import type { SessionStatusDto } from '../../../../core/gateway/analyzer.dto';
 import type { AnalyzerGateway } from '../../../../core/gateway/analyzer.gateway';
 import {
   analyzerGatewayStub,
+  buildDtoFixture,
   bundleDtoFixture,
   FIXTURE_SESSION_ID,
   joinedSessionDtoFixture,
   provideGatewayStub,
   sessionStatusDtoFixture,
 } from '../../../../core/gateway/analyzer.gateway.fixture';
-import { GatewayRequestError } from '../../../../core/gateway/gateway-request-error/gateway-request-error';
+import { failingWith } from '../../../../core/gateway/gateway-request-error/gateway-request-error.fixture';
 import { LiveUpdatesChannel } from '../../../../core/live-updates/live-updates.channel';
+import { deferredPromise } from '../../../../shared/utils/deferred-promise/deferred-promise.fixture';
 import { InsightsStore } from '../../../insights/store/insights-store/insights.store';
 import { LogsStore } from '../../../logs/store/logs-store/logs.store';
 import { logFileFixture } from '../../../logs/store/logs-store/logs.store.fixture';
@@ -30,25 +32,13 @@ type Setup = {
   readonly gateway?: Partial<AnalyzerGateway>;
 };
 
-const SHARING_BUILD = { version: '1.4.0', commit: 'none', date: 'unknown', summary: '1.4.0', sharesSessions: true };
-
-const pending = <TValue>(): { readonly promise: Promise<TValue>; readonly settle: (value: TValue) => void } => {
-  const handles: { settle: (value: TValue) => void } = { settle: () => undefined };
-
-  const promise = new Promise<TValue>((resolve) => {
-    handles.settle = resolve;
-  });
-
-  return { promise, settle: (value) => handles.settle(value) };
-};
-
 const stubClipboard = (writeText: () => Promise<void>): void => {
   vi.stubGlobal('navigator', { clipboard: { writeText: vi.fn(writeText) } });
 };
 
 const liveOver = async ({ isLive = false, sharesSessions = true, gateway: overrides = {} }: Setup = {}) => {
   const gateway = analyzerGatewayStub({
-    fetchBuild: vi.fn().mockResolvedValue({ ...SHARING_BUILD, sharesSessions }),
+    fetchBuild: vi.fn().mockResolvedValue(buildDtoFixture({ sharesSessions })),
     listSessions: vi.fn().mockResolvedValue(isLive ? [sessionStatusDtoFixture()] : []),
     openAnalysis: vi.fn().mockImplementation((analysisId: string) => Promise.resolve(bundleDtoFixture(5, { analysisId }))),
     ...overrides,
@@ -182,7 +172,7 @@ describe('LiveSessionStore', () => {
     });
 
     it('confirm, when the link cannot be created, leaves the warning open', async () => {
-      const { live } = await liveOver({ gateway: { startSession: vi.fn().mockRejectedValue(new GatewayRequestError('failed: 502', 502)) } });
+      const { live } = await liveOver({ gateway: { startSession: vi.fn().mockRejectedValue(failingWith(502)) } });
       live.requestShare();
 
       const isStarted = await live.confirm();
@@ -301,7 +291,7 @@ describe('LiveSessionStore', () => {
     it('a log whose publication failed is sent with its content again next time', async () => {
       vi.useFakeTimers();
       const { logs, gateway } = await liveOver({ isLive: true });
-      vi.mocked(gateway.publishSession).mockRejectedValueOnce(new GatewayRequestError('failed: 502', 502));
+      vi.mocked(gateway.publishSession).mockRejectedValueOnce(failingWith(502));
 
       await changeAndSettle(async () => {
         await logs.load(logFileFixture());
@@ -314,7 +304,7 @@ describe('LiveSessionStore', () => {
 
     it('a change made while the previous one is still being published waits for it, then is published too', async () => {
       vi.useFakeTimers();
-      const publishing = pending<SessionStatusDto>();
+      const publishing = deferredPromise<SessionStatusDto>();
       const { workspace, gateway } = await liveOver({ isLive: true });
       vi.mocked(gateway.publishSession).mockReturnValueOnce(publishing.promise);
 
@@ -346,7 +336,7 @@ describe('LiveSessionStore', () => {
       vi.useFakeTimers();
 
       const gateway = analyzerGatewayStub({
-        fetchBuild: vi.fn().mockResolvedValue(SHARING_BUILD),
+        fetchBuild: vi.fn().mockResolvedValue(buildDtoFixture({ sharesSessions: true })),
         listSessions: vi.fn().mockResolvedValue([sessionStatusDtoFixture()]),
       });
 

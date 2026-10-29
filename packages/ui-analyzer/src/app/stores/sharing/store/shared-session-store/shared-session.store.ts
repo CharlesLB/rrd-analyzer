@@ -1,21 +1,27 @@
 import { computed, inject, Service, signal } from '@angular/core';
 import { MILLISECONDS_PER_SECOND } from '@rrd-analyzer/shared';
-import { statusOfFailure } from '../../../../core/gateway/gateway-request-error/gateway-request-error';
 import { LIVE_UPDATE_KINDS, type LiveUpdate, LiveUpdatesChannel } from '../../../../core/live-updates/live-updates.channel';
 import { I18nStore } from '../../../i18n/store/i18n-store/i18n.store';
 import { ToastStore } from '../../../toast/store/toast-store/toast.store';
 import { SharingRepository } from '../../data-access/sharing-repository/sharing.repository';
 import { type FollowedLog, type FollowedSession, type LogHandover, logHandoverBetween } from '../../models/followed-session/followed-session';
-import { SHARE_FAILURES, type ShareFailure, shareFailureOf } from '../../models/share-failure/share-failure';
+import { SHARE_FAILURES, type ShareFailure, shareFailureIn } from '../../models/share-failure/share-failure';
 
 export const RECONNECTION_DELAY_MILLISECONDS = 5 * MILLISECONDS_PER_SECOND;
+
+type Refreshing = {
+  isRunning: boolean;
+  announcedRevision: number | null;
+};
 
 type Connection = {
   stopWatching?: () => void;
   reconnection?: ReturnType<typeof setTimeout>;
-  latestLog: FollowedLog | null;
   appliedLog: FollowedLog | null;
+  refreshing: Refreshing;
 };
+
+const idleRefreshing = (): Refreshing => ({ isRunning: false, announcedRevision: null });
 
 @Service()
 export class SharedSessionStore {
@@ -28,7 +34,7 @@ export class SharedSessionStore {
   private readonly _isJoiningState = signal(false);
   private readonly _joinFailureState = signal<ShareFailure | null>(null);
   private readonly _endedAnalysisIdState = signal<string | null>(null);
-  private readonly _connection: Connection = { latestLog: null, appliedLog: null };
+  private readonly _connection: Connection = { appliedLog: null, refreshing: idleRefreshing() };
 
   public readonly followed = this._followedState.asReadonly();
   public readonly isJoining = this._isJoiningState.asReadonly();
@@ -49,12 +55,12 @@ export class SharedSessionStore {
     try {
       const followed = await this._repository.join(sessionId, key);
 
-      this._take(followed);
+      this._followedState.set(followed);
       this._watch(followed);
 
       return followed.analysisId;
     } catch (error) {
-      this._joinFailureState.set(shareFailureOf(statusOfFailure(error)));
+      this._joinFailureState.set(shareFailureIn(error));
 
       return null;
     } finally {
@@ -63,24 +69,21 @@ export class SharedSessionStore {
   }
 
   public logToOpenWith(analysisId: string): LogHandover | null {
-    if (this.followedAnalysisId() !== analysisId) {
+    const followed = this._followedState();
+
+    if (followed?.analysisId !== analysisId) {
       return null;
     }
 
-    const handover = logHandoverBetween(this._connection.appliedLog, this._connection.latestLog);
+    const handover = logHandoverBetween(this._connection.appliedLog, followed.log);
 
-    this._connection.appliedLog = this._connection.latestLog;
+    this._connection.appliedLog = followed.log;
 
     return handover;
   }
 
   public acknowledgeEnd(): void {
     this._endedAnalysisIdState.set(null);
-  }
-
-  private _take(followed: FollowedSession): void {
-    this._connection.latestLog = followed.log;
-    this._followedState.set(followed);
   }
 
   private _isStillFollowing(followed: FollowedSession): boolean {
@@ -101,9 +104,7 @@ export class SharedSessionStore {
 
     switch (update.kind) {
       case LIVE_UPDATE_KINDS.REVISION:
-        if (update.revision > followed.revision) {
-          await this._refresh(followed);
-        }
+        await this._refreshFor(followed, update.revision);
 
         return;
       case LIVE_UPDATE_KINDS.RENEWED:
@@ -119,15 +120,52 @@ export class SharedSessionStore {
     }
   }
 
+  private async _refreshFor(followed: FollowedSession, revision: number): Promise<void> {
+    const { refreshing } = this._connection;
+
+    if (revision <= followed.revision) {
+      return;
+    }
+
+    if (refreshing.isRunning) {
+      refreshing.announcedRevision = Math.max(revision, refreshing.announcedRevision ?? revision);
+
+      return;
+    }
+
+    await this._refresh(followed);
+  }
+
   private async _refresh(followed: FollowedSession): Promise<void> {
+    const { refreshing } = this._connection;
+
+    if (refreshing.isRunning) {
+      return;
+    }
+
+    refreshing.isRunning = true;
+    await this._readLatest(followed);
+    refreshing.isRunning = false;
+
+    const { announcedRevision } = refreshing;
+    const current = this._followedState();
+
+    refreshing.announcedRevision = null;
+
+    if (announcedRevision !== null && current?.sessionId === followed.sessionId) {
+      await this._refreshFor(current, announcedRevision);
+    }
+  }
+
+  private async _readLatest(followed: FollowedSession): Promise<void> {
     try {
       const refreshed = await this._repository.refresh(followed.sessionId);
 
       if (this._isStillFollowing(followed)) {
-        this._take(refreshed);
+        this._followedState.set(refreshed);
       }
     } catch (error) {
-      if (shareFailureOf(statusOfFailure(error)) === SHARE_FAILURES.GONE) {
+      if (shareFailureIn(error) === SHARE_FAILURES.GONE) {
         await this._end(followed);
       }
     }
@@ -161,8 +199,8 @@ export class SharedSessionStore {
     this._connection.stopWatching = undefined;
     clearTimeout(this._connection.reconnection);
     this._followedState.set(null);
-    this._connection.latestLog = null;
     this._connection.appliedLog = null;
+    this._connection.refreshing = idleRefreshing();
 
     try {
       await this._repository.forget(followed.sessionId);

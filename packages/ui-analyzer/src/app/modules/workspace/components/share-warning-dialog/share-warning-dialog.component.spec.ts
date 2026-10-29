@@ -18,7 +18,7 @@ describe('ShareWarningDialogComponent', () => {
   it('warns what is uploaded, that changes follow, when it is erased and that the key is in the link', () => {
     const fixture = renderDialog();
 
-    expect(textOf(fixture, '.share-warning-dialog-title')).toBe('Share this analysis live?');
+    expect(textOf(fixture, '.modal-dialog-title')).toBe('Share this analysis live?');
     expect(textsOf(fixture, '.share-warning-dialog-point')).toEqual([
       'Its 3 files and every chart are encrypted on this device and uploaded to the sharing server.',
       'While the session lives, every change you make is sent too: charts, colors, new files and the log.',
@@ -53,7 +53,7 @@ describe('ShareWarningDialogComponent', () => {
 
   it.each([
     { name: 'Cancel', close: (fixture: ReturnType<typeof renderDialog>) => elementOf(fixture, '.share-warning-dialog-cancel')?.click() },
-    { name: 'the close button', close: (fixture: ReturnType<typeof renderDialog>) => elementOf(fixture, '.share-warning-dialog-close')?.click() },
+    { name: 'the close button', close: (fixture: ReturnType<typeof renderDialog>) => elementOf(fixture, '.modal-dialog-close')?.click() },
     { name: 'Escape', close: () => pressEscape() },
   ])('closes without sharing when $name is used', ({ close }) => {
     const fixture = renderDialog();
@@ -82,7 +82,7 @@ describe('ShareWarningDialogComponent', () => {
     const fixture = renderDialog();
     const closed = vi.fn();
     fixture.componentInstance.closed.subscribe(closed);
-    const scrim = elementOf(fixture, '.share-warning-dialog-scrim');
+    const scrim = elementOf(fixture, '.modal-dialog-scrim');
 
     scrim?.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true }));
     scrim?.click();

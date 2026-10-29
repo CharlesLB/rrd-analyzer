@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, effect, inject, input, untracked } from '@angular/core';
 import { Router } from '@angular/router';
 import { I18nStore } from '../../../../stores/i18n/store/i18n-store/i18n.store';
-import { SHARE_FAILURES } from '../../../../stores/sharing/models/share-failure/share-failure';
+import { SHARE_FAILURES, type ShareFailure } from '../../../../stores/sharing/models/share-failure/share-failure';
 import { SharedSessionStore } from '../../../../stores/sharing/store/shared-session-store/shared-session.store';
 
 type FailureText = {
@@ -30,19 +30,8 @@ export class SharedSessionPageComponent {
 
   protected readonly failure = computed<FailureText | null>(() => {
     const failure = this._sharedSession.joinFailure();
-    const viewer = this.texts().sharing.viewer;
 
-    if (failure === null || this._sharedSession.isJoining()) {
-      return null;
-    }
-
-    if (failure === SHARE_FAILURES.GONE) {
-      return { title: viewer.expiredTitle, detail: viewer.expiredDetail, canRetry: false };
-    }
-
-    return failure === SHARE_FAILURES.INVALID_LINK
-      ? { title: viewer.invalidTitle, detail: viewer.invalidDetail, canRetry: false }
-      : { title: viewer.failedTitle, detail: viewer.failedDetail, canRetry: true };
+    return failure === null || this._sharedSession.isJoining() ? null : this._failureTextOf(failure);
   });
 
   public constructor() {
@@ -60,6 +49,22 @@ export class SharedSessionPageComponent {
 
   protected async toLibrary(): Promise<void> {
     await this._router.navigateByUrl(LIBRARY_ROUTE, { replaceUrl: true });
+  }
+
+  private _failureTextOf(failure: ShareFailure): FailureText {
+    const viewer = this.texts().sharing.viewer;
+    const retryable: FailureText = { title: viewer.failedTitle, detail: viewer.failedDetail, canRetry: true };
+
+    const texts: Readonly<Record<ShareFailure, FailureText>> = {
+      [SHARE_FAILURES.GONE]: { title: viewer.expiredTitle, detail: viewer.expiredDetail, canRetry: false },
+      [SHARE_FAILURES.INVALID_LINK]: { title: viewer.invalidTitle, detail: viewer.invalidDetail, canRetry: false },
+      [SHARE_FAILURES.TOO_LARGE]: retryable,
+      [SHARE_FAILURES.BUSY]: retryable,
+      [SHARE_FAILURES.UNREACHABLE]: retryable,
+      [SHARE_FAILURES.OTHER]: retryable,
+    };
+
+    return texts[failure];
   }
 
   private async _join(sessionId: string, key: string): Promise<void> {

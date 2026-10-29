@@ -90,6 +90,50 @@ $ease-pop: cubic-bezier(0.2, 0.9, 0.25, 1.05);
   cursor: pointer;
 }
 
+@mixin busy-when-disabled {
+  &:disabled {
+    opacity: 0.6;
+    cursor: progress;
+  }
+}
+
+@mixin quiet-button($color, $hover-border-color, $hover-color: $color) {
+  @include outline-button(9px, 6px 14px, 13px, $color);
+
+  & {
+    border-color: var(--line2);
+  }
+
+  &:hover {
+    border-color: $hover-border-color;
+    color: $hover-color;
+  }
+}
+
+@mixin live-dot($size) {
+  width: $size;
+  height: $size;
+  border-radius: 50%;
+  background: var(--ok);
+  animation: om-pulse 1.6s ease-in-out infinite;
+}
+
+@mixin share-state-badge($font-size, $radius, $padding) {
+  flex: none;
+  font-size: $font-size;
+  font-weight: 600;
+  color: var(--mut);
+  border: 1px solid var(--line2);
+  border-radius: $radius;
+  padding: $padding;
+
+  &-online {
+    color: var(--accT);
+    border-color: var(--accLine);
+    background: var(--accBg);
+  }
+}
+
 @mixin modal-scrim {
   position: fixed;
   inset: 0;

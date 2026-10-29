@@ -1,12 +1,11 @@
 import { computed, effect, inject, Service, signal } from '@angular/core';
 import { MILLISECONDS_PER_MINUTE } from '@rrd-analyzer/shared';
-import { statusOfFailure } from '../../../../core/gateway/gateway-request-error/gateway-request-error';
 import { BuildStore } from '../../../build/store/build-store/build.store';
 import { I18nStore } from '../../../i18n/store/i18n-store/i18n.store';
 import { ToastStore } from '../../../toast/store/toast-store/toast.store';
 import { SharingRepository } from '../../data-access/sharing-repository/sharing.repository';
 import { type LiveSession, type SessionPublication, withoutSessionOf, withSessionReplaced } from '../../models/live-session/live-session';
-import { SHARE_FAILURES, type ShareFailure, shareFailureOf } from '../../models/share-failure/share-failure';
+import { SHARE_FAILURES, type ShareFailure, shareFailureIn } from '../../models/share-failure/share-failure';
 
 export const STATUS_POLLING_MILLISECONDS = MILLISECONDS_PER_MINUTE;
 
@@ -22,7 +21,6 @@ export class SharingStore {
   private readonly _hasSessions = computed(() => this._sessionsState().length > 0);
 
   public readonly isAvailable = this._build.sharesSessions;
-  public readonly sessions = this._sessionsState.asReadonly();
   public readonly sessionsByAnalysis = computed<ReadonlyMap<string, LiveSession>>(
     () => new Map(this._sessionsState().map((session) => [session.analysisId, session])),
   );
@@ -67,7 +65,7 @@ export class SharingStore {
 
       return session;
     } catch (error) {
-      this._toasts.showFailure(this._startFailureMessage(shareFailureOf(statusOfFailure(error))));
+      this._toasts.showFailure(this._startFailureMessage(shareFailureIn(error)));
 
       return null;
     } finally {
@@ -83,7 +81,7 @@ export class SharingStore {
 
       return session;
     } catch (error) {
-      this._reportUnpublished(analysisId, shareFailureOf(statusOfFailure(error)));
+      this._reportUnpublished(analysisId, shareFailureIn(error));
 
       return null;
     }

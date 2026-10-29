@@ -4,7 +4,7 @@ import { MILLISECONDS_PER_HOUR } from '@rrd-analyzer/shared';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { elementOf, renderWithInputs, textOf } from '../../../../shared/utils/component-fixture/component-fixture.fixture';
 import type { Analysis } from '../../../../stores/library/models/analysis/analysis.model';
-import { SHARE_MARKS, type ShareMark } from '../../models/share-mark/share-mark';
+import { SHARE_MARKS, type ShareMark } from '../../../../stores/sharing/models/share-mark/share-mark';
 import { AnalysisRowComponent } from './analysis-row.component';
 
 const NOW = new Date(2026, 7, 29, 15, 0).getTime();

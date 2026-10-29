@@ -1,25 +1,22 @@
 import { afterNextRender, ChangeDetectionStrategy, Component, computed, type ElementRef, inject, output, viewChild } from '@angular/core';
 import { FormField, FormRoot, form } from '@angular/forms/signals';
 import { formatPlural } from '@rrd-analyzer/shared';
-import { GLYPHS } from '../../../../shared/constants/glyphs';
-import { DismissOnScrimDirective } from '../../../../shared/directives/dismiss-on-scrim/dismiss-on-scrim.directive';
-import { FocusTrapDirective } from '../../../../shared/directives/focus-trap/focus-trap.directive';
+import { ModalDialogComponent } from '../../../../shared/components/modal-dialog/modal-dialog.component';
 import { I18nStore } from '../../../../stores/i18n/store/i18n-store/i18n.store';
 import { newAnalysisDraftSchema } from '../../../../stores/library/models/new-analysis-draft/new-analysis-draft';
 import { LibraryStore } from '../../../../stores/library/store/library-store/library.store';
 import { PendingSourceListComponent } from '../pending-source-list/pending-source-list.component';
 import { SourceDropZoneComponent } from '../source-drop-zone/source-drop-zone.component';
 
-const DIALOG_TITLE_ID = 'new-analysis-dialog-title';
+const FORM_ID = 'new-analysis-dialog-form';
 const NAME_FIELD_ID = 'new-analysis-dialog-name';
 
 @Component({
   selector: 'app-new-analysis-dialog',
-  imports: [DismissOnScrimDirective, FocusTrapDirective, FormField, FormRoot, PendingSourceListComponent, SourceDropZoneComponent],
+  imports: [FormField, FormRoot, ModalDialogComponent, PendingSourceListComponent, SourceDropZoneComponent],
   templateUrl: './new-analysis-dialog.component.html',
   styleUrl: './new-analysis-dialog.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  host: { '(document:keydown.escape)': 'close()' },
 })
 export class NewAnalysisDialogComponent {
   public readonly created = output<string>();
@@ -28,10 +25,9 @@ export class NewAnalysisDialogComponent {
   private readonly _nameField = viewChild.required<ElementRef<HTMLInputElement>>('nameField');
   private readonly _dropZone = viewChild.required(SourceDropZoneComponent);
 
-  protected readonly titleId = DIALOG_TITLE_ID;
+  protected readonly formId = FORM_ID;
   protected readonly nameFieldId = NAME_FIELD_ID;
   protected readonly texts = inject(I18nStore).texts;
-  protected readonly glyphs = GLYPHS;
   protected readonly isDropActive = this._library.isDropActive;
   protected readonly sources = computed(() => this._library.draft().sources);
 

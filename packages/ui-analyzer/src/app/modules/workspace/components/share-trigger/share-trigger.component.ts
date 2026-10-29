@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, computed, inject, input, output } f
 import { formatPlural } from '@rrd-analyzer/shared';
 import { GLYPHS } from '../../../../shared/constants/glyphs';
 import { I18nStore } from '../../../../stores/i18n/store/i18n-store/i18n.store';
+import { SHARE_MARKS, shareMarkTextOf } from '../../../../stores/sharing/models/share-mark/share-mark';
 
 @Component({
   selector: 'app-share-trigger',
@@ -23,6 +24,8 @@ export class ShareTriggerComponent {
     const minutesLeft = this.minutesLeft();
     const sharing = this.texts().sharing;
 
-    return minutesLeft === null ? null : { tip: formatPlural(sharing.liveTip, minutesLeft), label: formatPlural(sharing.marks.online, minutesLeft) };
+    return minutesLeft === null
+      ? null
+      : { tip: formatPlural(sharing.liveTip, minutesLeft), label: shareMarkTextOf({ kind: SHARE_MARKS.ONLINE, minutesLeft }, sharing.marks).label };
   });
 }

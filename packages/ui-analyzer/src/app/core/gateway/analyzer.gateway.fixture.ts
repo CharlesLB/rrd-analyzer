@@ -4,6 +4,7 @@ import { vi } from 'vitest';
 import { SERIES_COLORS } from '../../shared/constants/colors';
 import type {
   AnalysisDto,
+  BuildDto,
   BundleDto,
   ConfigurationStampDto,
   InsightsReportDto,
@@ -160,9 +161,18 @@ export const joinedSessionDtoFixture = (overrides: Partial<JoinedSessionDto> = {
   ...overrides,
 });
 
+export const buildDtoFixture = (overrides: Partial<BuildDto> = {}): BuildDto => ({
+  version: '1.4.0',
+  commit: 'abcdef0123456',
+  date: '2026-09-28',
+  summary: '1.4.0 (abcdef0)',
+  sharesSessions: false,
+  ...overrides,
+});
+
 export const analyzerGatewayStub = (overrides: Partial<AnalyzerGateway> = {}): AnalyzerGateway =>
   ({
-    fetchBuild: vi.fn().mockResolvedValue({ version: '1.4.0', commit: 'abcdef0123456', date: '2026-09-28', summary: '1.4.0 (abcdef0)', sharesSessions: false }),
+    fetchBuild: vi.fn().mockResolvedValue(buildDtoFixture()),
     fetchSampleAnalysis: vi.fn().mockResolvedValue(null),
     listAnalyses: vi.fn().mockResolvedValue([analysisDtoFixture()]),
     createAnalysis: vi.fn().mockResolvedValue(analysisDtoFixture()),

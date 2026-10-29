@@ -363,10 +363,10 @@
 }
 
 @defer (when liveSession.isPanelOpen(); prefetch on idle) {
-  @if (liveSession.isPanelOpen() && liveSession.session(); as session) {
+  @if (liveSession.isPanelOpen() && liveShare(); as share) {
     <app-share-panel
-      [session]="session"
-      [nowMilliseconds]="nowMilliseconds()"
+      [session]="share.session"
+      [minutesLeft]="share.minutesLeft"
       [isBusy]="liveSession.isBusy()"
       (copyRequested)="liveSession.copyLink()"
       (endRequested)="liveSession.end()"

@@ -219,10 +219,10 @@ export type SessionPublicationDto = {
   readonly log: PublishedLogDto | null;
 };
 
-type JoinedLogDto = {
+export type JoinedLogDto = {
   readonly fileId: string;
   readonly name: string;
-  readonly content: string;
+  readonly content?: string;
   readonly view: unknown;
 };
 

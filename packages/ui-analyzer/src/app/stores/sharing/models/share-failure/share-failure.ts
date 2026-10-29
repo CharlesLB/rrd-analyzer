@@ -22,3 +22,17 @@ const FAILURES_BY_STATUS: ReadonlyMap<number, ShareFailure> = new Map([
 ]);
 
 export const shareFailureOf = (status: number): ShareFailure => FAILURES_BY_STATUS.get(status) ?? SHARE_FAILURES.OTHER;
+
+const SHARE_FAILURE_ERROR_NAME = 'ShareFailureError';
+
+export class ShareFailureError extends Error {
+  public readonly failure: ShareFailure;
+
+  public constructor(failure: ShareFailure, cause: unknown) {
+    super(`sharing failed: ${failure}`, { cause });
+    this.name = SHARE_FAILURE_ERROR_NAME;
+    this.failure = failure;
+  }
+}
+
+export const shareFailureIn = (error: unknown): ShareFailure => (error instanceof ShareFailureError ? error.failure : SHARE_FAILURES.OTHER);

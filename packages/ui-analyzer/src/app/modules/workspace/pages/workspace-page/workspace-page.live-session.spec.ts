@@ -6,6 +6,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { AnalyzerGateway } from '../../../../core/gateway/analyzer.gateway';
 import {
   analyzerGatewayStub,
+  buildDtoFixture,
   bundleDtoFixture,
   chartsDtoFixture,
   FIXTURE_SESSION_ID,
@@ -15,37 +16,19 @@ import {
 } from '../../../../core/gateway/analyzer.gateway.fixture';
 import { LIVE_UPDATE_KINDS, type LiveUpdate, LiveUpdatesChannel } from '../../../../core/live-updates/live-updates.channel';
 import { elementOf, textOf, textsOf } from '../../../../shared/utils/component-fixture/component-fixture.fixture';
-import { ExportStore } from '../../../../stores/export/store/export-store/export.store';
-import { InsightsStore } from '../../../../stores/insights/store/insights-store/insights.store';
 import { LogsStore } from '../../../../stores/logs/store/logs-store/logs.store';
 import { logRecordsFixture } from '../../../../stores/logs/store/logs-store/logs.store.fixture';
-import { LiveSessionStore } from '../../../../stores/sharing/store/live-session-store/live-session.store';
 import { SharedSessionStore } from '../../../../stores/sharing/store/shared-session-store/shared-session.store';
-import { TimeWindowStore } from '../../../../stores/time-window/store/time-window-store/time-window.store';
-import { CanvasDragStore } from '../../../../stores/workspace/store/canvas-drag-store/canvas-drag.store';
-import { SeriesDataStore } from '../../../../stores/workspace/store/series-data-store/series-data.store';
-import { WorkspaceStore } from '../../../../stores/workspace/store/workspace-store/workspace.store';
-import { WorkspacePageComponent } from './workspace-page.component';
+import { WORKSPACE_PAGE_PROVIDERS } from '../../workspace.routes';
+import { renderWorkspacePage, type WorkspacePageFixture } from './workspace-page.fixture';
 
-const SHARING_BUILD = { version: '1.4.0', commit: 'none', date: 'unknown', summary: '1.4.0', sharesSessions: true };
 const LOG_CONTENT = JSON.stringify(logRecordsFixture());
 const DETECTED_MAPPING = { timestamp: '@timestamp', type: 'lvl', message: 'event.msg' };
 const PLACED_VIEW = { mapping: DETECTED_MAPPING, chosenColors: [], hiddenTypes: ['info'], isShown: true };
 
 const sharedLogOf = (fileId: string, view: unknown, content = LOG_CONTENT) => ({ fileId, name: 'atlas-api-logs.json', content, view });
 
-const renderPage = async () => {
-  const fixture = TestBed.createComponent(WorkspacePageComponent);
-  fixture.componentRef.setInput('analysisId', 'a1');
-  fixture.detectChanges();
-  await vi.waitFor(() => expect(TestBed.inject(WorkspaceStore).analysisName()).not.toBe(''));
-  await fixture.whenStable();
-  fixture.detectChanges();
-
-  return fixture;
-};
-
-const settle = async (fixture: Awaited<ReturnType<typeof renderPage>>): Promise<void> => {
+const settle = async (fixture: WorkspacePageFixture): Promise<void> => {
   await fixture.whenStable();
   fixture.detectChanges();
   await fixture.whenStable();
@@ -58,7 +41,7 @@ describe('WorkspacePageComponent live sessions', () => {
 
   const configure = (overrides: Partial<AnalyzerGateway> = {}): void => {
     gateway = analyzerGatewayStub({
-      fetchBuild: vi.fn().mockResolvedValue(SHARING_BUILD),
+      fetchBuild: vi.fn().mockResolvedValue(buildDtoFixture({ sharesSessions: true })),
       openAnalysis: vi.fn().mockResolvedValue(bundleDtoFixture(4, { canvas: chartsDtoFixture('s0', 's1') })),
       ...overrides,
     });
@@ -76,14 +59,7 @@ describe('WorkspacePageComponent live sessions', () => {
             },
           },
         },
-        WorkspaceStore,
-        SeriesDataStore,
-        CanvasDragStore,
-        TimeWindowStore,
-        InsightsStore,
-        LogsStore,
-        ExportStore,
-        LiveSessionStore,
+        ...WORKSPACE_PAGE_PROVIDERS,
       ],
     });
   };
@@ -100,20 +76,20 @@ describe('WorkspacePageComponent live sessions', () => {
   });
 
   it('in a build that shares no sessions, offers no way to share', async () => {
-    configure({ fetchBuild: vi.fn().mockResolvedValue({ ...SHARING_BUILD, sharesSessions: false }) });
+    configure({ fetchBuild: vi.fn().mockResolvedValue(buildDtoFixture()) });
 
-    const fixture = await renderPage();
+    const fixture = await renderWorkspacePage();
 
     expect(elementOf(fixture, 'app-share-trigger')).toBeNull();
   });
 
   it('warns before sharing, creates the link once confirmed, and shows it with every file marked', async () => {
     configure();
-    const fixture = await renderPage();
+    const fixture = await renderWorkspacePage();
 
     elementOf(fixture, '.share-trigger')?.click();
     await settle(fixture);
-    const warning = textOf(fixture, '.share-warning-dialog-title');
+    const warning = textOf(fixture, '.share-warning-dialog .modal-dialog-title');
     elementOf(fixture, '.share-warning-dialog-confirm')?.click();
     await vi.waitFor(() => expect(gateway.startSession).toHaveBeenCalledWith('a1', { log: null }));
     await settle(fixture);
@@ -127,7 +103,7 @@ describe('WorkspacePageComponent live sessions', () => {
 
   it('copies the link and ends the session from the panel, which closes once the session is over', async () => {
     configure({ listSessions: vi.fn().mockResolvedValue([sessionStatusDtoFixture()]) });
-    const fixture = await renderPage();
+    const fixture = await renderWorkspacePage();
     elementOf(fixture, '.share-trigger-live')?.click();
     await settle(fixture);
 
@@ -143,7 +119,7 @@ describe('WorkspacePageComponent live sessions', () => {
 
   it('closes the warning without sharing when it is cancelled', async () => {
     configure();
-    const fixture = await renderPage();
+    const fixture = await renderWorkspacePage();
     elementOf(fixture, '.share-trigger')?.click();
     await settle(fixture);
 
@@ -156,11 +132,11 @@ describe('WorkspacePageComponent live sessions', () => {
 
   it('closes the panel from its close button and leaves the session live', async () => {
     configure({ listSessions: vi.fn().mockResolvedValue([sessionStatusDtoFixture()]) });
-    const fixture = await renderPage();
+    const fixture = await renderWorkspacePage();
     elementOf(fixture, '.share-trigger-live')?.click();
     await settle(fixture);
 
-    elementOf(fixture, '.share-panel-close')?.click();
+    elementOf(fixture, '.share-panel .modal-dialog-close')?.click();
     await settle(fixture);
 
     expect(elementOf(fixture, '.share-panel')).toBeNull();
@@ -172,7 +148,7 @@ describe('WorkspacePageComponent live sessions', () => {
       configure(overrides);
       await TestBed.inject(SharedSessionStore).join(FIXTURE_SESSION_ID, 'key');
 
-      return await renderPage();
+      return await renderWorkspacePage();
     };
 
     it('says the analysis follows a live session, offers no way to share it again, and places its log as it was shared', async () => {
@@ -242,7 +218,7 @@ describe('WorkspacePageComponent live sessions', () => {
     it('stays where it is when a session followed for another analysis ends', async () => {
       configure({ joinSession: vi.fn().mockResolvedValue(joinedSessionDtoFixture({ analysisId: 'a2' })) });
       await TestBed.inject(SharedSessionStore).join(FIXTURE_SESSION_ID, 'key');
-      await renderPage();
+      await renderWorkspacePage();
       const navigation = vi.spyOn(TestBed.inject(Router), 'navigateByUrl').mockResolvedValue(true);
 
       deliver({ kind: LIVE_UPDATE_KINDS.EXPIRED });

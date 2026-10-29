@@ -13,7 +13,6 @@ export type FollowedSession = {
   readonly revision: number;
   readonly expiresAtMilliseconds: number;
   readonly liveUrl: string;
-  readonly hasChanged: boolean;
   readonly log: FollowedLog | null;
 };
 

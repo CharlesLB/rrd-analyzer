@@ -3,8 +3,9 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { JoinedSessionDto } from '../../../../core/gateway/analyzer.dto';
 import type { AnalyzerGateway } from '../../../../core/gateway/analyzer.gateway';
 import { analyzerGatewayStub, FIXTURE_SESSION_ID, joinedSessionDtoFixture, provideGatewayStub } from '../../../../core/gateway/analyzer.gateway.fixture';
-import { GatewayRequestError } from '../../../../core/gateway/gateway-request-error/gateway-request-error';
+import { failingWith } from '../../../../core/gateway/gateway-request-error/gateway-request-error.fixture';
 import { LIVE_UPDATE_KINDS, type LiveUpdate, LiveUpdatesChannel } from '../../../../core/live-updates/live-updates.channel';
+import { deferredPromise } from '../../../../shared/utils/deferred-promise/deferred-promise.fixture';
 import { ToastStore } from '../../../toast/store/toast-store/toast.store';
 import { LOG_HANDOVERS } from '../../models/followed-session/followed-session';
 import { SHARE_FAILURES } from '../../models/share-failure/share-failure';
@@ -18,19 +19,6 @@ type Watch = {
 
 const KEY = 'a2V5';
 const LOG = { fileId: 'f1', name: 'service.ndjson', content: '{"level":"info"}', view: { mapping: null, chosenColors: [], hiddenTypes: [], isShown: true } };
-
-const failingWith = (status: number): GatewayRequestError => new GatewayRequestError(`failed: ${status}`, status);
-
-const pending = <TValue>(): { readonly promise: Promise<TValue>; readonly settle: (value: TValue) => void; readonly fail: (error: unknown) => void } => {
-  const handles: { settle: (value: TValue) => void; fail: (error: unknown) => void } = { settle: () => undefined, fail: () => undefined };
-
-  const promise = new Promise<TValue>((resolve, reject) => {
-    handles.settle = resolve;
-    handles.fail = reject;
-  });
-
-  return { promise, settle: (value) => handles.settle(value), fail: (error) => handles.fail(error) };
-};
 
 const followingOver = (overrides: Partial<AnalyzerGateway> = {}) => {
   const watches: Watch[] = [];
@@ -216,7 +204,7 @@ describe('SharedSessionStore', () => {
   });
 
   it('a revision read while the session ended is dropped, and the session is ended only once', async () => {
-    const reading = pending<JoinedSessionDto>();
+    const reading = deferredPromise<JoinedSessionDto>();
     const { store, gateway, watches } = followingOver({ refreshSession: vi.fn().mockReturnValue(reading.promise) });
     await store.join(FIXTURE_SESSION_ID, KEY);
     const watch = latestWatchOf(watches);
@@ -232,7 +220,7 @@ describe('SharedSessionStore', () => {
   });
 
   it('a revision that arrives after the session ended is not taken', async () => {
-    const reading = pending<JoinedSessionDto>();
+    const reading = deferredPromise<JoinedSessionDto>();
     const { store, watches } = followingOver({ refreshSession: vi.fn().mockReturnValue(reading.promise) });
     await store.join(FIXTURE_SESSION_ID, KEY);
     const watch = latestWatchOf(watches);
@@ -282,5 +270,93 @@ describe('SharedSessionStore', () => {
 
     expect(store.endedAnalysisId()).toBe('a1');
     expect(watches).toHaveLength(1);
+  });
+
+  it('a revision announced while a refresh runs waits for it, and the newest of several is read once after it', async () => {
+    const reading = deferredPromise<JoinedSessionDto>();
+    const { store, gateway, watches } = followingOver({ refreshSession: vi.fn().mockReturnValueOnce(reading.promise) });
+    vi.mocked(gateway.refreshSession).mockResolvedValue(joinedSessionDtoFixture({ revision: 4 }));
+    await store.join(FIXTURE_SESSION_ID, KEY);
+    const watch = latestWatchOf(watches);
+
+    watch.deliver({ kind: LIVE_UPDATE_KINDS.REVISION, revision: 2, expiresAtMilliseconds: 1 });
+    watch.deliver({ kind: LIVE_UPDATE_KINDS.REVISION, revision: 4, expiresAtMilliseconds: 1 });
+    watch.deliver({ kind: LIVE_UPDATE_KINDS.REVISION, revision: 3, expiresAtMilliseconds: 1 });
+    await settle();
+    const readsMeanwhile = vi.mocked(gateway.refreshSession).mock.calls.length;
+    reading.settle(joinedSessionDtoFixture({ revision: 2 }));
+    await settle();
+
+    expect(readsMeanwhile).toBe(1);
+    expect(gateway.refreshSession).toHaveBeenCalledTimes(2);
+    expect(store.followed()?.revision).toBe(4);
+  });
+
+  it('a revision announced while a refresh runs is not read again when that refresh already brought it', async () => {
+    const reading = deferredPromise<JoinedSessionDto>();
+    const { store, gateway, watches } = followingOver({ refreshSession: vi.fn().mockReturnValue(reading.promise) });
+    await store.join(FIXTURE_SESSION_ID, KEY);
+    const watch = latestWatchOf(watches);
+
+    watch.deliver({ kind: LIVE_UPDATE_KINDS.REVISION, revision: 2, expiresAtMilliseconds: 1 });
+    watch.deliver({ kind: LIVE_UPDATE_KINDS.REVISION, revision: 3, expiresAtMilliseconds: 1 });
+    reading.settle(joinedSessionDtoFixture({ revision: 3 }));
+    await settle();
+
+    expect(gateway.refreshSession).toHaveBeenCalledTimes(1);
+    expect(store.followed()?.revision).toBe(3);
+  });
+
+  it('a revision announced while a refresh runs is dropped when the session ends before that refresh is done', async () => {
+    const reading = deferredPromise<JoinedSessionDto>();
+    const { store, gateway, watches } = followingOver({ refreshSession: vi.fn().mockReturnValue(reading.promise) });
+    await store.join(FIXTURE_SESSION_ID, KEY);
+    const watch = latestWatchOf(watches);
+
+    watch.deliver({ kind: LIVE_UPDATE_KINDS.REVISION, revision: 2, expiresAtMilliseconds: 1 });
+    watch.deliver({ kind: LIVE_UPDATE_KINDS.REVISION, revision: 3, expiresAtMilliseconds: 1 });
+    watch.deliver({ kind: LIVE_UPDATE_KINDS.EXPIRED });
+    await settle();
+    reading.settle(joinedSessionDtoFixture({ revision: 2 }));
+    await settle();
+
+    expect(gateway.refreshSession).toHaveBeenCalledTimes(1);
+    expect(store.followed()).toBeNull();
+  });
+
+  it('a connection dropped while a refresh runs is watched again without a second refresh', async () => {
+    vi.useFakeTimers();
+    const reading = deferredPromise<JoinedSessionDto>();
+    const { store, gateway, watches } = followingOver({ refreshSession: vi.fn().mockReturnValue(reading.promise) });
+    await store.join(FIXTURE_SESSION_ID, KEY);
+    const watch = latestWatchOf(watches);
+
+    watch.deliver({ kind: LIVE_UPDATE_KINDS.REVISION, revision: 2, expiresAtMilliseconds: 1 });
+    watch.deliver({ kind: LIVE_UPDATE_KINDS.DISCONNECTED });
+    await vi.advanceTimersByTimeAsync(RECONNECTION_DELAY_MILLISECONDS);
+
+    expect(gateway.refreshSession).toHaveBeenCalledTimes(1);
+    expect(watches).toHaveLength(2);
+
+    reading.settle(joinedSessionDtoFixture({ revision: 2 }));
+    await vi.advanceTimersByTimeAsync(0);
+
+    expect(store.followed()?.revision).toBe(2);
+  });
+
+  it('the log of the followed session, kept by a refresh that leaves its content out, is not handed over again', async () => {
+    const { store, gateway, watches } = followingOver({ joinSession: vi.fn().mockResolvedValue(joinedSessionDtoFixture({ log: LOG })) });
+    await store.join(FIXTURE_SESSION_ID, KEY);
+    const opened = store.logToOpenWith('a1');
+    vi.mocked(gateway.refreshSession).mockResolvedValueOnce(
+      joinedSessionDtoFixture({ revision: 2, log: { fileId: LOG.fileId, name: LOG.name, view: LOG.view } }),
+    );
+
+    latestWatchOf(watches).deliver({ kind: LIVE_UPDATE_KINDS.REVISION, revision: 2, expiresAtMilliseconds: 1 });
+    await settle();
+
+    expect(opened?.kind).toBe(LOG_HANDOVERS.OPENED);
+    expect(store.followed()?.revision).toBe(2);
+    expect(store.logToOpenWith('a1')).toBeNull();
   });
 });

@@ -1,18 +1,18 @@
 import { TestBed } from '@angular/core/testing';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { AnalyzerGateway } from '../../../../core/gateway/analyzer.gateway';
-import { analyzerGatewayStub, provideGatewayStub, sessionStatusDtoFixture } from '../../../../core/gateway/analyzer.gateway.fixture';
-import { GatewayRequestError } from '../../../../core/gateway/gateway-request-error/gateway-request-error';
+import { analyzerGatewayStub, buildDtoFixture, provideGatewayStub, sessionStatusDtoFixture } from '../../../../core/gateway/analyzer.gateway.fixture';
+import { failingWith } from '../../../../core/gateway/gateway-request-error/gateway-request-error.fixture';
 import { ToastStore } from '../../../toast/store/toast-store/toast.store';
+import type { LiveSession } from '../../models/live-session/live-session';
 import { SharingStore, STATUS_POLLING_MILLISECONDS } from './sharing.store';
 
-const SHARING_BUILD = { version: '1.4.0', commit: 'none', date: 'unknown', summary: '1.4.0', sharesSessions: true };
 const NO_LOG = { log: null };
 
-const failingWith = (status: number): GatewayRequestError => new GatewayRequestError(`failed: ${status}`, status);
+const sessionsOf = (store: SharingStore): readonly LiveSession[] => [...store.sessionsByAnalysis().values()];
 
 const sharingOver = async (overrides: Partial<AnalyzerGateway> = {}): Promise<{ readonly store: SharingStore; readonly gateway: AnalyzerGateway }> => {
-  const gateway = analyzerGatewayStub({ fetchBuild: vi.fn().mockResolvedValue(SHARING_BUILD), ...overrides });
+  const gateway = analyzerGatewayStub({ fetchBuild: vi.fn().mockResolvedValue(buildDtoFixture({ sharesSessions: true })), ...overrides });
 
   TestBed.configureTestingModule({ providers: [provideGatewayStub(gateway)] });
 
@@ -29,11 +29,11 @@ describe('SharingStore', () => {
   });
 
   it('load, in a build that shares no sessions, asks for none and offers nothing', async () => {
-    const { store, gateway } = await sharingOver({ fetchBuild: vi.fn().mockResolvedValue({ ...SHARING_BUILD, sharesSessions: false }) });
+    const { store, gateway } = await sharingOver({ fetchBuild: vi.fn().mockResolvedValue(buildDtoFixture()) });
 
     expect(store.isAvailable()).toBe(false);
     expect(gateway.listSessions).not.toHaveBeenCalled();
-    expect(store.sessions()).toEqual([]);
+    expect(sessionsOf(store)).toEqual([]);
   });
 
   it('load, in a build that shares sessions, reads the sessions this app owns, by analysis', async () => {
@@ -49,7 +49,7 @@ describe('SharingStore', () => {
 
     await store.refresh();
 
-    expect(store.sessions()).toHaveLength(1);
+    expect(sessionsOf(store)).toHaveLength(1);
   });
 
   it('refresh, when a session it knew is gone, drops it and says it ended after an hour without activity', async () => {
@@ -58,7 +58,7 @@ describe('SharingStore', () => {
 
     await store.refresh();
 
-    expect(store.sessions()).toEqual([]);
+    expect(sessionsOf(store)).toEqual([]);
     expect(TestBed.inject(ToastStore).message()).toBe('the live session ended after an hour without activity');
   });
 
@@ -86,7 +86,7 @@ describe('SharingStore', () => {
     const session = await store.start('a1', NO_LOG);
 
     expect(session).toBeNull();
-    expect(store.sessions()).toEqual([]);
+    expect(sessionsOf(store)).toEqual([]);
     expect(store.busyAnalysisIds().size).toBe(0);
     expect(TestBed.inject(ToastStore).message()).toBe(message);
   });
@@ -97,7 +97,7 @@ describe('SharingStore', () => {
     const published = await store.publish('a1', NO_LOG);
 
     expect(published?.revision).toBe(2);
-    expect(store.sessions()).toEqual([published]);
+    expect(sessionsOf(store)).toEqual([published]);
   });
 
   it('publish, for a session the server no longer has, drops it and says it ended', async () => {
@@ -109,7 +109,7 @@ describe('SharingStore', () => {
     const published = await store.publish('a1', NO_LOG);
 
     expect(published).toBeNull();
-    expect(store.sessions()).toEqual([]);
+    expect(sessionsOf(store)).toEqual([]);
     expect(TestBed.inject(ToastStore).message()).toBe('the live session ended after an hour without activity');
   });
 
@@ -121,7 +121,7 @@ describe('SharingStore', () => {
 
     await store.publish('a1', NO_LOG);
 
-    expect(store.sessions()).toHaveLength(1);
+    expect(sessionsOf(store)).toHaveLength(1);
     expect(TestBed.inject(ToastStore).message()).toBe('the latest changes could not be sent to the live session');
   });
 
@@ -132,7 +132,7 @@ describe('SharingStore', () => {
 
     expect(isEnded).toBe(true);
     expect(gateway.endSession).toHaveBeenCalledWith('a1');
-    expect(store.sessions()).toEqual([]);
+    expect(sessionsOf(store)).toEqual([]);
     expect(TestBed.inject(ToastStore).message()).toBe('live session ended: everything was erased from the server');
   });
 
@@ -145,7 +145,7 @@ describe('SharingStore', () => {
     const isEnded = await store.end('a1');
 
     expect(isEnded).toBe(false);
-    expect(store.sessions()).toHaveLength(1);
+    expect(sessionsOf(store)).toHaveLength(1);
     expect(TestBed.inject(ToastStore).message()).toBe('the live session could not be ended');
   });
 

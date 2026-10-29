@@ -161,7 +161,7 @@ export class WorkspacePageComponent {
   protected readonly canvasExport = inject(ExportStore);
   protected readonly settings = inject(SettingsStore);
   protected readonly liveSession = inject(LiveSessionStore);
-  protected readonly nowMilliseconds = useTickingClock(CLOCK_TICK_MILLISECONDS);
+  private readonly _nowMilliseconds = useTickingClock(CLOCK_TICK_MILLISECONDS);
   protected readonly libraryFilterHistory = computed(() => this._searchHistory.histories()[SEARCH_FIELDS.CHART_LIBRARY]);
   protected readonly isCompact = useMediaQuery(COMPACT_LAYOUT_QUERY);
 
@@ -222,11 +222,13 @@ export class WorkspacePageComponent {
     return cursor === null ? '' : formatShortTimestamp(instantAt(this.timeWindow.window(), cursor.fraction));
   });
 
-  protected readonly shareMinutesLeft = computed(() => {
+  protected readonly liveShare = computed(() => {
     const session = this.liveSession.session();
 
-    return session === null ? null : minutesLeftOf(session.expiresAtMilliseconds, this.nowMilliseconds());
+    return session === null ? null : { session, minutesLeft: minutesLeftOf(session.expiresAtMilliseconds, this._nowMilliseconds()) };
   });
+
+  protected readonly shareMinutesLeft = computed(() => this.liveShare()?.minutesLeft ?? null);
 
   private readonly _followed = computed(() => {
     const followed = this._sharedSession.followed();
@@ -239,7 +241,7 @@ export class WorkspacePageComponent {
   protected readonly followMinutesLeft = computed(() => {
     const followed = this._followed();
 
-    return followed === null ? null : minutesLeftOf(followed.expiresAtMilliseconds, this.nowMilliseconds());
+    return followed === null ? null : minutesLeftOf(followed.expiresAtMilliseconds, this._nowMilliseconds());
   });
 
   protected readonly logEntryCount = computed(() => (this.logs.status() === LOG_STATUSES.READY ? this.logs.entries().length : null));

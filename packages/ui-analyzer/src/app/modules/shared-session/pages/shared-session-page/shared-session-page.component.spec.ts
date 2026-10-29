@@ -3,14 +3,12 @@ import { provideRouter, Router } from '@angular/router';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { AnalyzerGateway } from '../../../../core/gateway/analyzer.gateway';
 import { analyzerGatewayStub, FIXTURE_SESSION_ID, joinedSessionDtoFixture, provideGatewayStub } from '../../../../core/gateway/analyzer.gateway.fixture';
-import { GatewayRequestError } from '../../../../core/gateway/gateway-request-error/gateway-request-error';
+import { failingWith } from '../../../../core/gateway/gateway-request-error/gateway-request-error.fixture';
 import { LiveUpdatesChannel } from '../../../../core/live-updates/live-updates.channel';
 import { elementOf, textOf } from '../../../../shared/utils/component-fixture/component-fixture.fixture';
 import { SharedSessionPageComponent } from './shared-session-page.component';
 
 const KEY = 'a2V5';
-
-const failingWith = (status: number): GatewayRequestError => new GatewayRequestError(`failed: ${status}`, status);
 
 describe('SharedSessionPageComponent', () => {
   let gateway: AnalyzerGateway;

@@ -1,3 +1,5 @@
+@use 'mixins';
+
 :host {
   display: contents;
 }
@@ -21,10 +23,7 @@
     border-color: var(--accLine);
   }
 
-  &:disabled {
-    opacity: 0.6;
-    cursor: progress;
-  }
+  @include mixins.busy-when-disabled;
 
   &-live {
     background: var(--accBg);
@@ -46,10 +45,6 @@
   }
 
   &-pulse {
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    background: var(--ok);
-    animation: om-pulse 1.6s ease-in-out infinite;
+    @include mixins.live-dot(8px);
   }
 }

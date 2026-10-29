@@ -1,18 +1,15 @@
 import { TestBed } from '@angular/core/testing';
-import { MILLISECONDS_PER_MINUTE } from '@rrd-analyzer/shared';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { elementOf, elementsOf, renderWithInputs, textOf, textsOf } from '../../../../shared/utils/component-fixture/component-fixture.fixture';
 import type { LiveSession } from '../../../../stores/sharing/models/live-session/live-session';
 import { SharePanelComponent } from './share-panel.component';
-
-const NOW = 1_000_000;
 
 const SESSION: LiveSession = {
   analysisId: 'a1',
   sessionId: 'session-1',
   link: 'https://rrd-analyzer.example/app/#/shared/session-1/key-1',
   revision: 2,
-  expiresAtMilliseconds: NOW + 37 * MILLISECONDS_PER_MINUTE,
+  expiresAtMilliseconds: 1_000_000,
   files: [
     { name: 'cpu.rrd', path: '/rrd/cpu.rrd', isOnline: true },
     { name: 'memory.rrd', path: '', isOnline: false },
@@ -21,7 +18,7 @@ const SESSION: LiveSession = {
 };
 
 const renderPanel = (inputs: Readonly<Record<string, unknown>> = {}) =>
-  renderWithInputs(SharePanelComponent, { session: SESSION, nowMilliseconds: NOW, isBusy: false, ...inputs });
+  renderWithInputs(SharePanelComponent, { session: SESSION, minutesLeft: 37, isBusy: false, ...inputs });
 
 describe('SharePanelComponent', () => {
   beforeEach(() => {
@@ -32,7 +29,7 @@ describe('SharePanelComponent', () => {
     const fixture = renderPanel();
 
     expect(elementOf(fixture, '.share-panel-link-field')).toHaveProperty('value', SESSION.link);
-    expect(textOf(fixture, '.share-panel-expiry')).toBe('Erased 37 minutes after the last activity');
+    expect(textOf(fixture, '.modal-dialog-helper')).toBe('Erased 37 minutes after the last activity');
     expect(textsOf(fixture, '.share-panel-file-name')).toEqual(['cpu.rrd', 'memory.rrd']);
     expect(textsOf(fixture, '.share-panel-state')).toEqual(['online', 'local']);
     expect(elementsOf(fixture, '.share-panel-file-name').map((name) => name.title)).toEqual(['/rrd/cpu.rrd', 'memory.rrd']);
@@ -54,6 +51,7 @@ describe('SharePanelComponent', () => {
 
     expect(textsOf(fixture, '.share-panel-label')).toEqual(['Public link', 'Files', 'Log']);
     expect(textsOf(fixture, '.share-panel-file-name').at(-1)).toBe('service.ndjson');
+    expect(elementsOf(fixture, '.share-panel-file-name').at(-1)?.title).toBe('service.ndjson');
     expect(textsOf(fixture, '.share-panel-state').at(-1)).toBe('local');
   });
 
@@ -64,7 +62,7 @@ describe('SharePanelComponent', () => {
   });
 
   it('with a minute left, speaks of one minute', () => {
-    expect(textOf(renderPanel({ nowMilliseconds: SESSION.expiresAtMilliseconds - 1 }), '.share-panel-expiry')).toBe('Erased 1 minute after the last activity');
+    expect(textOf(renderPanel({ minutesLeft: 1 }), '.modal-dialog-helper')).toBe('Erased 1 minute after the last activity');
   });
 
   it('asks to copy the link, to end the session and to close, each from its own button', () => {
@@ -76,7 +74,7 @@ describe('SharePanelComponent', () => {
 
     elementOf(fixture, '.share-panel-link-copy')?.click();
     elementOf(fixture, '.share-panel-end')?.click();
-    elementOf(fixture, '.share-panel-close')?.click();
+    elementOf(fixture, '.modal-dialog-close')?.click();
     document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
 
     expect(asked.copy).toHaveBeenCalledTimes(1);
@@ -95,7 +93,7 @@ describe('SharePanelComponent', () => {
     const fixture = renderPanel();
     const closed = vi.fn();
     fixture.componentInstance.closed.subscribe(closed);
-    const scrim = elementOf(fixture, '.share-panel-scrim');
+    const scrim = elementOf(fixture, '.modal-dialog-scrim');
 
     scrim?.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true }));
     scrim?.click();

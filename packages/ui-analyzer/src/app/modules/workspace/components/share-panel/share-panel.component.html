@@ -1,54 +1,33 @@
-<div class="share-panel-scrim" appDismissOnScrim (dismissed)="closed.emit()">
-  <div class="share-panel" appFocusTrap role="dialog" aria-modal="true" [attr.aria-labelledby]="titleId">
-    <div class="share-panel-header">
-      <span class="share-panel-pulse"></span>
-      <div class="share-panel-heading">
-        <div class="share-panel-title" [id]="titleId">{{ texts().sharing.panel.title }}</div>
-        <div class="share-panel-expiry">{{ expiry() }}</div>
-      </div>
-      <button class="share-panel-close" type="button" [title]="texts().sharing.panel.close" [attr.aria-label]="texts().sharing.panel.close" (click)="closed.emit()">
-        {{ glyphs.CLOSE }}
-      </button>
+<app-modal-dialog
+  class="share-panel"
+  [heading]="texts().sharing.panel.title"
+  [helper]="expiry()"
+  [closeLabel]="texts().sharing.panel.close"
+  (closed)="closed.emit()"
+>
+  <span class="share-panel-pulse" modalDialogLead></span>
+
+  <div class="share-panel-body">
+    <label class="share-panel-label" [for]="linkFieldId">{{ texts().sharing.panel.linkLabel }}</label>
+    <div class="share-panel-link">
+      <input #linkField class="share-panel-link-field" [id]="linkFieldId" type="text" readonly [value]="session().link" />
+      <button class="share-panel-link-copy" type="button" (click)="copyRequested.emit()">{{ texts().sharing.panel.copy }}</button>
     </div>
 
-    <div class="share-panel-body">
-      <label class="share-panel-label" [for]="linkFieldId">{{ texts().sharing.panel.linkLabel }}</label>
-      <div class="share-panel-link">
-        <input #linkField class="share-panel-link-field" [id]="linkFieldId" type="text" readonly [value]="session().link" />
-        <button class="share-panel-link-copy" type="button" (click)="copyRequested.emit()">{{ texts().sharing.panel.copy }}</button>
-      </div>
-
-      <span class="share-panel-label">{{ texts().sharing.panel.filesLabel }}</span>
+    @for (group of groups(); track group.label) {
+      <span class="share-panel-label">{{ group.label }}</span>
       <ul class="share-panel-files">
-        @for (file of session().files; track $index) {
+        @for (entry of group.entries; track $index) {
           <li class="share-panel-file">
-            <span class="share-panel-file-name" [title]="file.path || file.name">{{ file.name }}</span>
-            @if (file.isOnline) {
-              <span class="share-panel-state share-panel-state-online" [title]="texts().sharing.panel.onlineTip">{{ texts().sharing.panel.online }}</span>
-            } @else {
-              <span class="share-panel-state" [title]="texts().sharing.panel.localTip">{{ texts().sharing.panel.local }}</span>
-            }
+            <span class="share-panel-file-name" [title]="entry.tip">{{ entry.name }}</span>
+            <span class="share-panel-state" [class.share-panel-state-online]="entry.isOnline" [title]="entry.stateTip">{{ entry.stateLabel }}</span>
           </li>
         }
       </ul>
-
-      @if (session().log; as log) {
-        <span class="share-panel-label">{{ texts().sharing.panel.logLabel }}</span>
-        <ul class="share-panel-files">
-          <li class="share-panel-file">
-            <span class="share-panel-file-name">{{ log.name }}</span>
-            @if (log.isOnline) {
-              <span class="share-panel-state share-panel-state-online" [title]="texts().sharing.panel.onlineTip">{{ texts().sharing.panel.online }}</span>
-            } @else {
-              <span class="share-panel-state" [title]="texts().sharing.panel.localTip">{{ texts().sharing.panel.local }}</span>
-            }
-          </li>
-        </ul>
-      }
-    </div>
-
-    <div class="share-panel-footer">
-      <button class="share-panel-end" type="button" [disabled]="isBusy()" [attr.aria-busy]="isBusy()" (click)="endRequested.emit()">{{ endLabel() }}</button>
-    </div>
+    }
   </div>
-</div>
+
+  <button class="share-panel-end" type="button" modalDialogFooter [disabled]="isBusy()" [attr.aria-busy]="isBusy()" (click)="endRequested.emit()">
+    {{ endLabel() }}
+  </button>
+</app-modal-dialog>

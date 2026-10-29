@@ -576,7 +576,7 @@ type SharingPanelMessages = {
   readonly close: string;
 };
 
-type SharingMarkMessages = {
+export type SharingMarkMessages = {
   readonly local: string;
   readonly localTip: string;
   readonly online: PluralForms;

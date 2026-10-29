@@ -13,10 +13,7 @@
 
   &-pulse {
     flex: none;
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    background: var(--ok);
+    @include mixins.live-dot(8px);
   }
 
   &-label {
