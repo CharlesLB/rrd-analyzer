@@ -74,3 +74,12 @@ func (files *Files) Exists(callerContext context.Context, path string) (bool, er
 
 	return kept, nil
 }
+
+// Forget lets go of the file kept under path, so a tab that is done with it gets its memory back. A
+// path that holds nothing is already forgotten.
+func (files *Files) Forget(path string) {
+	files.mutex.Lock()
+	defer files.mutex.Unlock()
+
+	delete(files.contents, path)
+}

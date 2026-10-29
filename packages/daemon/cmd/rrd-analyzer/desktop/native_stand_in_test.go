@@ -13,6 +13,7 @@ import (
 	analysisInfra "github.com/CharlesLB/rrd-analyzer/packages/daemon/internal/analysis/infrastructure"
 	exportInfra "github.com/CharlesLB/rrd-analyzer/packages/daemon/internal/export/infrastructure"
 	searchesInfra "github.com/CharlesLB/rrd-analyzer/packages/daemon/internal/searches/infrastructure"
+	sharingInfra "github.com/CharlesLB/rrd-analyzer/packages/daemon/internal/sharing/infrastructure"
 )
 
 // oneSourceDump is an rrdtool dump of one series reading 1, 2 and 3 over three five-minute rows.
@@ -86,6 +87,7 @@ func operationsOver(t *testing.T, windowDialogs *dialogs) *surface.Operations {
 		Picker:                 windowDialogs,
 		SaveTargets:            windowDialogs,
 		Writer:                 exportInfra.NewFileWriter(),
+		Sharing:                surface.SharingWiring{Sessions: sharingInfra.NewMemoryRegistry()},
 	})
 }
 

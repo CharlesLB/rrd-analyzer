@@ -18,7 +18,7 @@ func TestNewEditionFailsWhenTheSampleCannotBeWritten(t *testing.T) {
 		return sampleanalysis.Dataset{}, errSampleUnwritten
 	}
 
-	if _, err := newEdition(context.Background(), time.Now(), unwritten); !errors.Is(err, errSampleUnwritten) {
+	if _, err := newEdition(context.Background(), time.Now(), editionSettings{generateSample: unwritten}); !errors.Is(err, errSampleUnwritten) {
 		t.Fatalf("err = %v, want %v", err, errSampleUnwritten)
 	}
 }

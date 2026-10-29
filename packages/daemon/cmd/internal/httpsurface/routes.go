@@ -25,6 +25,7 @@ func Routes(operations *surface.Operations) *http.ServeMux {
 	registerInsightsRoutes(mux, operations)
 	registerExportRoutes(mux, operations)
 	registerSearchHistoryRoutes(mux, operations)
+	registerSessionRoutes(mux, operations)
 
 	return mux
 }

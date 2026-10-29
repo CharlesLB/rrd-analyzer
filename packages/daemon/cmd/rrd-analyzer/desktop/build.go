@@ -20,6 +20,8 @@ import (
 	searchesInfra "github.com/CharlesLB/rrd-analyzer/packages/daemon/internal/searches/infrastructure"
 	"github.com/CharlesLB/rrd-analyzer/packages/daemon/internal/shared/config"
 	"github.com/CharlesLB/rrd-analyzer/packages/daemon/internal/shared/messages"
+	"github.com/CharlesLB/rrd-analyzer/packages/daemon/internal/shared/shareservice"
+	sharingInfra "github.com/CharlesLB/rrd-analyzer/packages/daemon/internal/sharing/infrastructure"
 )
 
 // programName is the name GTK reports as the window's class, and it has to be the executable's
@@ -76,6 +78,12 @@ func run(frontendAssets fs.FS, native nativeRuntime) error {
 	}
 	defer func() { _ = searchHistory.Close() }()
 
+	liveSessions, err := sharingInfra.OpenStore(context.Background(), paths.StoreFile)
+	if err != nil {
+		return fmt.Errorf("open the live sessions: %w", err)
+	}
+	defer func() { _ = liveSessions.Close() }()
+
 	dialogs := newDialogs(native, analysisInfra.NewSourceDescriber())
 	operations := surface.Build(surface.Wiring{
 		Store:                  store,
@@ -85,6 +93,7 @@ func run(frontendAssets fs.FS, native nativeRuntime) error {
 		Picker:                 dialogs,
 		SaveTargets:            dialogs,
 		Writer:                 exportInfra.NewFileWriter(),
+		Sharing:                surface.SharingWiring{ServiceURL: shareservice.URL, Sessions: liveSessions},
 	})
 	binding := NewAPI(operations, dialogs)
 

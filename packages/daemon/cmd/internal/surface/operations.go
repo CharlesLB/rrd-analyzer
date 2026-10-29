@@ -15,6 +15,7 @@ import (
 	searchesUsecase "github.com/CharlesLB/rrd-analyzer/packages/daemon/internal/searches/usecase"
 	seriesDomain "github.com/CharlesLB/rrd-analyzer/packages/daemon/internal/series/domain"
 	"github.com/CharlesLB/rrd-analyzer/packages/daemon/internal/shared/version"
+	sharingUsecase "github.com/CharlesLB/rrd-analyzer/packages/daemon/internal/sharing/usecase"
 )
 
 type FilePicker interface {
@@ -69,6 +70,7 @@ type Dependencies struct {
 	Insights *insightsUsecase.Service
 	Exports  *exportUsecase.Service
 	Searches *searchesUsecase.Service
+	Sharing  *sharingUsecase.Service
 	Sources  SourceDescriber
 	Picker   FilePicker
 }
@@ -78,14 +80,15 @@ type Operations struct {
 	insights *insightsUsecase.Service
 	exports  *exportUsecase.Service
 	searches *searchesUsecase.Service
+	sharing  *sharingUsecase.Service
 	sources  SourceDescriber
 	picker   FilePicker
 }
 
 func New(dependencies Dependencies) *Operations {
 	if dependencies.Analyses == nil || dependencies.Insights == nil || dependencies.Exports == nil || dependencies.Searches == nil ||
-		dependencies.Sources == nil || dependencies.Picker == nil {
-		panic("surface: the analyses, insights, exports and searches services, the source describer and the file picker are all required")
+		dependencies.Sharing == nil || dependencies.Sources == nil || dependencies.Picker == nil {
+		panic("surface: the analyses, insights, exports, searches and sharing services, the source describer and the file picker are all required")
 	}
 
 	return &Operations{
@@ -93,20 +96,30 @@ func New(dependencies Dependencies) *Operations {
 		insights: dependencies.Insights,
 		exports:  dependencies.Exports,
 		searches: dependencies.Searches,
+		sharing:  dependencies.Sharing,
 		sources:  dependencies.Sources,
 		picker:   dependencies.Picker,
 	}
 }
 
+// BuildInfo is the build's identity, and whether it was given a share service: the frontend offers
+// live sessions only when it was.
 type BuildInfo struct {
-	Version string `json:"version"`
-	Commit  string `json:"commit"`
-	Date    string `json:"date"`
-	Summary string `json:"summary"`
+	Version        string `json:"version"`
+	Commit         string `json:"commit"`
+	Date           string `json:"date"`
+	Summary        string `json:"summary"`
+	SharesSessions bool   `json:"sharesSessions"`
 }
 
 func (operations *Operations) Build() BuildInfo {
-	return BuildInfo{Version: version.Version, Commit: version.Commit, Date: version.Date, Summary: version.Summary()}
+	return BuildInfo{
+		Version:        version.Version,
+		Commit:         version.Commit,
+		Date:           version.Date,
+		Summary:        version.Summary(),
+		SharesSessions: operations.sharing.SharesSessions(),
+	}
 }
 
 func (operations *Operations) ListAnalyses(callerContext context.Context) ([]AnalysisView, error) {
@@ -195,7 +208,13 @@ func (operations *Operations) RenameAnalysis(callerContext context.Context, anal
 	return viewOf(renamed), nil
 }
 
+// DeleteAnalysis first lets go of whatever is live about the analysis: a session it owns is ended,
+// and the files of a session it follows are dropped from memory.
 func (operations *Operations) DeleteAnalysis(callerContext context.Context, analysisID string) error {
+	if err := operations.sharing.Release(callerContext, analysisID); err != nil {
+		return err
+	}
+
 	return operations.analyses.Delete(callerContext, analysisID)
 }
 

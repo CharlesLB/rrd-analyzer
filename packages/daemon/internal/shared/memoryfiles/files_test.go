@@ -85,3 +85,20 @@ func TestFilesReadNothingOnceTheCallerHasGone(t *testing.T) {
 		t.Fatalf("want context.Canceled, got %v", err)
 	}
 }
+
+func TestFilesForgetWhatTheyWereToldToLetGoOf(t *testing.T) {
+	files := memoryfiles.New()
+	forgotten := files.Keep("cpu.rrd", []byte("one"))
+	kept := files.Keep("memory.rrd", []byte("two"))
+
+	files.Forget(forgotten)
+	files.Forget(forgotten)
+
+	if exists, _ := files.Exists(context.Background(), forgotten); exists {
+		t.Errorf("Exists(%q) = true after Forget, want false", forgotten)
+	}
+
+	if exists, _ := files.Exists(context.Background(), kept); !exists {
+		t.Errorf("Exists(%q) = false, want the other file still kept", kept)
+	}
+}

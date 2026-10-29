@@ -1,6 +1,8 @@
 package surface
 
 import (
+	"strings"
+
 	analysisDomain "github.com/CharlesLB/rrd-analyzer/packages/daemon/internal/analysis/domain"
 	analysisInfra "github.com/CharlesLB/rrd-analyzer/packages/daemon/internal/analysis/infrastructure"
 	analysisUsecase "github.com/CharlesLB/rrd-analyzer/packages/daemon/internal/analysis/usecase"
@@ -13,12 +15,15 @@ import (
 	searchesDomain "github.com/CharlesLB/rrd-analyzer/packages/daemon/internal/searches/domain"
 	searchesUsecase "github.com/CharlesLB/rrd-analyzer/packages/daemon/internal/searches/usecase"
 	"github.com/CharlesLB/rrd-analyzer/packages/daemon/internal/shared/clock"
+	sharingDomain "github.com/CharlesLB/rrd-analyzer/packages/daemon/internal/sharing/domain"
+	sharingInfra "github.com/CharlesLB/rrd-analyzer/packages/daemon/internal/sharing/infrastructure"
+	sharingUsecase "github.com/CharlesLB/rrd-analyzer/packages/daemon/internal/sharing/usecase"
 )
 
 // Wiring is the part of the application the binaries do not share: where the library is kept,
 // where the source files are and how they become series, where a person's overrides are read from,
-// and the halves only a native window has. Every field but ConfigurationDirectory is required; an
-// empty directory runs the built-in rules and units.
+// the halves only a native window has, and where live sessions are published. Every field but
+// ConfigurationDirectory is required; an empty directory runs the built-in rules and units.
 type Wiring struct {
 	Store                  analysisDomain.Store
 	SearchHistory          searchesDomain.Store
@@ -27,6 +32,17 @@ type Wiring struct {
 	Picker                 FilePicker
 	SaveTargets            exportDomain.SaveTargetPicker
 	Writer                 exportDomain.Writer
+	Sharing                SharingWiring
+}
+
+// SharingWiring is where live sessions go. ServiceURL is the share service's address, empty in a
+// build that was given none; Sessions keeps the sessions this app owns and is required; Keeper keeps
+// the files of a session followed in memory, and is nil wherever that cannot be done, which is
+// everywhere but the browser edition.
+type SharingWiring struct {
+	ServiceURL string
+	Sessions   sharingDomain.Registry
+	Keeper     sharingDomain.FileKeeper
 }
 
 // SourceFiles is where the files an analysis names are kept, through the three ways the application
@@ -50,6 +66,10 @@ func Build(wiring Wiring) *Operations {
 
 	if wiring.Files.Loader == nil || wiring.Files.Presence == nil || wiring.Files.Reader == nil {
 		panic("surface: the source files need a loader, a presence check and a reader")
+	}
+
+	if wiring.Sharing.Sessions == nil {
+		panic("surface: live sessions need a registry to be kept in")
 	}
 
 	analyses := analysisUsecase.NewService(
@@ -76,8 +96,32 @@ func Build(wiring Wiring) *Operations {
 			Writer:  wiring.Writer,
 		}),
 		Searches: searchesUsecase.NewService(wiring.SearchHistory),
+		Sharing:  sharingServiceOf(wiring, analyses),
 		Sources:  analysisInfra.NewSourceDescriber(),
 		Picker:   wiring.Picker,
+	})
+}
+
+// sharingServiceOf publishes through a client of the share service only when the build was given
+// one. The address is taken without a trailing slash, since every path and link is appended to it.
+func sharingServiceOf(wiring Wiring, analyses *analysisUsecase.Service) *sharingUsecase.Service {
+	serviceURL := strings.TrimSuffix(wiring.Sharing.ServiceURL, "/")
+
+	var host sharingDomain.Host
+	if serviceURL != "" {
+		host = sharingInfra.NewHostClient(serviceURL)
+	}
+
+	return sharingUsecase.NewService(sharingUsecase.Dependencies{
+		ServiceURL: serviceURL,
+		Host:       host,
+		Registry:   wiring.Sharing.Sessions,
+		Library:    analysisUsecase.NewSharingLibrary(analyses),
+		Reader:     wiring.Files.Reader,
+		Format:     rrdInfra.NewSourceFormat(),
+		Entropy:    sharingInfra.SystemEntropy{},
+		Clock:      clock.New(),
+		Keeper:     wiring.Sharing.Keeper,
 	})
 }
 

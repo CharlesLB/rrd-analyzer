@@ -18,6 +18,8 @@ import (
 	rrdInfra "github.com/CharlesLB/rrd-analyzer/packages/daemon/internal/rrd/infrastructure"
 	searchesInfra "github.com/CharlesLB/rrd-analyzer/packages/daemon/internal/searches/infrastructure"
 	"github.com/CharlesLB/rrd-analyzer/packages/daemon/internal/shared/memoryfiles"
+	"github.com/CharlesLB/rrd-analyzer/packages/daemon/internal/shared/shareservice"
+	sharingInfra "github.com/CharlesLB/rrd-analyzer/packages/daemon/internal/sharing/infrastructure"
 )
 
 // noConfigurationDirectory runs the built-in insights rules and units: a browser has no folder of
@@ -34,11 +36,20 @@ type Edition struct {
 // New builds the edition and opens its library on the sample analysis, so a visitor has something
 // to explore before opening a file of their own. now is the moment the sample counts as opened.
 func New(callerContext context.Context, now time.Time) (*Edition, error) {
-	return newEdition(callerContext, now, sampleanalysis.Generate)
+	return newEdition(callerContext, now, editionSettings{generateSample: sampleanalysis.Generate, shareService: shareservice.URL})
 }
 
-// newEdition builds the edition over the sample generateSample writes.
-func newEdition(callerContext context.Context, now time.Time, generateSample sampleGenerator) (*Edition, error) {
+// editionSettings is what a build decides about an edition: the sample it opens on, and the share
+// service its live sessions go to, empty for none.
+type editionSettings struct {
+	generateSample sampleGenerator
+	shareService   string
+}
+
+// newEdition builds the edition with the settings a build chose. The tab owns the sessions it
+// starts for as long as it is open, and keeps the files of the ones it follows in the same memory
+// as the files a person opened.
+func newEdition(callerContext context.Context, now time.Time, settings editionSettings) (*Edition, error) {
 	files := memoryfiles.New()
 
 	operations := surface.Build(surface.Wiring{
@@ -49,9 +60,10 @@ func newEdition(callerContext context.Context, now time.Time, generateSample sam
 		Picker:                 httpsurface.UnavailableDialogs{},
 		SaveTargets:            httpsurface.UnavailableDialogs{},
 		Writer:                 httpsurface.UnavailableDialogs{},
+		Sharing:                surface.SharingWiring{ServiceURL: settings.shareService, Sessions: sharingInfra.NewMemoryRegistry(), Keeper: files},
 	})
 
-	sampleAnswer, err := seedSampleAnalysis(callerContext, operations, files, generateSample, now)
+	sampleAnswer, err := seedSampleAnalysis(callerContext, operations, files, settings.generateSample, now)
 	if err != nil {
 		return nil, fmt.Errorf("open the sample analysis: %w", err)
 	}

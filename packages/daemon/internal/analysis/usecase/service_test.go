@@ -114,6 +114,7 @@ const (
 	saveSeriesColorsOperation
 	addSourcesOperation
 	deleteOperation
+	saveLibraryOrderOperation
 )
 
 // failingStore is a memoryStore whose one operation fails, the way a database that stopped answering
@@ -163,6 +164,14 @@ func (store *failingStore) SaveCanvas(callerContext context.Context, analysisID 
 	}
 
 	return store.memoryStore.SaveCanvas(callerContext, analysisID, canvas)
+}
+
+func (store *failingStore) SaveLibraryOrder(callerContext context.Context, analysisID string, order []analysisDomain.ChartReference) error {
+	if err := store.refusal(saveLibraryOrderOperation); err != nil {
+		return err
+	}
+
+	return store.memoryStore.SaveLibraryOrder(callerContext, analysisID, order)
 }
 
 func (store *failingStore) SaveSeriesColors(callerContext context.Context, analysisID string, colors []analysisDomain.SeriesColor) error {

@@ -7,6 +7,7 @@ import (
 	analysisInfra "github.com/CharlesLB/rrd-analyzer/packages/daemon/internal/analysis/infrastructure"
 	exportInfra "github.com/CharlesLB/rrd-analyzer/packages/daemon/internal/export/infrastructure"
 	searchesInfra "github.com/CharlesLB/rrd-analyzer/packages/daemon/internal/searches/infrastructure"
+	sharingInfra "github.com/CharlesLB/rrd-analyzer/packages/daemon/internal/sharing/infrastructure"
 )
 
 // completeWiring is every port Build needs, kept in memory, for a test to take one away from.
@@ -20,6 +21,7 @@ func completeWiring() surface.Wiring {
 		Picker:        picker,
 		SaveTargets:   picker,
 		Writer:        exportInfra.NewFileWriter(),
+		Sharing:       surface.SharingWiring{Sessions: sharingInfra.NewMemoryRegistry()},
 	}
 }
 
@@ -36,6 +38,7 @@ func TestBuild_MissingPort_PanicsNamingTheWire(t *testing.T) {
 		{name: "no source loader", giveWiring: func(wiring *surface.Wiring) { wiring.Files.Loader = nil }},
 		{name: "no source presence check", giveWiring: func(wiring *surface.Wiring) { wiring.Files.Presence = nil }},
 		{name: "no source reader", giveWiring: func(wiring *surface.Wiring) { wiring.Files.Reader = nil }},
+		{name: "no live session registry", giveWiring: func(wiring *surface.Wiring) { wiring.Sharing.Sessions = nil }},
 	}
 
 	for _, tt := range tests {

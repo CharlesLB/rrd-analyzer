@@ -138,3 +138,23 @@ func (bound *API) ForgetSearch(field string, term string) ([]string, error) {
 func (bound *API) CancelInsights(runID string) {
 	bound.runs.cancel(runID)
 }
+
+func (bound *API) ListSessions() ([]surface.SessionStatus, error) {
+	return bound.operations.ListSessions(bound.context())
+}
+
+func (bound *API) StartSession(analysisID string, publication surface.SessionPublication) (surface.SessionStatus, error) {
+	return bound.operations.StartSession(bound.context(), analysisID, publication)
+}
+
+func (bound *API) PublishSession(analysisID string, publication surface.SessionPublication) (surface.SessionStatus, error) {
+	return bound.operations.PublishSession(bound.context(), analysisID, publication)
+}
+
+func (bound *API) SessionStatus(analysisID string) (surface.SessionStatus, error) {
+	return bound.operations.SessionStatus(bound.context(), analysisID)
+}
+
+func (bound *API) EndSession(analysisID string) error {
+	return bound.operations.EndSession(bound.context(), analysisID)
+}

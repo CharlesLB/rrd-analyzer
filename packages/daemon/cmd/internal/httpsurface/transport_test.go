@@ -23,6 +23,7 @@ import (
 	rrdDomain "github.com/CharlesLB/rrd-analyzer/packages/daemon/internal/rrd/domain"
 	searchesDomain "github.com/CharlesLB/rrd-analyzer/packages/daemon/internal/searches/domain"
 	"github.com/CharlesLB/rrd-analyzer/packages/daemon/internal/shared/failure"
+	sharingDomain "github.com/CharlesLB/rrd-analyzer/packages/daemon/internal/sharing/domain"
 )
 
 // statusCase is one domain error, wrapped the way the use case that raises it wraps it, and the
@@ -62,6 +63,21 @@ var domainErrorStatuses = []statusCase{
 	{name: "search term too long", give: fmt.Errorf("remember: %w", searchesDomain.ErrTermTooLong), want: http.StatusBadRequest},
 	{name: "insights run over an unknown series", give: fmt.Errorf("series %q: %w", "ghost", insightsDomain.ErrUnknownSeries), want: http.StatusNotFound},
 	{name: "insights defaults that do not parse", give: insightsDomain.DefaultConfigurationFailure(nil), want: http.StatusInternalServerError},
+	{name: "a build given no share service", give: sharingDomain.ErrNotConfigured, want: http.StatusServiceUnavailable},
+	{name: "following a session with nowhere to keep it", give: sharingDomain.ErrViewingUnavailable, want: http.StatusNotImplemented},
+	{name: "an analysis not live", give: fmt.Errorf("find the live session of %q: %w", "a", sharingDomain.ErrNotLive), want: http.StatusNotFound},
+	{name: "a session not followed", give: sharingDomain.ErrNotFollowed, want: http.StatusNotFound},
+	{name: "a session that ended", give: errors.Join(sharingDomain.ErrSessionEnded, nil), want: http.StatusNotFound},
+	{name: "a malformed link", give: sharingDomain.ErrLinkInvalid, want: http.StatusBadRequest},
+	{name: "a link whose key does not open the session", give: sharingDomain.ErrKeyRefused, want: http.StatusUnprocessableEntity},
+	{name: "a session past the service's size", give: fmt.Errorf("publish %q: %w", "cpu.rrd", sharingDomain.ErrTooLarge), want: http.StatusRequestEntityTooLarge},
+	{name: "a service refusing new sessions", give: fmt.Errorf("start a live session: %w", sharingDomain.ErrServiceBusy), want: http.StatusTooManyRequests},
+	{name: "a service that cannot be reached", give: fmt.Errorf("%w: POST /api/sessions: %w", sharingDomain.ErrServiceFailed, errors.New("refused")), want: http.StatusBadGateway},
+	{name: "a new log without its content", give: sharingDomain.ErrLogContentMissing, want: http.StatusBadRequest},
+	{name: "a log's view that is not JSON", give: sharingDomain.ErrLogViewInvalid, want: http.StatusBadRequest},
+	{name: "a published source without a path", give: fmt.Errorf("%q: %w", "dropped.rrd", sharingDomain.ErrSourceUnlocated), want: http.StatusUnprocessableEntity},
+	{name: "a published source that cannot be read", give: fmt.Errorf("%q: %w: %w", "cpu.rrd", sharingDomain.ErrSourceUnreadable, fs.ErrNotExist), want: http.StatusUnprocessableEntity},
+	{name: "a published file that is not a source", give: fmt.Errorf("%q: %w", "id_rsa", sharingDomain.ErrNotASource), want: http.StatusUnprocessableEntity},
 }
 
 // sourceFailure wraps an rrd error the way loading an analysis' sources does, so the table checks
