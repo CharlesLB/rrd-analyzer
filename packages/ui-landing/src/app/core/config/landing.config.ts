@@ -1,10 +1,12 @@
 declare const RELEASE_VERSION: string;
+declare const SITE_URL: string;
 
 const REPOSITORY_URL = 'https://github.com/CharlesLB/rrd-analyzer';
 
 export const LANDING_CONFIGURATION = {
   releaseVersion: RELEASE_VERSION,
   repositoryUrl: REPOSITORY_URL,
+  siteUrl: SITE_URL,
 } as const;
 
 export const PROJECT_LINKS = {

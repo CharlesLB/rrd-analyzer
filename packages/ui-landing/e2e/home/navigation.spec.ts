@@ -51,8 +51,13 @@ test.describe('section navigation', () => {
     await expect.poll(async () => isJustBelowTheHeader(await sectionTopOf(page, 'download'))).toBe(true);
   });
 
-  test('an address that does not exist shows the landing page', async ({ page }) => {
+  test('an address that does not exist says so, stays out of search results and leads back to the landing page', async ({ page }) => {
     await page.goto('/nowhere');
+
+    await expect(page.locator('h1')).toHaveText('This page does not exist.');
+    await expect(page.locator('meta[name="robots"]')).toHaveAttribute('content', 'noindex');
+
+    await page.locator('.not-found-page-home').click();
 
     await expect(page.locator('.hero-title')).toBeVisible();
   });

@@ -68,11 +68,13 @@ release. They need a Cloudflare account logged in with `wrangler login`.
    pnpm --filter @rrd-analyzer/share-service exec wrangler r2 bucket lifecycle add rrd-analyzer-sessions sessions-safety-net sessions/ --expire-days 1
    ```
 
-2. **Build the site** with the address it will be served from, so the browser app shares sessions
-   through this same Worker:
+2. **Build the site** with the address it will be served from, twice over: as `SITE_URL`, the
+   address search engines index and link previews point at, and as `SHARE_SERVICE_URL`, so the
+   browser app shares sessions through this same Worker:
 
    ```bash
-   SHARE_SERVICE_URL=https://rrd-analyzer.example.com RELEASE_VERSION=1.2.3 pnpm build:landing
+   SITE_URL=https://rrd-analyzer.example.com SHARE_SERVICE_URL=https://rrd-analyzer.example.com \
+     RELEASE_VERSION=1.2.3 pnpm build:landing
    ```
 
 3. **Deploy** the Worker with the site beside it:
@@ -84,8 +86,9 @@ release. They need a Cloudflare account logged in with `wrangler login`.
 4. **Build the desktop app** with the same `SHARE_SERVICE_URL`, so its *Share live* button points
    here. A build without it has no share button.
 
-The static site carries the security headers `nginx/landing.conf` sets, from
-`packages/ui-landing/public/_headers`; the API sets its own (`Cache-Control: no-store`,
+The static site carries the security headers and the redirects `nginx/landing.conf` sets, from
+`packages/ui-landing/public/_headers` and `_redirects`, and answers an address that does not exist
+with its `404.html` under a 404 status (`not_found_handling: "404-page"`); the API sets its own (`Cache-Control: no-store`,
 `X-Content-Type-Options: nosniff`). `ALLOWED_ORIGINS` stays empty in production, where the app and
 the API share one origin.
 

@@ -2,9 +2,10 @@ import type { Messages } from '../messages/messages.model';
 
 export const ENGLISH_MESSAGES: Messages = {
   meta: {
-    title: 'RRD Analyzer: read your RRD files like a timeline',
+    title: 'RRD Analyzer: free RRD file viewer for rrdtool metrics',
     description:
-      'RRD Analyzer opens round-robin database files, lines every metric up on one clock, overlays your logs and points out what went wrong. Free, open source and local only.',
+      'Open rrdtool .rrd files on Windows, Linux or in your browser. Line every metric up on one clock, overlay your logs and see what went wrong. Free, open source.',
+    openGraphLocale: 'en_US',
   },
   common: {
     productName: 'RRD Analyzer',
@@ -168,5 +169,14 @@ export const ENGLISH_MESSAGES: Messages = {
     releases: 'Releases',
     reportIssue: 'Report an issue',
     toggleTheme: 'Toggle light and dark theme',
+  },
+  notFound: {
+    title: 'Page not found · RRD Analyzer',
+    description: 'There is no page of RRD Analyzer at this address.',
+    eyebrow: 'Error 404',
+    heading: 'This page does not exist.',
+    body: 'The address may be mistyped, or the page may have moved. Everything about RRD Analyzer is on its home page.',
+    home: 'Go to the home page',
+    openApp: 'Open RRD Analyzer in your browser',
   },
 };

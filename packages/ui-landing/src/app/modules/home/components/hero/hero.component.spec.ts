@@ -38,12 +38,15 @@ describe('HeroComponent', () => {
     expect(attributeOf(fixture, '.hero-demo', 'href')).toBe('#demo');
   });
 
-  it('carries a described screenshot for each theme and loads them lazily, so only the one on show is fetched', () => {
+  it('carries a described screenshot for each theme, the light one fetched first as the largest thing on screen and the dark one only when shown', () => {
     const fixture = renderWithInputs(HeroComponent, { version: '1.2.3', downloadCall: LINUX_CALL });
     const screenshots = elementsOf(fixture, '.hero-screenshot-image');
 
     expect(screenshots.map((screenshot) => screenshot.getAttribute('src'))).toEqual(['screenshots/workspace.jpg', 'screenshots/workspace-dark.jpg']);
-    expect(screenshots.every((screenshot) => screenshot.getAttribute('loading') === 'lazy')).toBe(true);
+    expect(screenshots.map((screenshot) => [screenshot.getAttribute('loading'), screenshot.getAttribute('fetchpriority')])).toEqual([
+      [null, 'high'],
+      ['lazy', null],
+    ]);
     expect(screenshots.every((screenshot) => (screenshot.getAttribute('alt') ?? '').length > 0)).toBe(true);
   });
 });
