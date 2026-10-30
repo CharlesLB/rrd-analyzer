@@ -35,7 +35,13 @@ describe('HomePageComponent', () => {
   it('describes the page for search engines and link previews', () => {
     TestBed.createComponent(HomePageComponent).detectChanges();
 
-    expect(TestBed.inject(Meta).getTag('name="description"')?.content).toContain('round-robin database files');
+    const meta = TestBed.inject(Meta);
+    expect(meta.getTag('name="description"')?.content).toContain('rrdtool .rrd files');
+    expect(meta.getTag('property="og:image"')?.content).toBe('http://127.0.0.1:4300/screenshots/workspace.jpg');
+    expect(document.head.querySelector('link[rel="canonical"]')?.getAttribute('href')).toBe('http://127.0.0.1:4300/');
+    expect(JSON.parse(document.head.querySelector('script[type="application/ld+json"]')?.textContent ?? '')).toMatchObject({
+      '@context': 'https://schema.org',
+    });
   });
 
   it('offers the Windows installer until the page has rendered in a browser and read its platform', async () => {

@@ -222,7 +222,9 @@ desktop. The module carries the build identity the Makefile stamps into the desk
 into `internal/shared/shareservice` the same way by the Makefile, `tools/build-browser-runtime.sh` and
 the GoReleaser configurations. Left unset, a build shares nothing and shows no share button. The landing page links its downloads to the latest stable tag, or to
 `RELEASE_VERSION`, and `pnpm build:landing` stops when there is neither, since every download button
-would point at a file that does not exist; see packages/ui-landing/README.md. The `browser` package of `cmd/rrd-analyzer-web` is tested
+would point at a file that does not exist. It also stops without `SITE_URL`, the address the site is
+served from, which its canonical link, link previews, robots.txt and sitemap must name in full; see
+packages/ui-landing/README.md. The `browser` package of `cmd/rrd-analyzer-web` is tested
 natively and, compiled to WebAssembly, under Node:
 
 ```bash

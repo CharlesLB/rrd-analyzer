@@ -4,6 +4,7 @@ import { EXPIRING_SHARE_SERVICE_PORT, EXPIRY_MILLISECONDS, SHARE_SERVICE_PORT, S
 const LANDING_PORT = 4300;
 const SITE_PORT = 4301;
 const SITE_RELEASE_VERSION = '0.0.0';
+const SITE_URL = `http://127.0.0.1:${SITE_PORT}`;
 const TEMPORARY_DIRECTORY = process.env['TMPDIR'] ?? '/tmp';
 
 const shareServiceOf = (port: number, extraVariables: readonly string[]) => {
@@ -38,8 +39,9 @@ export default defineConfig({
   },
   projects: [
     { name: 'landing', testDir: './e2e/home', use: { ...browserUse, baseURL: `http://127.0.0.1:${LANDING_PORT}` } },
-    { name: 'site', testDir: './e2e/site', use: { ...browserUse, baseURL: `http://127.0.0.1:${SITE_PORT}` } },
+    { name: 'site', testDir: './e2e/site', use: { ...browserUse, baseURL: SITE_URL } },
     { name: 'live-sessions', testDir: './e2e/live-sessions', use: { ...browserUse, baseURL: SHARE_SERVICE_URL } },
+    { name: 'hosting', testDir: './e2e/hosting', use: { ...browserUse, baseURL: SHARE_SERVICE_URL } },
   ],
   webServer: [
     {
@@ -49,7 +51,7 @@ export default defineConfig({
       timeout: 180_000,
     },
     {
-      command: `SHARE_SERVICE_URL=${SHARE_SERVICE_URL} RELEASE_VERSION=${SITE_RELEASE_VERSION} pnpm build && python3 -m http.server ${SITE_PORT} --bind 127.0.0.1 --directory dist/browser`,
+      command: `SITE_URL=${SITE_URL} SHARE_SERVICE_URL=${SHARE_SERVICE_URL} RELEASE_VERSION=${SITE_RELEASE_VERSION} pnpm build && python3 -m http.server ${SITE_PORT} --bind 127.0.0.1 --directory dist/browser`,
       url: `http://127.0.0.1:${SITE_PORT}/app/`,
       reuseExistingServer: !process.env['CI'],
       timeout: 300_000,

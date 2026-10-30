@@ -1,0 +1,8 @@
+# The redirects nginx/landing.conf makes, for the same site served as Cloudflare Workers static assets.
+# They run before the assets are matched, so they replace the 307 Temporary Redirect Cloudflare's
+# html_handling would answer these addresses with: a permanent redirect is what tells a search engine
+# that the address it was given is a copy of another, and which one to index.
+
+/index.html     /       301
+/app            /app/   301
+/app/index.html /app/   301
