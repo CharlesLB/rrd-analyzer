@@ -15,6 +15,7 @@ EMBED_DIR := $(DESKTOP_DIR)/dist
 VERSION ?= $(shell git describe --tags --always --dirty 2>/dev/null || echo dev)
 COMMIT ?= $(shell git rev-parse HEAD 2>/dev/null || echo none)
 COMMIT_DATE ?= $(shell git log -1 --format=%cI 2>/dev/null || echo unknown)
+SHARE_SERVICE_URL ?=
 TAG ?= $(shell git describe --tags --exact-match 2>/dev/null)
 
 # `make publish v1.2.3` takes the word after publish as the tag and gives it an empty rule, so make
@@ -30,11 +31,16 @@ endif
 # The same identity goreleaser stamps, into the same package: version.Version without the tag's
 # leading v, the full commit and the commit date. An -X naming a symbol that does not exist is
 # silently ignored by the linker, which is how a local build used to report "dev" forever.
+#
+# SHARE_SERVICE_URL is the share service live sessions are published to, stamped the same way into
+# shareservice.URL. Left empty, the build shares nothing and shows no share button.
 VERSION_PACKAGE := github.com/CharlesLB/rrd-analyzer/packages/daemon/internal/shared/version
+SHARE_SERVICE_PACKAGE := github.com/CharlesLB/rrd-analyzer/packages/daemon/internal/shared/shareservice
 LDFLAGS := -s -w \
 	-X $(VERSION_PACKAGE).Version=$(VERSION:v%=%) \
 	-X $(VERSION_PACKAGE).Commit=$(COMMIT) \
-	-X $(VERSION_PACKAGE).Date=$(COMMIT_DATE)
+	-X $(VERSION_PACKAGE).Date=$(COMMIT_DATE) \
+	-X $(SHARE_SERVICE_PACKAGE).URL=$(SHARE_SERVICE_URL)
 GO_BUILD := go build -trimpath -ldflags '$(LDFLAGS)'
 
 # The desktop build is the release build: the same tags goreleaser sets, so `make desktop` and

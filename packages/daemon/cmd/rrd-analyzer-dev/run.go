@@ -20,6 +20,8 @@ import (
 	analysisInfra "github.com/CharlesLB/rrd-analyzer/packages/daemon/internal/analysis/infrastructure"
 	searchesDomain "github.com/CharlesLB/rrd-analyzer/packages/daemon/internal/searches/domain"
 	searchesInfra "github.com/CharlesLB/rrd-analyzer/packages/daemon/internal/searches/infrastructure"
+	sharingDomain "github.com/CharlesLB/rrd-analyzer/packages/daemon/internal/sharing/domain"
+	sharingInfra "github.com/CharlesLB/rrd-analyzer/packages/daemon/internal/sharing/infrastructure"
 )
 
 const (
@@ -43,6 +45,7 @@ type settings struct {
 	storePath             string
 	webOrigins            []string
 	insightsConfiguration string
+	shareService          string
 }
 
 // run serves until callerContext ends or the process is interrupted. Asking for the usage is not a
@@ -74,9 +77,17 @@ func run(callerContext context.Context, arguments []string) error {
 	}
 	defer func() { _ = searchHistory.Close() }()
 
+	liveSessions, err := sharingInfra.OpenStore(lifetime, chosen.storePath)
+	if err != nil {
+		return fmt.Errorf("open the live sessions: %w", err)
+	}
+	defer func() { _ = liveSessions.Close() }()
+
+	stores := developmentStores{analyses: store, searchHistory: searchHistory, liveSessions: liveSessions}
+
 	server := &http.Server{
 		Addr:         chosen.address,
-		Handler:      allowWebOrigins(chosen.webOrigins, developmentRoutes(developmentSurface(store, searchHistory, chosen.insightsConfiguration))),
+		Handler:      allowWebOrigins(chosen.webOrigins, developmentRoutes(developmentSurface(stores, chosen))),
 		ReadTimeout:  readTimeout,
 		WriteTimeout: writeTimeout,
 		BaseContext:  func(net.Listener) context.Context { return lifetime },
@@ -100,6 +111,7 @@ func settingsFrom(arguments []string) (settings, error) {
 	storePath := flags.String("store", "", "path to the analyses database")
 	webOrigins := flags.String("web-origin", defaultWebOrigins, "comma-separated origins of the web app allowed to call this server from a browser")
 	insightsConfiguration := flags.String("insights-configuration", "", "directory of rules.toml, classifier.toml and units.toml overrides; empty runs the built-in rules and units")
+	shareService := flags.String("share-service", "", "address of the share service live sessions are published to, such as http://127.0.0.1:8787; empty shares nothing")
 
 	if err := flags.Parse(arguments); err != nil {
 		return settings{}, fmt.Errorf("read the command line: %w", err)
@@ -114,24 +126,33 @@ func settingsFrom(arguments []string) (settings, error) {
 		storePath:             *storePath,
 		webOrigins:            strings.Split(*webOrigins, originSeparator),
 		insightsConfiguration: *insightsConfiguration,
+		shareService:          *shareService,
 	}, nil
+}
+
+// developmentStores is everything a development run keeps in its database file.
+type developmentStores struct {
+	analyses      analysisDomain.Store
+	searchHistory searchesDomain.Store
+	liveSessions  sharingDomain.Registry
 }
 
 // developmentSurface wires the surface the way the desktop window does, except for the halves only
 // a native window can provide and for the sources a browser cannot give a path to, which are
 // synthesised.
-func developmentSurface(store analysisDomain.Store, searchHistory searchesDomain.Store, configurationDirectory string) *surface.Operations {
+func developmentSurface(stores developmentStores, chosen settings) *surface.Operations {
 	files := surface.DiskSourceFiles()
 	files.Loader = surface.NewSampleFallbackLoader(files.Loader)
 
 	return surface.Build(surface.Wiring{
-		Store:                  store,
-		SearchHistory:          searchHistory,
+		Store:                  stores.analyses,
+		SearchHistory:          stores.searchHistory,
 		Files:                  files,
-		ConfigurationDirectory: configurationDirectory,
+		ConfigurationDirectory: chosen.insightsConfiguration,
 		Picker:                 httpsurface.UnavailableDialogs{},
 		SaveTargets:            httpsurface.UnavailableDialogs{},
 		Writer:                 httpsurface.UnavailableDialogs{},
+		Sharing:                surface.SharingWiring{ServiceURL: chosen.shareService, Sessions: stores.liveSessions},
 	})
 }
 

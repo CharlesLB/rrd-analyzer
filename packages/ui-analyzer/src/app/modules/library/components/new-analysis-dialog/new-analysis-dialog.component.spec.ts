@@ -51,7 +51,7 @@ describe('NewAnalysisDialogComponent', () => {
     elementOf(fixture, '.new-analysis-dialog-create')?.focus();
     document.activeElement?.dispatchEvent(new KeyboardEvent('keydown', { key: 'Tab', bubbles: true, cancelable: true }));
 
-    expect(document.activeElement).toBe(elementOf(fixture, '.new-analysis-dialog-close'));
+    expect(document.activeElement).toBe(elementOf(fixture, '.modal-dialog-close'));
   });
 
   it('pressed with no source, Create makes nothing, marks the hint and takes the focus to the drop zone', async () => {
@@ -92,11 +92,11 @@ describe('NewAnalysisDialogComponent', () => {
     const { fixture } = renderDialog();
     await fixture.whenStable();
 
-    const dialog = elementOf(fixture, '.new-analysis-dialog');
+    const dialog = elementOf(fixture, '.modal-dialog');
 
     expect(dialog?.getAttribute('role')).toBe('dialog');
     expect(dialog?.getAttribute('aria-modal')).toBe('true');
-    expect(dialog?.getAttribute('aria-labelledby')).toBe(elementOf(fixture, '.new-analysis-dialog-title')?.id);
+    expect(dialog?.getAttribute('aria-labelledby')).toBe(elementOf(fixture, '.modal-dialog-title')?.id);
     expect(document.activeElement).toBe(elementOf(fixture, '.new-analysis-dialog-input'));
   });
 
@@ -140,7 +140,7 @@ describe('NewAnalysisDialogComponent', () => {
   it('closes on cancel, but not on a click inside the card', () => {
     const { fixture, store } = renderDialog();
 
-    elementOf(fixture, '.new-analysis-dialog')?.click();
+    elementOf(fixture, '.modal-dialog')?.click();
 
     expect(store.isDialogOpen()).toBe(true);
 
@@ -168,7 +168,7 @@ describe('NewAnalysisDialogComponent', () => {
 
   it('closes on a click that both starts and ends on the scrim', () => {
     const { fixture, store } = renderDialog();
-    const scrim = elementOf(fixture, '.new-analysis-dialog-scrim');
+    const scrim = elementOf(fixture, '.modal-dialog-scrim');
 
     scrim?.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true }));
     scrim?.click();
@@ -180,7 +180,7 @@ describe('NewAnalysisDialogComponent', () => {
     const { fixture, store } = renderDialog();
 
     elementOf(fixture, '.new-analysis-dialog-input')?.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true }));
-    elementOf(fixture, '.new-analysis-dialog-scrim')?.click();
+    elementOf(fixture, '.modal-dialog-scrim')?.click();
 
     expect(store.isDialogOpen()).toBe(true);
   });

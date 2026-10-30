@@ -14,19 +14,25 @@
 # how a Docker build names them, and otherwise what git says about the checkout. Without either,
 # the app reports "dev", as `go run` does.
 #
+# SHARE_SERVICE_URL, when set, is the share service live sessions are published to, stamped into
+# shareservice.URL the way the desktop build stamps it. Unset, the edition shares nothing.
+#
 # Usage: tools/build-browser-runtime.sh
 #        VERSION=v1.2.3 COMMIT=<sha> tools/build-browser-runtime.sh
+#        SHARE_SERVICE_URL=https://rrd-analyzer.example tools/build-browser-runtime.sh
 set -euo pipefail
 
 REPOSITORY_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 DAEMON="$REPOSITORY_ROOT/packages/daemon"
 OUTPUT="$REPOSITORY_ROOT/packages/ui-analyzer/browser-runtime"
 VERSION_PACKAGE="github.com/CharlesLB/rrd-analyzer/packages/daemon/internal/shared/version"
+SHARE_SERVICE_PACKAGE="github.com/CharlesLB/rrd-analyzer/packages/daemon/internal/shared/shareservice"
 
 VERSION="${VERSION:-$(git -C "$REPOSITORY_ROOT" describe --tags --always --dirty 2> /dev/null || echo dev)}"
 COMMIT="${COMMIT:-$(git -C "$REPOSITORY_ROOT" rev-parse HEAD 2> /dev/null || echo none)}"
 COMMIT_DATE="${COMMIT_DATE:-$(git -C "$REPOSITORY_ROOT" log -1 --format=%cI 2> /dev/null || echo unknown)}"
-LDFLAGS="-s -w -X $VERSION_PACKAGE.Version=${VERSION#v} -X $VERSION_PACKAGE.Commit=$COMMIT -X $VERSION_PACKAGE.Date=$COMMIT_DATE"
+SHARE_SERVICE_URL="${SHARE_SERVICE_URL:-}"
+LDFLAGS="-s -w -X $VERSION_PACKAGE.Version=${VERSION#v} -X $VERSION_PACKAGE.Commit=$COMMIT -X $VERSION_PACKAGE.Date=$COMMIT_DATE -X $SHARE_SERVICE_PACKAGE.URL=$SHARE_SERVICE_URL"
 
 mkdir -p "$OUTPUT"
 

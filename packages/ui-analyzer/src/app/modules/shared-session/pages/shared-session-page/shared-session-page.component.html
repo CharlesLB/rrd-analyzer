@@ -1,0 +1,20 @@
+<div class="shared-session-page">
+  @if (failure(); as failure) {
+    <div class="shared-session-page-message" role="alert">
+      <span class="shared-session-page-title shared-session-page-title-failed">{{ failure.title }}</span>
+      <span class="shared-session-page-detail">{{ failure.detail }}</span>
+      <div class="shared-session-page-actions">
+        <button class="shared-session-page-library" type="button" (click)="toLibrary()">{{ texts().sharing.viewer.toLibrary }}</button>
+        @if (failure.canRetry) {
+          <button class="shared-session-page-retry" type="button" (click)="retry()">{{ texts().sharing.viewer.retry }}</button>
+        }
+      </div>
+    </div>
+  } @else {
+    <div class="shared-session-page-message" role="status">
+      <span class="shared-session-page-pulse"></span>
+      <span class="shared-session-page-title">{{ texts().sharing.viewer.joining }}</span>
+      <span class="shared-session-page-detail">{{ texts().sharing.viewer.joiningDetail }}</span>
+    </div>
+  }
+</div>

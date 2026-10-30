@@ -19,4 +19,5 @@ export const GLYPHS = {
   DOWNWARD: '↓',
   MAPPED_FROM: '←',
   ATTENTION: '!',
+  SHARE: '↗',
 } as const;

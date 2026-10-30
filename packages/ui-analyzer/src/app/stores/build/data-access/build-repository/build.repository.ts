@@ -1,11 +1,14 @@
 import { Service } from '@angular/core';
 import { useAnalyzerGateway } from '../../../../core/gateway/use-analyzer-gateway/use-analyzer-gateway';
+import type { BuildInfo } from '../../models/build-info/build-info';
 
 @Service()
 export class BuildRepository {
   private readonly _withGateway = useAnalyzerGateway();
 
-  public async summary(): Promise<string> {
-    return (await this._withGateway(async (gateway) => await gateway.fetchBuild())).summary;
+  public async build(): Promise<BuildInfo> {
+    const { summary, sharesSessions } = await this._withGateway(async (gateway) => await gateway.fetchBuild());
+
+    return { summary, sharesSessions };
   }
 }

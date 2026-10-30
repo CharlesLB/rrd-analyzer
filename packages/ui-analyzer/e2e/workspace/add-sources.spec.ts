@@ -1,44 +1,14 @@
-import { expect, type Page } from '@playwright/test';
+import { expect } from '@playwright/test';
 import { resetLibrary, seedWorkspace, toastMessage } from '../support/analyzer';
-import { daemonAddressed } from '../support/daemon';
 import { test } from '../support/fixtures';
-import { emptyDump, type PickedSources } from '../support/new-analysis-dialog';
+import { emptyDump } from '../support/new-analysis-dialog';
+import { addSourcesFromMenu, giveThePickedFilesTheirPaths } from '../support/picked-files';
 import { BROKEN_SOURCES, sourcesNamed, type WrittenSource, writeBrokenSources, writeRrdFixtures } from '../support/rrd-fixtures';
 import { chartLibraryCount, chartTitles, libraryNames } from '../support/workspace';
 
-const ADD_SOURCES_PATTERN = '**/api/analyses/*/sources';
-const POST_METHOD = 'POST';
 const DUMP_SIZE = 512;
 
 const dumps: { written: readonly WrittenSource[] } = { written: [] };
-
-type PickedFile = { readonly name: string; readonly path: string; readonly size: number };
-
-const locateOnDisk = (file: PickedFile): PickedFile => dumps.written.find((written) => written.name === file.name) ?? file;
-
-const giveThePickedFilesTheirPaths = async (page: Page): Promise<void> => {
-  await page.route(ADD_SOURCES_PATTERN, async (route) => {
-    if (route.request().method() !== POST_METHOD) {
-      await route.fallback();
-
-      return;
-    }
-
-    const body = route.request().postDataJSON() as { files: readonly PickedFile[] };
-    const located = JSON.stringify({ files: body.files.map(locateOnDisk) });
-    const answer = await route.fetch({ url: daemonAddressed(route.request().url()), postData: located });
-
-    await route.fulfill({ response: answer });
-  });
-};
-
-const addSourcesFromMenu = async (page: Page, sources: PickedSources): Promise<void> => {
-  const choosing = page.waitForEvent('filechooser');
-
-  await page.locator('.analysis-title-menu-toggle').click();
-  await page.locator('app-analysis-title .menu-option').filter({ hasText: 'Add RRD files' }).click();
-  await (await choosing).setFiles(sources);
-};
 
 test.beforeAll(() => {
   dumps.written = [...writeRrdFixtures(), ...writeBrokenSources()];
@@ -47,7 +17,7 @@ test.beforeAll(() => {
 test.beforeEach(async ({ page }) => {
   await resetLibrary(page);
   await seedWorkspace(page, { name: 'Growing', files: sourcesNamed(dumps.written, ['temperature.xml']), canvas: [{ seriesId: 's0', label: 'temperature' }] });
-  await giveThePickedFilesTheirPaths(page);
+  await giveThePickedFilesTheirPaths(page, dumps.written);
 });
 
 test.describe('adding sources to an open analysis', () => {

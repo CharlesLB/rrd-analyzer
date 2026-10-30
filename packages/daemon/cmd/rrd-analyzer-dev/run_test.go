@@ -193,28 +193,41 @@ func TestRun_ACommandLineItCannotStartFrom_FailsSayingWhy(t *testing.T) {
 	}
 }
 
-// TestRun_ALibraryWhoseSchemaHoldsTheSearchHistorysName_FailsOpeningTheSearchHistory gives the
-// search history's table name to an index, which SQLite refuses to create a table over even when
-// asked to create it only if it is missing.
-func TestRun_ALibraryWhoseSchemaHoldsTheSearchHistorysName_FailsOpeningTheSearchHistory(t *testing.T) {
-	path := storePath(t)
-	handle, err := sqlitedb.Open(path)
-	if err != nil {
-		t.Fatalf("open the library: %v", err)
+// TestRun_ALibraryWhoseSchemaHoldsAStoresTableName_FailsOpeningThatStore gives a store's table
+// name to an index, which SQLite refuses to create a table over even when asked to create it only if
+// it is missing.
+func TestRun_ALibraryWhoseSchemaHoldsAStoresTableName_FailsOpeningThatStore(t *testing.T) {
+	tests := []struct {
+		name        string
+		giveTable   string
+		wantMessage string
+	}{
+		{name: "the search history", giveTable: "search_history", wantMessage: "open the search history"},
+		{name: "the live sessions", giveTable: "live_sessions", wantMessage: "open the live sessions"},
 	}
 
-	if _, err := handle.ExecContext(context.Background(), "CREATE TABLE decoy (term TEXT); CREATE INDEX search_history ON decoy (term);"); err != nil {
-		t.Fatalf("write the decoy index: %v", err)
-	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			path := storePath(t)
+			handle, err := sqlitedb.Open(path)
+			if err != nil {
+				t.Fatalf("open the library: %v", err)
+			}
 
-	if err := handle.Close(); err != nil {
-		t.Fatalf("close the library: %v", err)
-	}
+			if _, err := handle.ExecContext(context.Background(), "CREATE TABLE decoy (term TEXT); CREATE INDEX "+tt.giveTable+" ON decoy (term);"); err != nil {
+				t.Fatalf("write the decoy index: %v", err)
+			}
 
-	err = run(context.Background(), []string{"-address", "127.0.0.1:0", "-store", path})
+			if err := handle.Close(); err != nil {
+				t.Fatalf("close the library: %v", err)
+			}
 
-	if err == nil || !strings.Contains(err.Error(), "open the search history") {
-		t.Errorf("run = %v, want a failure opening the search history", err)
+			err = run(context.Background(), []string{"-address", "127.0.0.1:0", "-store", path})
+
+			if err == nil || !strings.Contains(err.Error(), tt.wantMessage) {
+				t.Errorf("run = %v, want a failure saying %q", err, tt.wantMessage)
+			}
+		})
 	}
 }
 

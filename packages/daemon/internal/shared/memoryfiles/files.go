@@ -26,18 +26,20 @@ func New() *Files {
 	return &Files{contents: make(map[string][]byte)}
 }
 
-// Keep holds a copy of content and answers with the path it is kept under. Every call gets a path
-// of its own, so two files that share a name never stand in for each other.
+// Keep holds content and answers with the path it is kept under. Every call gets a path of its own,
+// so two files that share a name never stand in for each other.
+//
+// Keep takes content over rather than copying it, and the caller does not touch it again. Every
+// caller hands a buffer of its own, filled for this file alone: the bytes the page sent, a sample
+// just written, a file a viewer just downloaded. A copy would hold a source of hundreds of megabytes
+// twice, for a moment, in a tab that has no memory to spare.
 func (files *Files) Keep(name string, content []byte) string {
-	kept := make([]byte, len(content))
-	copy(kept, content)
-
 	files.mutex.Lock()
 	defer files.mutex.Unlock()
 
 	files.lastIssued++
 	path := pathPrefix + strconv.Itoa(files.lastIssued) + "/" + name
-	files.contents[path] = kept
+	files.contents[path] = content
 
 	return path
 }
@@ -73,4 +75,13 @@ func (files *Files) Exists(callerContext context.Context, path string) (bool, er
 	_, kept := files.contents[path]
 
 	return kept, nil
+}
+
+// Forget lets go of the file kept under path, so a tab that is done with it gets its memory back. A
+// path that holds nothing is already forgotten.
+func (files *Files) Forget(path string) {
+	files.mutex.Lock()
+	defer files.mutex.Unlock()
+
+	delete(files.contents, path)
 }

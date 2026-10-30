@@ -8,11 +8,13 @@ import { I18nStore } from '../../../../stores/i18n/store/i18n-store/i18n.store';
 import { LibraryStore } from '../../../../stores/library/store/library-store/library.store';
 import { SEARCH_FIELDS } from '../../../../stores/search-history/models/search-field/search-field';
 import { SearchHistoryStore } from '../../../../stores/search-history/store/search-history-store/search-history.store';
+import { type ShareMark, shareMarkOf } from '../../../../stores/sharing/models/share-mark/share-mark';
+import { SharedSessionStore } from '../../../../stores/sharing/store/shared-session-store/shared-session.store';
+import { SharingStore } from '../../../../stores/sharing/store/sharing-store/sharing.store';
 import { AnalysisRowComponent } from '../../components/analysis-row/analysis-row.component';
 import { LibraryTopBarComponent } from '../../components/library-top-bar/library-top-bar.component';
 import { NewAnalysisCardComponent } from '../../components/new-analysis-card/new-analysis-card.component';
 import { NewAnalysisDialogComponent } from '../../components/new-analysis-dialog/new-analysis-dialog.component';
-
 import { analysesNamedLike, isFilterWorthShowing } from '../../models/analysis-filter/analysis-filter';
 
 const WORKSPACE_ROUTE = '/workspace';
@@ -31,6 +33,8 @@ export class LibraryPageComponent {
   private readonly _router = inject(Router);
   private readonly _build = inject(BuildStore);
   private readonly _searchHistory = inject(SearchHistoryStore);
+  private readonly _sharing = inject(SharingStore);
+  private readonly _sharedSession = inject(SharedSessionStore);
 
   protected readonly texts = inject(I18nStore).texts;
   protected readonly workspaceRoute = WORKSPACE_ROUTE;
@@ -49,9 +53,23 @@ export class LibraryPageComponent {
   protected readonly nowMilliseconds = useTickingClock(MILLISECONDS_PER_MINUTE);
   protected readonly version = this._build.summary;
 
+  protected readonly shareMarks = computed<Readonly<Record<string, ShareMark>>>(() => {
+    if (!this._sharing.isAvailable()) {
+      return {};
+    }
+
+    const situation = {
+      sessionsByAnalysis: this._sharing.sessionsByAnalysis(),
+      followedAnalysisId: this._sharedSession.followedAnalysisId(),
+      nowMilliseconds: this.nowMilliseconds(),
+    };
+
+    return Object.fromEntries(this.analyses().map((analysis) => [analysis.id, shareMarkOf(analysis.id, situation)]));
+  });
+
   public constructor() {
     void this._library.refresh();
-    void this._build.load();
+    void this._sharing.load();
     void this._searchHistory.load(SEARCH_FIELDS.LIBRARY);
     const stopWatchingNativeDrops = this._library.watchNativeFileDrop();
 

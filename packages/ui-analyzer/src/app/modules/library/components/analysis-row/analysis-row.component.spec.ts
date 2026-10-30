@@ -4,6 +4,7 @@ import { MILLISECONDS_PER_HOUR } from '@rrd-analyzer/shared';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { elementOf, renderWithInputs, textOf } from '../../../../shared/utils/component-fixture/component-fixture.fixture';
 import type { Analysis } from '../../../../stores/library/models/analysis/analysis.model';
+import { SHARE_MARKS, type ShareMark } from '../../../../stores/sharing/models/share-mark/share-mark';
 import { AnalysisRowComponent } from './analysis-row.component';
 
 const NOW = new Date(2026, 7, 29, 15, 0).getTime();
@@ -16,8 +17,8 @@ const analysis = (overrides: Partial<Analysis> = {}): Analysis => ({
   ...overrides,
 });
 
-const renderRow = (overrides: Partial<Analysis> = {}, missingSources: readonly string[] = []) =>
-  renderWithInputs(AnalysisRowComponent, { analysis: analysis(overrides), nowMilliseconds: NOW, route: ['/workspace', 'a1'], missingSources });
+const renderRow = (overrides: Partial<Analysis> = {}, missingSources: readonly string[] = [], shareMark: ShareMark | null = null) =>
+  renderWithInputs(AnalysisRowComponent, { analysis: analysis(overrides), nowMilliseconds: NOW, route: ['/workspace', 'a1'], missingSources, shareMark });
 
 describe('AnalysisRowComponent', () => {
   beforeEach(() => {
@@ -36,6 +37,41 @@ describe('AnalysisRowComponent', () => {
 
   it('says nothing about its files while they are all where it read them', () => {
     expect(elementOf(renderRow(), '.analysis-row-missing')).toBeNull();
+  });
+
+  it('in a build that shares no sessions, marks its files neither local nor online', () => {
+    expect(elementOf(renderRow(), '.analysis-row-share')).toBeNull();
+  });
+
+  it.each([
+    { name: 'kept on this device', mark: { kind: SHARE_MARKS.LOCAL }, label: 'Local', tip: 'kept only on this device', isOnline: false },
+    {
+      name: 'shared live',
+      mark: { kind: SHARE_MARKS.ONLINE, minutesLeft: 42 },
+      label: 'Online · 42 min',
+      tip: 'shared live; erased from the server 42 minutes after the last activity',
+      isOnline: true,
+    },
+    {
+      name: 'shared live with a minute left',
+      mark: { kind: SHARE_MARKS.ONLINE, minutesLeft: 1 },
+      label: 'Online · 1 min',
+      tip: 'shared live; erased from the server 1 minute after the last activity',
+      isOnline: true,
+    },
+    {
+      name: 'opened from a live link',
+      mark: { kind: SHARE_MARKS.FOLLOWING },
+      label: 'Live link',
+      tip: 'opened from a live link; erased from this tab when the session ends',
+      isOnline: true,
+    },
+  ])('marks an analysis $name', ({ mark, label, tip, isOnline }) => {
+    const share = elementOf(renderRow({}, [], mark), '.analysis-row-share');
+
+    expect(share?.textContent?.trim()).toBe(label);
+    expect(share?.title).toBe(tip);
+    expect(share?.classList.contains('analysis-row-share-online')).toBe(isOnline);
   });
 
   it('says how many of its files are missing from the disk, naming them in the tip, before it is opened', () => {

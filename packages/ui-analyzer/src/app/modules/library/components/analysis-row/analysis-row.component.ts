@@ -6,6 +6,7 @@ import { GLYPHS } from '../../../../shared/constants/glyphs';
 import { PressableDirective } from '../../../../shared/directives/pressable/pressable.directive';
 import { I18nStore } from '../../../../stores/i18n/store/i18n-store/i18n.store';
 import type { Analysis } from '../../../../stores/library/models/analysis/analysis.model';
+import { type ShareMark, type ShareMarkText, shareMarkTextOf } from '../../../../stores/sharing/models/share-mark/share-mark';
 import { formatRelativeAccess } from '../../models/relative-access/relative-access';
 
 @Component({
@@ -20,6 +21,7 @@ export class AnalysisRowComponent {
   public readonly nowMilliseconds = input.required<number>();
   public readonly route = input.required<readonly string[]>();
   public readonly missingSources = input.required<readonly string[]>();
+  public readonly shareMark = input.required<ShareMark | null>();
 
   public readonly removed = output<string>();
 
@@ -50,6 +52,12 @@ export class AnalysisRowComponent {
   protected readonly missingSourcesTip = computed(() =>
     formatMessage(this.texts().library.missingSourcesTip, { files: this.missingSources().join(this.texts().application.listSeparator) }),
   );
+
+  protected readonly shareMarkText = computed<ShareMarkText | null>(() => {
+    const mark = this.shareMark();
+
+    return mark === null ? null : shareMarkTextOf(mark, this.texts().sharing.marks);
+  });
 
   protected readonly access = computed(() => formatRelativeAccess(this.analysis().lastAccessedMilliseconds, this.nowMilliseconds(), this.texts()));
 

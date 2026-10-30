@@ -1,0 +1,24 @@
+<app-modal-dialog
+  class="share-warning-dialog"
+  [dialogRole]="alertRole"
+  [heading]="texts().sharing.warning.title"
+  [helper]="texts().sharing.warning.helper"
+  [closeLabel]="texts().sharing.warning.close"
+  (closed)="close()"
+>
+  <ul class="share-warning-dialog-points">
+    <li class="share-warning-dialog-point">{{ uploads() }}</li>
+    <li class="share-warning-dialog-point">{{ texts().sharing.warning.followsChanges }}</li>
+    <li class="share-warning-dialog-point">{{ texts().sharing.warning.erasure }}</li>
+    <li class="share-warning-dialog-point share-warning-dialog-point-key">{{ texts().sharing.warning.keyInLink }}</li>
+  </ul>
+
+  <ng-container ngProjectAs="[modalDialogFooter]">
+    <button #cancelButton class="share-warning-dialog-cancel" type="button" [disabled]="isBusy()" (click)="close()">
+      {{ texts().sharing.warning.cancel }}
+    </button>
+    <button class="share-warning-dialog-confirm" type="button" [disabled]="isBusy()" [attr.aria-busy]="isBusy()" (click)="confirmed.emit()">
+      {{ confirmLabel() }}
+    </button>
+  </ng-container>
+</app-modal-dialog>

@@ -1,0 +1,54 @@
+@use 'mixins';
+
+:host {
+  @include mixins.routed-page;
+}
+
+.shared-session-page {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+
+  &-message {
+    max-width: 520px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    text-align: center;
+  }
+
+  &-pulse {
+    @include mixins.live-dot(12px);
+  }
+
+  &-title {
+    font-size: 16px;
+    font-weight: 600;
+
+    &-failed {
+      color: var(--danger);
+    }
+  }
+
+  &-detail {
+    font-size: 13.5px;
+    color: var(--tx2);
+  }
+
+  &-actions {
+    margin-top: 8px;
+    display: flex;
+    gap: 9px;
+  }
+
+  &-library {
+    @include mixins.outline-button(9px, 6px 14px, 13px, var(--tx2));
+  }
+
+  &-retry {
+    @include mixins.primary-button;
+  }
+}

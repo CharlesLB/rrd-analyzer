@@ -1,0 +1,18 @@
+<div class="modal-dialog-scrim" appDismissOnScrim (dismissed)="closed.emit()">
+  <div class="modal-dialog" appFocusTrap [attr.role]="dialogRole()" aria-modal="true" [attr.aria-labelledby]="titleId">
+    <div class="modal-dialog-header">
+      <ng-content select="[modalDialogLead]" />
+      <div class="modal-dialog-heading">
+        <div class="modal-dialog-title" [id]="titleId">{{ heading() }}</div>
+        <div class="modal-dialog-helper">{{ helper() }}</div>
+      </div>
+      <button class="modal-dialog-close" type="button" [title]="closeLabel()" [attr.aria-label]="closeLabel()" (click)="closed.emit()">{{ glyphs.CLOSE }}</button>
+    </div>
+
+    <ng-content />
+
+    <div class="modal-dialog-footer">
+      <ng-content select="[modalDialogFooter]" />
+    </div>
+  </div>
+</div>

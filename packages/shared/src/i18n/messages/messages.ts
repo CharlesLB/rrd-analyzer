@@ -262,6 +262,7 @@ export type WorkspaceMessages = {
   readonly timeframeEditorUnavailable: string;
   readonly insightsPanelUnavailable: string;
   readonly contextMenuUnavailable: string;
+  readonly shareUnavailable: string;
   readonly exportMenuUnavailable: string;
   readonly seriesMenuUnavailable: string;
   readonly colorMenuUnavailable: string;
@@ -545,6 +546,89 @@ type SearchFieldMessages = {
   readonly forget: string;
 };
 
+type SharingWarningMessages = {
+  readonly title: string;
+  readonly helper: string;
+  readonly uploads: PluralForms;
+  readonly uploadsWithLog: PluralForms;
+  readonly followsChanges: string;
+  readonly erasure: string;
+  readonly keyInLink: string;
+  readonly cancel: string;
+  readonly confirm: string;
+  readonly confirming: string;
+  readonly close: string;
+};
+
+type SharingPanelMessages = {
+  readonly title: string;
+  readonly linkLabel: string;
+  readonly copy: string;
+  readonly expiry: PluralForms;
+  readonly filesLabel: string;
+  readonly logLabel: string;
+  readonly online: string;
+  readonly local: string;
+  readonly onlineTip: string;
+  readonly localTip: string;
+  readonly end: string;
+  readonly ending: string;
+  readonly close: string;
+};
+
+export type SharingMarkMessages = {
+  readonly local: string;
+  readonly localTip: string;
+  readonly online: PluralForms;
+  readonly onlineTip: PluralForms;
+  readonly following: string;
+  readonly followingTip: string;
+};
+
+type SharingToastMessages = {
+  readonly started: string;
+  readonly startedNotCopied: string;
+  readonly copied: string;
+  readonly notCopied: string;
+  readonly ended: string;
+  readonly notEnded: string;
+  readonly notStarted: string;
+  readonly tooLarge: string;
+  readonly busy: string;
+  readonly unreachable: string;
+  readonly changesNotSent: string;
+  readonly expired: string;
+};
+
+type SharingViewerMessages = {
+  readonly banner: string;
+  readonly bannerDetail: string;
+  readonly expiry: PluralForms;
+  readonly joining: string;
+  readonly joiningDetail: string;
+  readonly expiredTitle: string;
+  readonly expiredDetail: string;
+  readonly invalidTitle: string;
+  readonly invalidDetail: string;
+  readonly failedTitle: string;
+  readonly failedDetail: string;
+  readonly retry: string;
+  readonly toLibrary: string;
+  readonly ended: string;
+};
+
+export type SharingMessages = {
+  readonly shareLabel: string;
+  readonly shareTip: string;
+  readonly liveLabel: string;
+  readonly liveTip: PluralForms;
+  readonly warning: SharingWarningMessages;
+  readonly panel: SharingPanelMessages;
+  readonly marks: SharingMarkMessages;
+  readonly toasts: SharingToastMessages;
+  readonly viewer: SharingViewerMessages;
+};
+
 export type Messages = {
   readonly application: ApplicationMessages;
   readonly browserEdition: BrowserEditionMessages;
@@ -572,4 +656,5 @@ export type Messages = {
   readonly export: ExportMessages;
   readonly insights: InsightsMessages;
   readonly logs: LogsMessages;
+  readonly sharing: SharingMessages;
 };

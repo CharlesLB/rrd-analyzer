@@ -3,7 +3,9 @@
 package sqlitedb
 
 import (
+	"context"
 	"database/sql"
+	"errors"
 	"fmt"
 
 	"modernc.org/sqlite"
@@ -35,6 +37,22 @@ func Open(path string) (*sql.DB, error) {
 
 	handle := sql.OpenDB(connector)
 	handle.SetMaxOpenConns(1)
+
+	return handle, nil
+}
+
+// OpenWithSchema opens the database at path the way Open does and runs schema on it: the statements
+// that create, when they are not there yet, the tables a store keeps its rows in. A schema that does
+// not run, on a file that is not a database among others, closes the handle again.
+func OpenWithSchema(callerContext context.Context, path string, schema string) (*sql.DB, error) {
+	handle, err := Open(path)
+	if err != nil {
+		return nil, err
+	}
+
+	if _, err := handle.ExecContext(callerContext, schema); err != nil {
+		return nil, errors.Join(fmt.Errorf("prepare database %q: %w", path, err), handle.Close())
+	}
 
 	return handle, nil
 }

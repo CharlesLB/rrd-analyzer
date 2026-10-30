@@ -1,0 +1,31 @@
+@use 'mixins';
+
+.share-warning-dialog {
+  --modal-dialog-width: 520px;
+
+  &-points {
+    margin: 0;
+    padding: 14px 18px 14px 36px;
+    display: flex;
+    flex-direction: column;
+    gap: 9px;
+    font-size: 13px;
+    line-height: 1.45;
+    color: var(--tx);
+  }
+
+  &-point {
+    &-key {
+      color: var(--danger);
+    }
+  }
+
+  &-cancel {
+    @include mixins.quiet-button(var(--tx2), var(--acc), var(--tx));
+  }
+
+  &-confirm {
+    @include mixins.primary-button;
+    @include mixins.busy-when-disabled;
+  }
+}

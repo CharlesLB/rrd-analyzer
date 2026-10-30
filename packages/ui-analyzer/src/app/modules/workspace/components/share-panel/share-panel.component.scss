@@ -1,0 +1,86 @@
+@use 'mixins';
+
+.share-panel {
+  --modal-dialog-width: 560px;
+  --modal-dialog-header-alignment: center;
+  --modal-dialog-header-gap: 10px;
+  --modal-dialog-helper-size: 12.5px;
+  --modal-dialog-helper-offset: 2px;
+
+  &-pulse {
+    flex: none;
+    @include mixins.live-dot(9px);
+  }
+
+  &-body {
+    padding: 14px 18px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+    min-height: 0;
+  }
+
+  &-label {
+    @include mixins.caption-text;
+
+    & {
+      margin-top: 6px;
+    }
+  }
+
+  &-link {
+    display: flex;
+    gap: 8px;
+
+    &-field {
+      flex: 1;
+      min-width: 0;
+      font-family: var(--font-monospace);
+      font-size: 12px;
+      @include mixins.text-input(9px, 7px 9px);
+    }
+
+    &-copy {
+      @include mixins.primary-button;
+    }
+  }
+
+  &-files {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    border: 1px solid var(--line);
+    border-radius: 9px;
+    overflow: hidden;
+  }
+
+  &-file {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 7px 10px;
+    font-size: 13px;
+
+    & + & {
+      border-top: 1px solid var(--line);
+    }
+
+    &-name {
+      flex: 1;
+      min-width: 0;
+      @include mixins.text-ellipsis;
+    }
+  }
+
+  &-state {
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    @include mixins.share-state-badge(11px, 6px, 1px 6px);
+  }
+
+  &-end {
+    @include mixins.quiet-button(var(--danger), var(--danger));
+    @include mixins.busy-when-disabled;
+  }
+}

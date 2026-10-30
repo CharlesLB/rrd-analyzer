@@ -1,0 +1,61 @@
+# The headers nginx/landing.conf sets, for the same site served as Cloudflare Workers static assets.
+# A header set by two matching rules is joined with a comma, so each header has rules that never
+# overlap: the content security policy is the landing's on files at the root and the app's under
+# /app/, and Cloudflare's own default cache policy, revalidate every time, stands wherever no
+# rule below names a longer one.
+
+/*
+  X-Frame-Options: DENY
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+  Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=(), usb=()
+  Cross-Origin-Opener-Policy: same-origin
+  Strict-Transport-Security: max-age=31536000
+
+/
+  Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self'; font-src 'self'; connect-src 'self'; frame-ancestors 'none'; object-src 'none'; base-uri 'self'; form-action 'none'
+
+/:file
+  Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self'; font-src 'self'; connect-src 'self'; frame-ancestors 'none'; object-src 'none'; base-uri 'self'; form-action 'none'
+
+/app/*
+  Content-Security-Policy: default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; worker-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self'; frame-ancestors 'none'; object-src 'none'; base-uri 'self'; form-action 'none'
+
+/main-*.js
+  Cache-Control: public, max-age=31536000, immutable
+
+/chunk-*.js
+  Cache-Control: public, max-age=31536000, immutable
+
+/polyfills-*.js
+  Cache-Control: public, max-age=31536000, immutable
+
+/styles-*.css
+  Cache-Control: public, max-age=31536000, immutable
+
+/app/main-*.js
+  Cache-Control: public, max-age=31536000, immutable
+
+/app/chunk-*.js
+  Cache-Control: public, max-age=31536000, immutable
+
+/app/polyfills-*.js
+  Cache-Control: public, max-age=31536000, immutable
+
+/app/styles-*.css
+  Cache-Control: public, max-age=31536000, immutable
+
+/fonts/*
+  Cache-Control: public, max-age=604800
+
+/screenshots/*
+  Cache-Control: public, max-age=604800
+
+/app/fonts/*
+  Cache-Control: public, max-age=604800
+
+/app/screenshots/*
+  Cache-Control: public, max-age=604800
+
+/app-icon.svg
+  Cache-Control: public, max-age=604800

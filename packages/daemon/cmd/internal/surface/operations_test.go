@@ -17,6 +17,7 @@ import (
 	exportDomain "github.com/CharlesLB/rrd-analyzer/packages/daemon/internal/export/domain"
 	exportInfra "github.com/CharlesLB/rrd-analyzer/packages/daemon/internal/export/infrastructure"
 	searchesInfra "github.com/CharlesLB/rrd-analyzer/packages/daemon/internal/searches/infrastructure"
+	sharingInfra "github.com/CharlesLB/rrd-analyzer/packages/daemon/internal/sharing/infrastructure"
 )
 
 var pngSignature = []byte{0x89, 'P', 'N', 'G', '\r', '\n', 0x1a, '\n'}
@@ -69,6 +70,7 @@ func newOperations(t *testing.T, picker *savePicker) *surface.Operations {
 		Picker:                 picker,
 		SaveTargets:            picker,
 		Writer:                 exportInfra.NewFileWriter(),
+		Sharing:                surface.SharingWiring{Sessions: sharingInfra.NewMemoryRegistry()},
 	})
 }
 
@@ -308,6 +310,7 @@ func TestBuild_WiresTheConfiguredUnitsAndTheLookForMissingSourcesIntoTheAnalyses
 		Picker:                 picker,
 		SaveTargets:            picker,
 		Writer:                 exportInfra.NewFileWriter(),
+		Sharing:                surface.SharingWiring{Sessions: sharingInfra.NewMemoryRegistry()},
 	})
 
 	created, err := operations.CreateAnalysis(context.Background(), "Queues", []surface.FileInfo{{Name: "queue_depth.xml", Path: source}})

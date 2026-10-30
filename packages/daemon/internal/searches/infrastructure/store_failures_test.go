@@ -54,14 +54,6 @@ func reshape(t *testing.T, databasePath string, statements string) {
 	}
 }
 
-func TestOpenStore_APathTheConnectorCannotParse_IsRefused(t *testing.T) {
-	_, err := searchesInfra.OpenStore(context.Background(), filepath.Join(t.TempDir(), "analyses?%zz"))
-
-	if err == nil || !strings.Contains(err.Error(), "open search history database") {
-		t.Fatalf("err = %v, want the database refused before it is opened", err)
-	}
-}
-
 func TestOpenStore_AFileThatIsNotADatabase_IsRefused(t *testing.T) {
 	databasePath := filepath.Join(t.TempDir(), databaseFileName)
 	if err := os.WriteFile(databasePath, []byte(strings.Repeat("not a database ", 100)), ownerOnlyMode); err != nil {
@@ -70,8 +62,8 @@ func TestOpenStore_AFileThatIsNotADatabase_IsRefused(t *testing.T) {
 
 	_, err := searchesInfra.OpenStore(context.Background(), databasePath)
 
-	if err == nil || !strings.Contains(err.Error(), "prepare search history") {
-		t.Fatalf("err = %v, want the history refused while it is prepared", err)
+	if err == nil || !strings.Contains(err.Error(), "open search history database") {
+		t.Fatalf("err = %v, want the history refused", err)
 	}
 }
 

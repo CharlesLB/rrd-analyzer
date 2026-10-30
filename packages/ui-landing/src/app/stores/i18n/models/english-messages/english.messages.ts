@@ -90,7 +90,7 @@ export const ENGLISH_MESSAGES: Messages = {
       screenshotDescription: 'Exported PNG report with a critical finding shaded',
     },
     highlights: [
-      { title: 'Local only', body: 'Files are read on your machine. Originals are never modified or uploaded.' },
+      { title: 'Local first', body: 'Files are read on your machine and never modified. Nothing is uploaded unless you share an analysis live.' },
       { title: 'Built for big files', body: 'Log files up to 25 MB; tens of thousands of entries stay smooth.' },
       { title: 'Keyboard friendly', body: 'Run insights, find in JSON, step between entries, all without the mouse.' },
       { title: 'Light and dark', body: 'Both themes are first-class, down to exported reports.' },
@@ -103,14 +103,14 @@ export const ENGLISH_MESSAGES: Messages = {
       'The same RRD Analyzer, running entirely in a browser tab. It opens on a sample analysis, two weeks of a made-up API with its log already on the timeline, and takes your own .rrd files and logs whenever you are ready.',
     frameTitle: 'RRD Analyzer in your browser',
     open: 'Open RRD Analyzer in your browser',
-    openDetail: 'Nothing to install · nothing uploaded',
+    openDetail: 'Nothing to install · nothing uploaded unless you share it',
     smallScreenTitle: 'Best on a bigger screen',
     smallScreenBody: 'RRD Analyzer is built for a laptop or desktop screen. Open it there, or try it here anyway.',
     smallScreenOpen: 'Open it anyway',
     privacyPoints: [
       {
-        title: 'Nothing leaves your computer',
-        body: 'Your files are read inside your browser. Nothing is uploaded, and nothing is saved on our servers.',
+        title: 'Nothing leaves your computer unless you share it',
+        body: 'Your files are read inside your browser. Nothing is uploaded, and nothing is saved on our servers, until you ask for a live link: then the analysis is encrypted in your browser first, and erased one hour after its last activity.',
       },
       {
         title: 'Gone when you close the tab',

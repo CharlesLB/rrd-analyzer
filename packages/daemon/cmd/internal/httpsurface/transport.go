@@ -13,6 +13,7 @@ import (
 	insightsDomain "github.com/CharlesLB/rrd-analyzer/packages/daemon/internal/insights/domain"
 	rrdDomain "github.com/CharlesLB/rrd-analyzer/packages/daemon/internal/rrd/domain"
 	searchesDomain "github.com/CharlesLB/rrd-analyzer/packages/daemon/internal/searches/domain"
+	sharingDomain "github.com/CharlesLB/rrd-analyzer/packages/daemon/internal/sharing/domain"
 )
 
 const (
@@ -94,7 +95,12 @@ func (UnavailableDialogs) Write(context.Context, string, []byte) error {
 }
 
 func decode(writer http.ResponseWriter, request *http.Request, target any) bool {
-	if err := json.NewDecoder(http.MaxBytesReader(writer, request.Body, maximumBodyBytes)).Decode(target); err != nil {
+	return decodeWithin(writer, request, target, maximumBodyBytes)
+}
+
+// decodeWithin reads a body of at most limit bytes, for the one route whose body can carry a file.
+func decodeWithin(writer http.ResponseWriter, request *http.Request, target any, limit int64) bool {
+	if err := json.NewDecoder(http.MaxBytesReader(writer, request.Body, limit)).Decode(target); err != nil {
 		http.Error(writer, "malformed request body", http.StatusBadRequest)
 
 		return false
@@ -104,6 +110,15 @@ func decode(writer http.ResponseWriter, request *http.Request, target any) bool 
 }
 
 func respond[T any](writer http.ResponseWriter, payload T, err error) {
+	respondWith(writer, http.StatusOK, payload, err)
+}
+
+// respondCreated answers a request that started something: a live session, or a copy of one.
+func respondCreated[T any](writer http.ResponseWriter, payload T, err error) {
+	respondWith(writer, http.StatusCreated, payload, err)
+}
+
+func respondWith[T any](writer http.ResponseWriter, status int, payload T, err error) {
 	if err != nil {
 		fail(writer, err)
 
@@ -111,6 +126,7 @@ func respond[T any](writer http.ResponseWriter, payload T, err error) {
 	}
 
 	writer.Header().Set("Content-Type", jsonContentType)
+	writer.WriteHeader(status)
 	if err := json.NewEncoder(writer).Encode(payload); err != nil {
 		log.Println("encode response:", err)
 	}
@@ -139,6 +155,12 @@ func fail(writer http.ResponseWriter, err error) {
 // way this build cannot read, and in every case a different file is the remedy, not a different
 // request.
 //
+// A live session answers in the statuses of docs/SHARING.md: a session or a link that is gone is a
+// 404 like any analysis; a share service that could not be reached is the 502 of a gateway, one that
+// refuses for size or for rate is its 413 or 429, and a build given no service is a 503 for every
+// session route. Following a session where no file can be kept in memory is a 501: the request is
+// right, this binary cannot do it.
+//
 // The last case names the errors that are the server's own fault on purpose, so every domain error
 // is decided here rather than left to the fallback: embedded insights defaults that do not parse
 // ship in the binary, and a missing rrdtool is missing from the machine the server runs on, so no
@@ -146,8 +168,24 @@ func fail(writer http.ResponseWriter, err error) {
 func statusOf(err error) int {
 	switch {
 	case errors.Is(err, analysisDomain.ErrAnalysisNotFound), errors.Is(err, analysisDomain.ErrSeriesNotFound),
-		errors.Is(err, insightsDomain.ErrUnknownSeries):
+		errors.Is(err, insightsDomain.ErrUnknownSeries),
+		errors.Is(err, sharingDomain.ErrNotLive), errors.Is(err, sharingDomain.ErrNotFollowed), errors.Is(err, sharingDomain.ErrSessionEnded):
 		return http.StatusNotFound
+	case errors.Is(err, sharingDomain.ErrNotConfigured):
+		return http.StatusServiceUnavailable
+	case errors.Is(err, sharingDomain.ErrViewingUnavailable):
+		return http.StatusNotImplemented
+	case errors.Is(err, sharingDomain.ErrTooLarge):
+		return http.StatusRequestEntityTooLarge
+	case errors.Is(err, sharingDomain.ErrServiceBusy):
+		return http.StatusTooManyRequests
+	case errors.Is(err, sharingDomain.ErrServiceFailed):
+		return http.StatusBadGateway
+	case errors.Is(err, sharingDomain.ErrLinkInvalid), errors.Is(err, sharingDomain.ErrLogContentMissing), errors.Is(err, sharingDomain.ErrLogViewInvalid):
+		return http.StatusBadRequest
+	case errors.Is(err, sharingDomain.ErrKeyRefused), errors.Is(err, sharingDomain.ErrSourceUnlocated), errors.Is(err, sharingDomain.ErrSourceUnreadable),
+		errors.Is(err, sharingDomain.ErrNotASource):
+		return http.StatusUnprocessableEntity
 	case errors.Is(err, analysisDomain.ErrNoSources), errors.Is(err, analysisDomain.ErrNameEmpty), errors.Is(err, analysisDomain.ErrChartFull),
 		errors.Is(err, analysisDomain.ErrAxisUnknown), errors.Is(err, analysisDomain.ErrStatisticUnknown),
 		errors.Is(err, analysisDomain.ErrColorInvalid),

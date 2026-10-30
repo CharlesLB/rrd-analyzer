@@ -1,0 +1,58 @@
+@use 'mixins';
+
+:host {
+  display: contents;
+}
+
+.modal-dialog {
+  width: var(--modal-dialog-width);
+  max-width: 100%;
+  max-height: 86vh;
+  display: flex;
+  flex-direction: column;
+  @include mixins.popover-surface;
+
+  &-scrim {
+    @include mixins.modal-scrim;
+  }
+
+  &-header {
+    display: flex;
+    align-items: var(--modal-dialog-header-alignment, flex-start);
+    gap: var(--modal-dialog-header-gap, 12px);
+    padding: 16px 18px;
+    border-bottom: 1px solid var(--line);
+    flex: none;
+  }
+
+  &-heading {
+    flex: 1;
+    min-width: 0;
+  }
+
+  &-title {
+    font-size: 16px;
+    font-weight: 600;
+  }
+
+  &-helper {
+    font-size: var(--modal-dialog-helper-size, 13px);
+    color: var(--tx2);
+    margin-top: var(--modal-dialog-helper-offset, 3px);
+  }
+
+  &-close {
+    @include mixins.icon-button(var(--tx), 0 4px);
+  }
+
+  &-footer {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 9px;
+    padding: 12px 18px;
+    border-top: 1px solid var(--line);
+    background: var(--surf);
+    flex: none;
+  }
+}

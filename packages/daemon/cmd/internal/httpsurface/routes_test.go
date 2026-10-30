@@ -19,6 +19,7 @@ import (
 	searchesInfra "github.com/CharlesLB/rrd-analyzer/packages/daemon/internal/searches/infrastructure"
 	seriesDomain "github.com/CharlesLB/rrd-analyzer/packages/daemon/internal/series/domain"
 	"github.com/CharlesLB/rrd-analyzer/packages/daemon/internal/shared/version"
+	sharingInfra "github.com/CharlesLB/rrd-analyzer/packages/daemon/internal/sharing/infrastructure"
 )
 
 // serverConfiguredFrom serves the surface over a library and a search history kept in memory, with
@@ -38,6 +39,7 @@ func serverConfiguredFrom(t *testing.T, configurationDirectory string) http.Hand
 		Picker:                 UnavailableDialogs{},
 		SaveTargets:            UnavailableDialogs{},
 		Writer:                 UnavailableDialogs{},
+		Sharing:                surface.SharingWiring{Sessions: sharingInfra.NewMemoryRegistry()},
 	})
 
 	mux := Routes(operations)

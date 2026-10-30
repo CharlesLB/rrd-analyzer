@@ -22,27 +22,17 @@ import { SettingsStore } from '../../../../stores/settings/store/settings-store/
 import { TimeWindowStore } from '../../../../stores/time-window/store/time-window-store/time-window.store';
 import { chartIdOf } from '../../../../stores/workspace/models/plotted-chart/plotted-chart';
 import { CanvasDragStore } from '../../../../stores/workspace/store/canvas-drag-store/canvas-drag.store';
-import { SeriesDataStore } from '../../../../stores/workspace/store/series-data-store/series-data.store';
 import { WorkspaceStore } from '../../../../stores/workspace/store/workspace-store/workspace.store';
+import { WORKSPACE_PAGE_PROVIDERS } from '../../workspace.routes';
 import { WorkspacePageComponent } from './workspace-page.component';
+import { renderWorkspacePage, type WorkspacePageFixture } from './workspace-page.fixture';
 
-const renderPage = async () => {
-  const fixture = TestBed.createComponent(WorkspacePageComponent);
-  fixture.componentRef.setInput('analysisId', 'a1');
-  fixture.detectChanges();
-  await vi.waitFor(() => expect(TestBed.inject(WorkspaceStore).analysisName()).not.toBe(''));
-  await fixture.whenStable();
-  fixture.detectChanges();
-
-  return fixture;
-};
-
-const click = (fixture: Awaited<ReturnType<typeof renderPage>>, selector: string, index = 0): void => {
+const click = (fixture: WorkspacePageFixture, selector: string, index = 0): void => {
   elementsOf(fixture, selector)[index]?.click();
   fixture.detectChanges();
 };
 
-const press = (fixture: Awaited<ReturnType<typeof renderPage>>, key: string, modifiers: KeyboardEventInit = {}): void => {
+const press = (fixture: WorkspacePageFixture, key: string, modifiers: KeyboardEventInit = {}): void => {
   document.dispatchEvent(new KeyboardEvent('keydown', { key, ...modifiers }));
   fixture.detectChanges();
 };
@@ -57,17 +47,7 @@ describe('WorkspacePageComponent', () => {
     Object.defineProperty(Element.prototype, 'scrollIntoView', { value: vi.fn(), configurable: true });
     gateway = analyzerGatewayStub({ openAnalysis: vi.fn().mockResolvedValue(bundleDtoFixture(4, { canvas: chartsDtoFixture('s0', 's1') })) });
     TestBed.configureTestingModule({
-      providers: [
-        provideRouter([]),
-        provideGatewayStub(gateway),
-        WorkspaceStore,
-        SeriesDataStore,
-        CanvasDragStore,
-        TimeWindowStore,
-        InsightsStore,
-        LogsStore,
-        ExportStore,
-      ],
+      providers: [provideRouter([]), provideGatewayStub(gateway), ...WORKSPACE_PAGE_PROVIDERS],
     });
   });
 
@@ -77,7 +57,7 @@ describe('WorkspacePageComponent', () => {
   });
 
   it('runs insights from the keyboard, except while the reader types in a field', async () => {
-    const fixture = await renderPage();
+    const fixture = await renderWorkspacePage();
     const insights = TestBed.inject(InsightsStore);
 
     elementOf(fixture, '.chart-library-filter input')?.dispatchEvent(new KeyboardEvent('keydown', { key: 'i', bubbles: true }));
@@ -93,7 +73,7 @@ describe('WorkspacePageComponent', () => {
   });
 
   it('shades the findings of a run on every chart, and stops once the findings are hidden', async () => {
-    const fixture = await renderPage();
+    const fixture = await renderWorkspacePage();
     const insights = TestBed.inject(InsightsStore);
     vi.useFakeTimers();
     const running = insights.run();
@@ -111,7 +91,7 @@ describe('WorkspacePageComponent', () => {
   });
 
   it('opens the analysis named by the route with its library and canvas', async () => {
-    const fixture = await renderPage();
+    const fixture = await renderWorkspacePage();
 
     expect(textOf(fixture, '.analysis-title-name')).toBe('Atlas prod · capacity');
     expect(textOf(fixture, '.time-nav-dates-label')).toBe('Last 24 hours');
@@ -121,7 +101,7 @@ describe('WorkspacePageComponent', () => {
   });
 
   it('goes back to the menu from the bar', async () => {
-    const fixture = await renderPage();
+    const fixture = await renderWorkspacePage();
     const navigate = vi.spyOn(TestBed.inject(Router), 'navigateByUrl').mockResolvedValue(true);
 
     click(fixture, '.timeframe-bar-back');
@@ -130,7 +110,7 @@ describe('WorkspacePageComponent', () => {
   });
 
   it('opens the timeframe popover on quick select, and a preset applies and closes it', async () => {
-    const fixture = await renderPage();
+    const fixture = await renderWorkspacePage();
 
     click(fixture, '.time-nav-dates');
 
@@ -143,7 +123,7 @@ describe('WorkspacePageComponent', () => {
   });
 
   it('keeps the popover open on an absolute range it had to fit to the data, saying what the range became', async () => {
-    const fixture = await renderPage();
+    const fixture = await renderWorkspacePage();
 
     click(fixture, '.time-nav-dates');
     click(fixture, '.timeframe-popover-tab', 1);
@@ -161,7 +141,7 @@ describe('WorkspacePageComponent', () => {
   });
 
   it('keeps the popover open and the window as it was for a quick count that is not a whole number', async () => {
-    const fixture = await renderPage();
+    const fixture = await renderWorkspacePage();
     const before = TestBed.inject(TimeWindowStore).window();
 
     click(fixture, '.time-nav-dates');
@@ -174,7 +154,7 @@ describe('WorkspacePageComponent', () => {
   });
 
   it('Escape with the analysis menu open over the dates closes the analysis menu alone', async () => {
-    const fixture = await renderPage();
+    const fixture = await renderWorkspacePage();
 
     click(fixture, '.time-nav-dates');
     click(fixture, '.analysis-title-menu-toggle');
@@ -186,7 +166,7 @@ describe('WorkspacePageComponent', () => {
   });
 
   it('fills the absolute fields from the window, and applies them from the absolute tab', async () => {
-    const fixture = await renderPage();
+    const fixture = await renderWorkspacePage();
 
     click(fixture, '.time-nav-dates');
     click(fixture, '.timeframe-popover-tab', 1);
@@ -200,7 +180,7 @@ describe('WorkspacePageComponent', () => {
   });
 
   it('removes a chart from its panel and adds another from the library', async () => {
-    const fixture = await renderPage();
+    const fixture = await renderWorkspacePage();
 
     click(fixture, '.chart-panel-header-remove', 1);
 
@@ -212,7 +192,7 @@ describe('WorkspacePageComponent', () => {
   });
 
   it('marks only the chart a drag is over as the drop target', async () => {
-    const fixture = await renderPage();
+    const fixture = await renderWorkspacePage();
     const canvasDrag = TestBed.inject(CanvasDragStore);
 
     canvasDrag.beginDrag('s3');
@@ -226,7 +206,7 @@ describe('WorkspacePageComponent', () => {
   });
 
   it('opens the context menu of a library card and adds the chart from it', async () => {
-    const fixture = await renderPage();
+    const fixture = await renderWorkspacePage();
 
     elementsOf(fixture, '.library-thumbnail')[2]?.dispatchEvent(new MouseEvent('contextmenu', { clientX: 60, clientY: 200, cancelable: true }));
     fixture.detectChanges();
@@ -240,7 +220,7 @@ describe('WorkspacePageComponent', () => {
   });
 
   it('opens the export menu from a chart header, marks that button, and exports the CSV of that chart alone from it', async () => {
-    const fixture = await renderPage();
+    const fixture = await renderWorkspacePage();
 
     click(fixture, '.chart-panel-header-export', 1);
 
@@ -255,7 +235,7 @@ describe('WorkspacePageComponent', () => {
   });
 
   it('collapses the library to its rail', async () => {
-    const fixture = await renderPage();
+    const fixture = await renderWorkspacePage();
 
     click(fixture, '.chart-library-toggle');
 
@@ -263,7 +243,7 @@ describe('WorkspacePageComponent', () => {
   });
 
   it('offers to add logs from the bar, and once a file is placed, shows its entries on a track under the charts', async () => {
-    const fixture = await renderPage();
+    const fixture = await renderWorkspacePage();
     const logs = TestBed.inject(LogsStore);
 
     expect(textOf(fixture, '.logs-trigger-add')).toBe('+Add logs');
@@ -280,7 +260,7 @@ describe('WorkspacePageComponent', () => {
 
   it('opens the sample on the log it comes with, already placed on the track under the charts', async () => {
     TestBed.overrideProvider(SampleAnalysisStore, { useValue: { logToOpenWith: vi.fn().mockResolvedValue(logFileFixture()) } });
-    const fixture = await renderPage();
+    const fixture = await renderWorkspacePage();
     const logs = TestBed.inject(LogsStore);
 
     await vi.waitFor(() => expect(logs.status()).toBe('ready'));
@@ -292,7 +272,7 @@ describe('WorkspacePageComponent', () => {
   });
 
   it('opens a clicked log entry beside the charts, marks its time on every chart, and steps and closes from the keyboard', async () => {
-    const fixture = await renderPage();
+    const fixture = await renderWorkspacePage();
     const logs = TestBed.inject(LogsStore);
     await logs.load(logFileFixture());
     logs.confirmSetup();
@@ -330,7 +310,7 @@ describe('WorkspacePageComponent', () => {
   });
 
   it('Escape with the logs setup open closes an open picker first, then the setup', async () => {
-    const fixture = await renderPage();
+    const fixture = await renderWorkspacePage();
     await TestBed.inject(LogsStore).load(logFileFixture());
     fixture.detectChanges();
     await fixture.whenStable();
@@ -353,7 +333,7 @@ describe('WorkspacePageComponent', () => {
   });
 
   it('drops the logs when another analysis is opened in the same workspace', async () => {
-    const fixture = await renderPage();
+    const fixture = await renderWorkspacePage();
     const logs = TestBed.inject(LogsStore);
     await logs.load(logFileFixture());
 
@@ -364,7 +344,7 @@ describe('WorkspacePageComponent', () => {
   });
 
   it('Escape while a zoom is being dragged out drops the selection and closes nothing, and the next Escape closes the popover', async () => {
-    const fixture = await renderPage();
+    const fixture = await renderWorkspacePage();
     const timeWindow = TestBed.inject(TimeWindowStore);
 
     click(fixture, '.time-nav-dates');
@@ -384,7 +364,7 @@ describe('WorkspacePageComponent', () => {
   });
 
   it('takes a log file dropped anywhere on the workspace and opens its setup, saying so while the file hovers, and leaves a dragged chart alone', async () => {
-    const fixture = await renderPage();
+    const fixture = await renderWorkspacePage();
     const host: HTMLElement = fixture.nativeElement;
     const file = logFileFixture();
     const dragOf = (type: string, dataTransfer: unknown): Event => Object.assign(new Event(type, { bubbles: true, cancelable: true }), { dataTransfer });
@@ -412,7 +392,7 @@ describe('WorkspacePageComponent', () => {
   });
 
   it('writes the time under the cursor once and shows the same on every chart', async () => {
-    const fixture = await renderPage();
+    const fixture = await renderWorkspacePage();
     const timeWindow = TestBed.inject(TimeWindowStore);
 
     timeWindow.pointAt(0.5, null);
@@ -426,7 +406,7 @@ describe('WorkspacePageComponent', () => {
   });
 
   it('while the window is being slid, leaves the log track as it was and regroups it once the slide rests', async () => {
-    const fixture = await renderPage();
+    const fixture = await renderWorkspacePage();
     const logs = TestBed.inject(LogsStore);
     const timeWindow = TestBed.inject(TimeWindowStore);
     const { fromMilliseconds } = timeWindow.bounds();
@@ -447,7 +427,7 @@ describe('WorkspacePageComponent', () => {
   });
 
   it('WorkspacePageComponent walks the findings of a finished run from the keyboard: shading, focus, expansion, the chart and the panel', async () => {
-    const fixture = await renderPage();
+    const fixture = await renderWorkspacePage();
     const insights = TestBed.inject(InsightsStore);
     await insights.run();
     fixture.detectChanges();
@@ -489,7 +469,7 @@ describe('WorkspacePageComponent', () => {
 
   it('WorkspacePageComponent cancels a run still under way on Escape', async () => {
     vi.mocked(gateway.runInsights).mockImplementation(async () => await new Promise(() => undefined));
-    const fixture = await renderPage();
+    const fixture = await renderWorkspacePage();
     const insights = TestBed.inject(InsightsStore);
 
     void insights.run();
@@ -500,7 +480,7 @@ describe('WorkspacePageComponent', () => {
   });
 
   it('WorkspacePageComponent closes on Escape the settings menu, the context menu, the export menu and the series menu, each opened in turn', async () => {
-    const fixture = await renderPage();
+    const fixture = await renderWorkspacePage();
     const workspace = TestBed.inject(WorkspaceStore);
 
     click(fixture, '.view-settings-toggle');
@@ -543,7 +523,7 @@ describe('WorkspacePageComponent', () => {
   });
 
   it('WorkspacePageComponent undoes a change to the canvas on Ctrl+Z and redoes it on Ctrl+Y and on Ctrl+Shift+Z', async () => {
-    const fixture = await renderPage();
+    const fixture = await renderWorkspacePage();
     const workspace = TestBed.inject(WorkspaceStore);
 
     click(fixture, '.chart-panel-header-remove', 1);
@@ -562,7 +542,7 @@ describe('WorkspacePageComponent', () => {
   });
 
   it('WorkspacePageComponent, with a log entry open and searched, steps through the matches on F3 and Shift+F3 and to the entry before on the left arrow', async () => {
-    const fixture = await renderPage();
+    const fixture = await renderWorkspacePage();
     const logs = TestBed.inject(LogsStore);
     await logs.load(logFileFixture());
     logs.confirmSetup();
@@ -601,7 +581,7 @@ describe('WorkspacePageComponent', () => {
   });
 
   it('WorkspacePageComponent remembers the library filter committed and forgets it once asked to from the recent filters', async () => {
-    const fixture = await renderPage();
+    const fixture = await renderWorkspacePage();
     const field = elementOf(fixture, '.chart-library-filter input');
 
     typeInto(fixture, '.chart-library-filter input', 'cpu');
@@ -621,7 +601,7 @@ describe('WorkspacePageComponent', () => {
   });
 
   it('WorkspacePageComponent applies a whole quick count from the popover and closes it', async () => {
-    const fixture = await renderPage();
+    const fixture = await renderWorkspacePage();
 
     click(fixture, '.time-nav-dates');
     typeInto(fixture, '.quick-select-count', '6');
@@ -633,7 +613,7 @@ describe('WorkspacePageComponent', () => {
   });
 
   it('WorkspacePageComponent keeps the popover open when the quick count it is asked to apply is one the window refuses', async () => {
-    const fixture = await renderPage();
+    const fixture = await renderWorkspacePage();
     const before = TestBed.inject(TimeWindowStore).window();
 
     click(fixture, '.time-nav-dates');
@@ -647,7 +627,7 @@ describe('WorkspacePageComponent', () => {
   });
 
   it('WorkspacePageComponent puts the cursor of a pointer on a chart on every chart while crosshairs are shared, and on that chart alone otherwise', async () => {
-    const fixture = await renderPage();
+    const fixture = await renderWorkspacePage();
     const timeWindow = TestBed.inject(TimeWindowStore);
     const settings = TestBed.inject(SettingsStore);
     const overlay = elementsOf(fixture, '.chart-panel-overlay')[1];
@@ -684,7 +664,7 @@ describe('WorkspacePageComponent', () => {
   });
 
   it('WorkspacePageComponent marks the chart a dragged chart is held over as its drop target', async () => {
-    const fixture = await renderPage();
+    const fixture = await renderWorkspacePage();
     const canvasDrag = TestBed.inject(CanvasDragStore);
     canvasDrag.beginDrag('s3');
     await vi.waitFor(() => expect(canvasDrag.isDragging()).toBe(true));
@@ -696,7 +676,7 @@ describe('WorkspacePageComponent', () => {
   });
 
   it('WorkspacePageComponent opens the colour menu of a series from its chart and recolours the series with the colour chosen', async () => {
-    const fixture = await renderPage();
+    const fixture = await renderWorkspacePage();
     const workspace = TestBed.inject(WorkspaceStore);
 
     click(fixture, '.color-picker-swatch');
@@ -712,7 +692,7 @@ describe('WorkspacePageComponent', () => {
   });
 
   it('WorkspacePageComponent keeps saying a log file may be dropped while the drag only crosses into the page, and stops once it leaves', async () => {
-    const fixture = await renderPage();
+    const fixture = await renderWorkspacePage();
     const host: HTMLElement = fixture.nativeElement;
 
     const leaveAt = (clientX: number): void => {
@@ -743,7 +723,7 @@ describe('WorkspacePageComponent', () => {
   });
 
   it('WorkspacePageComponent, for a drop that carries no file, only takes the hint away', async () => {
-    const fixture = await renderPage();
+    const fixture = await renderWorkspacePage();
     const host: HTMLElement = fixture.nativeElement;
     const drop = dragEventOf('drop', { cancelable: true }, { types: [], files: [] });
 
@@ -760,7 +740,7 @@ describe('WorkspacePageComponent', () => {
   it('WorkspacePageComponent, compiled again from its own metadata as a TestBed override compiles it, still closes the analysis menu on Escape', async () => {
     TestBed.overrideComponent(WorkspacePageComponent, { set: {} });
     await TestBed.compileComponents();
-    const fixture = await renderPage();
+    const fixture = await renderWorkspacePage();
 
     click(fixture, '.analysis-title-menu-toggle');
     press(fixture, 'Escape');

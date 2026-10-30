@@ -1,0 +1,33 @@
+<app-modal-dialog
+  class="share-panel"
+  [heading]="texts().sharing.panel.title"
+  [helper]="expiry()"
+  [closeLabel]="texts().sharing.panel.close"
+  (closed)="closed.emit()"
+>
+  <span class="share-panel-pulse" modalDialogLead></span>
+
+  <div class="share-panel-body">
+    <label class="share-panel-label" [for]="linkFieldId">{{ texts().sharing.panel.linkLabel }}</label>
+    <div class="share-panel-link">
+      <input #linkField class="share-panel-link-field" [id]="linkFieldId" type="text" readonly [value]="session().link" />
+      <button class="share-panel-link-copy" type="button" (click)="copyRequested.emit()">{{ texts().sharing.panel.copy }}</button>
+    </div>
+
+    @for (group of groups(); track group.label) {
+      <span class="share-panel-label">{{ group.label }}</span>
+      <ul class="share-panel-files">
+        @for (entry of group.entries; track $index) {
+          <li class="share-panel-file">
+            <span class="share-panel-file-name" [title]="entry.tip">{{ entry.name }}</span>
+            <span class="share-panel-state" [class.share-panel-state-online]="entry.isOnline" [title]="entry.stateTip">{{ entry.stateLabel }}</span>
+          </li>
+        }
+      </ul>
+    }
+  </div>
+
+  <button class="share-panel-end" type="button" modalDialogFooter [disabled]="isBusy()" [attr.aria-busy]="isBusy()" (click)="endRequested.emit()">
+    {{ endLabel() }}
+  </button>
+</app-modal-dialog>

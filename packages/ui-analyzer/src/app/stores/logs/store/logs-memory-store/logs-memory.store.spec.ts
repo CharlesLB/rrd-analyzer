@@ -6,7 +6,7 @@ import { LogsMemoryStore, REMEMBERED_ANALYSES } from './logs-memory.store';
 
 const snapshotOf = (name: string): LogsSnapshot => ({
   file: { name, sizeBytes: 10 },
-  loaded: { records: [], notes: [], fields: [], detectedMapping: EMPTY_MAPPING },
+  loaded: { source: new File([], 'atlas-api-logs.json'), records: [], notes: [], fields: [], detectedMapping: EMPTY_MAPPING },
   draftMapping: EMPTY_MAPPING,
   placement: null,
   chosenColors: new Map(),

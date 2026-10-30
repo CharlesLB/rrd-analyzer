@@ -39,6 +39,7 @@
         [nowMilliseconds]="nowMilliseconds()"
         [route]="[workspaceRoute, analysis.id]"
         [missingSources]="missingSources()[analysis.id] ?? noneMissing"
+        [shareMark]="shareMarks()[analysis.id] ?? null"
         (removed)="remove($event)"
       />
     }

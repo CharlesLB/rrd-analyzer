@@ -2,6 +2,7 @@ import type { LoadChildrenCallback, Route } from '@angular/router';
 import { describe, expect, it } from 'vitest';
 import { routes } from './app.routes';
 import { libraryRoutes } from './modules/library/library.routes';
+import { sharedSessionRoutes } from './modules/shared-session/shared-session.routes';
 import { workspaceRoutes } from './modules/workspace/workspace.routes';
 
 const routeAt = (path: string): Route => {
@@ -31,6 +32,10 @@ describe('routes', () => {
 
   it('routes, at the workspace, load the workspace on demand', async () => {
     expect(await childrenLoadedBy('workspace')).toBe(workspaceRoutes);
+  });
+
+  it('routes, at a shared link, load the page that opens a live session on demand', async () => {
+    expect(await childrenLoadedBy('shared')).toBe(sharedSessionRoutes);
   });
 
   it('routes send any other address back to the library', () => {

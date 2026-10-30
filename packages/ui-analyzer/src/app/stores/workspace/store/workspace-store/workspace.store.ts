@@ -153,6 +153,10 @@ export class WorkspaceStore {
     this._showBundle(shown);
   }
 
+  public async settled(): Promise<void> {
+    await this._saves.latest;
+  }
+
   public async rename(name: string): Promise<boolean> {
     const analysisId = this._analysisIdState();
 

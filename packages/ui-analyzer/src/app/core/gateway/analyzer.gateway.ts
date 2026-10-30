@@ -11,9 +11,12 @@ import type {
   ExportRequestDto,
   InsightsReportDto,
   InsightsRequestDto,
+  JoinedSessionDto,
   PickedFileDto,
   SampleAnalysisDto,
   SeriesColorDto,
+  SessionPublicationDto,
+  SessionStatusDto,
   SourcesExportDto,
   WindowDto,
   WindowRequestDto,
@@ -46,4 +49,11 @@ export type AnalyzerGateway = {
   rememberSearch(field: string, term: string): Promise<readonly string[]>;
   forgetSearch(field: string, term: string): Promise<readonly string[]>;
   watchFileDrop(handler: (paths: readonly string[]) => void): () => void;
+  listSessions(): Promise<readonly SessionStatusDto[]>;
+  startSession(analysisId: string, publication: SessionPublicationDto): Promise<SessionStatusDto>;
+  publishSession(analysisId: string, publication: SessionPublicationDto): Promise<SessionStatusDto>;
+  endSession(analysisId: string): Promise<void>;
+  joinSession(sessionId: string, key: string): Promise<JoinedSessionDto>;
+  refreshSession(sessionId: string): Promise<JoinedSessionDto>;
+  forgetSession(sessionId: string): Promise<void>;
 };

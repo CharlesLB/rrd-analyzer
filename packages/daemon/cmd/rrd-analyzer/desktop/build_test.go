@@ -119,9 +119,9 @@ func TestRun_AWindowThatFailsToOpen_FailsWithItsReason(t *testing.T) {
 	}
 }
 
-// libraryHoldingTheSearchHistorysName gives the search history's table name to an index, which
-// SQLite refuses to create a table over even when asked to create it only if it is missing.
-func libraryHoldingTheSearchHistorysName(t *testing.T, path string) {
+// libraryHoldingATableName gives a store's table name to an index, which SQLite refuses to create a
+// table over even when asked to create it only if it is missing.
+func libraryHoldingATableName(t *testing.T, path string, table string) {
 	t.Helper()
 
 	handle, err := sqlitedb.Open(path)
@@ -129,7 +129,7 @@ func libraryHoldingTheSearchHistorysName(t *testing.T, path string) {
 		t.Fatalf("open the library: %v", err)
 	}
 
-	if _, err := handle.ExecContext(context.Background(), "CREATE TABLE decoy (term TEXT); CREATE INDEX search_history ON decoy (term);"); err != nil {
+	if _, err := handle.ExecContext(context.Background(), "CREATE TABLE decoy (term TEXT); CREATE INDEX "+table+" ON decoy (term);"); err != nil {
 		t.Fatalf("write the decoy index: %v", err)
 	}
 
@@ -151,8 +151,11 @@ func TestRun_APlaceItCannotKeepTheLibrary_FailsBeforeOpeningAWindow(t *testing.T
 			}
 		}, wantMessage: "open the analysis library"},
 		{name: "a library whose schema holds the search history's name", givePlace: func(t *testing.T) {
-			libraryHoldingTheSearchHistorysName(t, resolvedAt(t).StoreFile)
+			libraryHoldingATableName(t, resolvedAt(t).StoreFile, "search_history")
 		}, wantMessage: "open the search history"},
+		{name: "a library whose schema holds the live sessions' name", givePlace: func(t *testing.T) {
+			libraryHoldingATableName(t, resolvedAt(t).StoreFile, "live_sessions")
+		}, wantMessage: "open the live sessions"},
 	}
 
 	for _, tt := range tests {

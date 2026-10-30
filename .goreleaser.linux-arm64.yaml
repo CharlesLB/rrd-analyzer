@@ -47,6 +47,8 @@ builds:
       - -X github.com/CharlesLB/rrd-analyzer/packages/daemon/internal/shared/version.Version={{ .Version }}
       - -X github.com/CharlesLB/rrd-analyzer/packages/daemon/internal/shared/version.Commit={{ .FullCommit }}
       - -X github.com/CharlesLB/rrd-analyzer/packages/daemon/internal/shared/version.Date={{ .CommitDate }}
+      # The share service live sessions go to; unset, the release shares nothing.
+      - -X github.com/CharlesLB/rrd-analyzer/packages/daemon/internal/shared/shareservice.URL={{ envOrDefault "SHARE_SERVICE_URL" "" }}
     mod_timestamp: "{{ .CommitTimestamp }}"
 
 archives:

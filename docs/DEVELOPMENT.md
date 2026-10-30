@@ -28,6 +28,8 @@ packages/
 │   ├── internal/rrd/              reading .rrd / .xml dumps into series
 │   ├── internal/series/           aggregation, consolidation and statistics
 │   ├── internal/export/           CSV encoding, export file names and writing exports to disk
+│   ├── internal/sharing/          live sessions: sealing, publishing and following an analysis
+│   │                              through the share service (docs/SHARING.md)
 │   └── internal/shared/           config, clock, sentinel errors, metric names, product strings
 │
 │   Every domain carries domain/ (entities, ports, constant sentinel errors),
@@ -148,7 +150,8 @@ The development server runs the built-in insights rules. Pass
 `units.toml` of your own.
 It answers browser calls only from the web app's own origins, `http://localhost:4200` and
 `http://127.0.0.1:4200`, so no other page open in the browser can reset the development library;
-pass `-web-origin` to serve the app from somewhere else.
+pass `-web-origin` to serve the app from somewhere else. Live sessions are off unless it is given a
+share service, `-share-service http://127.0.0.1:8787` for the one `packages/share-service` runs locally.
 
 Wails' own dev server defaults to the API's port, so `make dev` moves it to `:34116` rather
 than the API moving. Without that they collide, and the failure is misleading: a Wails server
@@ -180,8 +183,26 @@ On the frontend, `WebAssemblyGateway` is the third gateway, chosen when the buil
 `core/config/edition.config.ts` with its browser twin. It shares every route with
 `BrowserGateway` through `ApiGateway`, and differs only in its transport: it posts each request to
 the worker instead of fetching it, and hands a picked or dropped file's bytes to the worker, which
-keeps them under a `memory:/` path the analysis names. Nothing leaves the tab, and closing or
-reloading it erases everything; the app says so in a bar across its top.
+keeps them under a `memory:/` path the analysis names. Nothing leaves the tab unless the person
+shares an analysis live, and closing or reloading it erases everything; the app says so in a bar
+across its top.
+
+### Live sessions
+
+*Share live* turns the open analysis into a public link that follows the owner's changes and is
+erased one hour after its last activity. The protocol, the encryption and the lifecycle are in
+[SHARING.md](SHARING.md); the three parts that speak it are `packages/share-service` (the Cloudflare
+Worker), `internal/sharing` in the core, and `stores/sharing` in the frontend:
+
+- `SharingStore` (root) holds the sessions this app owns, which is what the library's *Local* and
+  *Online* marks read, and asks the core for them again every minute while one is live.
+- `LiveSessionStore` (one per workspace) opens the warning and the share panel, and publishes the
+  analysis again a moment after any change settles: the canvas, the colors, the order of the
+  library, the name, a source added, the log or the way it is shown. It waits for the workspace's
+  own saves first, so the core always publishes what was stored.
+- `SharedSessionStore` (root) is the other side: it joins a link (`#/shared/{sessionId}/{key}`),
+  watches the session over a WebSocket (`core/live-updates`), takes each newer revision, and when the
+  session ends erases the analysis from the tab and sends the page back to the library.
 
 ```bash
 pnpm start:browser               # builds the WebAssembly runtime, serves the app at :4210/app/
@@ -197,7 +218,9 @@ core compiles to WebAssembly unchanged.
 Neither build names a version by hand; both read the git tags, the way GoReleaser does for the
 desktop. The module carries the build identity the Makefile stamps into the desktop build
 (`git describe --tags --always --dirty`, the commit and its date, or `VERSION`, `COMMIT` and
-`COMMIT_DATE` when set). The landing page links its downloads to the latest stable tag, or to
+`COMMIT_DATE` when set), and the share service live sessions go to, `SHARE_SERVICE_URL`, stamped
+into `internal/shared/shareservice` the same way by the Makefile, `tools/build-browser-runtime.sh` and
+the GoReleaser configurations. Left unset, a build shares nothing and shows no share button. The landing page links its downloads to the latest stable tag, or to
 `RELEASE_VERSION`, and `pnpm build:landing` stops when there is neither, since every download button
 would point at a file that does not exist; see packages/ui-landing/README.md. The `browser` package of `cmd/rrd-analyzer-web` is tested
 natively and, compiled to WebAssembly, under Node:
@@ -365,7 +388,15 @@ suite is Playwright over the real UI and the real Go use cases: `pnpm test:e2e` 
 servers itself, and `pnpm test:e2e:report` opens the last report. It always starts its own daemon,
 on a library under `$TMPDIR`, and refuses to run while something else holds `:34115`: every test
 resets the library it runs against, and reusing a `pnpm start:daemon` left running would delete
-the development library in `~/.rrd-analyzer`. Stop it first; a running `pnpm start` is reused. The design check is described
+the development library in `~/.rrd-analyzer`. Stop it first; a running `pnpm start` is reused.
+Live sessions run end to end too, against `wrangler dev` with its state under `$TMPDIR`: the
+analyzer suite starts one share service on `:34190` and hands it to every daemon, so the desktop
+journey shares files read off disk; the landing suite builds the site with `SHARE_SERVICE_URL`
+pointing at `:4302`, where the `live-sessions` project opens the app from the Worker's own origin,
+under the headers of `public/_headers`, as in production. A second service on `:4303` erases a
+session 15 seconds after its last activity, and the expiry journey routes its traffic there instead
+of waiting an hour. Each service creates at most ten sessions a minute, as deployed, so a journey
+starts few. The design check is described
 in [packages/ui-analyzer/tools/design-check](../packages/ui-analyzer/tools/design-check/README.md).
 
 ## Releasing

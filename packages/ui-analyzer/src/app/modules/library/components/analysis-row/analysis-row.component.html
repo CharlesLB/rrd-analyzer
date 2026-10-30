@@ -9,6 +9,9 @@
       {{ missingSourcesLabel() }}
     </span>
   }
+  @if (shareMarkText(); as mark) {
+    <span class="analysis-row-share" [class.analysis-row-share-online]="mark.isOnline" [title]="mark.tip">{{ mark.label }}</span>
+  }
   <span class="analysis-row-access">{{ access() }}</span>
   <span class="analysis-row-open">{{ texts().library.openAnalysis }}</span>
 </div>

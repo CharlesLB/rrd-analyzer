@@ -43,13 +43,9 @@ type Store struct {
 // OpenStore prepares the search history in the database at path, beside whatever else the file
 // already holds.
 func OpenStore(callerContext context.Context, path string) (*Store, error) {
-	handle, err := sqlitedb.Open(path)
+	handle, err := sqlitedb.OpenWithSchema(callerContext, path, schema)
 	if err != nil {
 		return nil, fmt.Errorf("open search history database: %w", err)
-	}
-
-	if _, err := handle.ExecContext(callerContext, schema); err != nil {
-		return nil, errors.Join(fmt.Errorf("prepare search history in %q: %w", path, err), handle.Close())
 	}
 
 	return &Store{handle: handle}, nil

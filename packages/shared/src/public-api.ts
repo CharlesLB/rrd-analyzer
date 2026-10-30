@@ -23,6 +23,7 @@ export type {
   QuickPresetMessages,
   RelativeTimeMessages,
   SeverityMessages,
+  SharingMarkMessages,
   StatisticsMessages,
   TimeframeBarMessages,
   TimeframePopoverMessages,

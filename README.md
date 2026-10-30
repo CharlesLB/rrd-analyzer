@@ -52,6 +52,17 @@ see [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md#insights).
 `.txt`, up to 25 MB). The time, type and message fields are detected for you, and the entries land
 on a track under the charts, one lane per type. Click a marker to open the entry beside the charts.
 
+## Share live
+
+**Share live** turns the open analysis into a public link: whoever opens it sees the same charts,
+files and log in a browser, and follows every change you make while the session lives. A warning
+says what will be uploaded before anything is. The files, the log and the charts are encrypted on
+your machine with a key that travels only inside the link, so the server never sees it.
+
+Everything is erased one hour after the last activity, or as soon as you end the session. The
+library marks every analysis *Local* or *Online*, and the share panel marks each of its files. How it
+works is in [docs/SHARING.md](docs/SHARING.md).
+
 ## Download
 
 Grab the latest build from the [**releases page**](https://github.com/CharlesLB/rrd-analyzer/releases/latest).

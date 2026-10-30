@@ -438,6 +438,34 @@ describe('WorkspaceStore', () => {
     expect(gateway.openAnalysis).toHaveBeenCalledTimes(2);
   });
 
+  it('settled waits for the saves already under way, so what is read next is what was stored', async () => {
+    await configure(chartsDtoFixture('s2', 's0'));
+    const save: { finish: () => void } = { finish: () => undefined };
+    const progress = { isSettled: false };
+    vi.mocked(gateway.saveCanvas).mockImplementationOnce(
+      async () =>
+        await new Promise<void>((resolve) => {
+          save.finish = resolve;
+        }),
+    );
+
+    store.addToCanvas('s4');
+    await vi.waitFor(() => expect(gateway.saveCanvas).toHaveBeenCalledTimes(1));
+
+    const settled = store.settled().then(() => {
+      progress.isSettled = true;
+    });
+
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    const isSettledBeforeTheSave = progress.isSettled;
+
+    save.finish();
+    await settled;
+
+    expect(isSettledBeforeTheSave).toBe(false);
+    expect(progress.isSettled).toBe(true);
+  });
+
   it('an analysis that fails after a later one was opened says nothing about it', async () => {
     await configure(chartsDtoFixture('s2', 's0'));
     const slow: { reject: (reason: Error) => void } = { reject: () => undefined };

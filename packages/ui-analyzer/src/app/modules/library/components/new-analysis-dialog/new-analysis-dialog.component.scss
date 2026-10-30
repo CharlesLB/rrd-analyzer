@@ -1,53 +1,7 @@
 @use 'mixins';
 
 .new-analysis-dialog {
-  width: 620px;
-  max-width: 100%;
-  max-height: 86vh;
-  display: flex;
-  flex-direction: column;
-  @include mixins.popover-surface;
-
-  &-scrim {
-    position: fixed;
-    inset: 0;
-    background: var(--scrim);
-    z-index: 60;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 24px;
-    animation: om-fade 0.22s ease both;
-  }
-
-  &-header {
-    display: flex;
-    align-items: flex-start;
-    gap: 12px;
-    padding: 16px 18px;
-    border-bottom: 1px solid var(--line);
-    flex: none;
-  }
-
-  &-heading {
-    flex: 1;
-    min-width: 0;
-  }
-
-  &-title {
-    font-size: 16px;
-    font-weight: 600;
-  }
-
-  &-helper {
-    font-size: 13px;
-    color: var(--tx2);
-    margin-top: 3px;
-  }
-
-  &-close {
-    @include mixins.icon-button(var(--tx), 0 4px);
-  }
+  --modal-dialog-width: 620px;
 
   &-body {
     padding: 16px 18px;
@@ -72,16 +26,6 @@
     @include mixins.text-input(9px, 7px 9px);
   }
 
-  &-footer {
-    display: flex;
-    align-items: center;
-    gap: 9px;
-    padding: 12px 18px;
-    border-top: 1px solid var(--line);
-    background: var(--surf);
-    flex: none;
-  }
-
   &-hint {
     font-size: 12.5px;
     color: var(--mut);
@@ -94,16 +38,7 @@
   }
 
   &-cancel {
-    @include mixins.outline-button(9px, 6px 14px, 13px, var(--tx2));
-
-    & {
-      border-color: var(--line2);
-    }
-
-    &:hover {
-      border-color: var(--acc);
-      color: var(--tx);
-    }
+    @include mixins.quiet-button(var(--tx2), var(--acc), var(--tx));
   }
 
   &-create {
@@ -123,9 +58,6 @@
       @include mixins.primary-button;
     }
 
-    &:disabled {
-      opacity: 0.6;
-      cursor: progress;
-    }
+    @include mixins.busy-when-disabled;
   }
 }

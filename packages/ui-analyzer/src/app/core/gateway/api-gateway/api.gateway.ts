@@ -14,14 +14,18 @@ import type {
   ExportRequestDto,
   InsightsReportDto,
   InsightsRequestDto,
+  JoinedSessionDto,
   PickedFileDto,
   SampleAnalysisDto,
   SeriesColorDto,
+  SessionPublicationDto,
+  SessionStatusDto,
   SourcesExportDto,
   WindowDto,
   WindowRequestDto,
 } from '../analyzer.dto';
 import type { AnalyzerGateway } from '../analyzer.gateway';
+import { GatewayRequestError } from '../gateway-request-error/gateway-request-error';
 
 const CSV_MIME_TYPE = 'text/csv';
 const SOURCES_MIME_TYPE = 'application/octet-stream';
@@ -57,7 +61,11 @@ const API_PATHS = {
   CSV_EXPORT: '/api/export/csv',
   INSIGHTS_CONFIGURATION: '/api/insights/configuration',
   SEARCH_HISTORY: '/api/search-history',
+  SESSIONS: '/api/sessions',
+  SHARED_SESSIONS: '/api/shared-sessions',
 } as const;
+
+const SHARED_SESSION_REFRESH_RESOURCE = 'refresh';
 
 const FORGET_SEARCH_RESOURCE = 'forget';
 
@@ -69,6 +77,7 @@ const ANALYSIS_RESOURCES = {
   INSIGHTS: 'insights',
   SOURCES: 'sources',
   MISSING_SOURCES: 'missing-sources',
+  SESSION: 'session',
 } as const;
 
 type AnalysisResource = ValueOf<typeof ANALYSIS_RESOURCES>;
@@ -78,6 +87,8 @@ const analysisPath = (analysisId: string): string => `${API_PATHS.ANALYSES}/${an
 const searchHistoryPath = (field: string): string => `${API_PATHS.SEARCH_HISTORY}/${encodeURIComponent(field)}`;
 
 const analysisResourcePath = (analysisId: string, resource: AnalysisResource): string => `${analysisPath(analysisId)}/${resource}`;
+
+const sharedSessionPath = (sessionId: string): string => `${API_PATHS.SHARED_SESSIONS}/${encodeURIComponent(sessionId)}`;
 
 type CsvExportPayloadDto = CsvExportDto & { readonly fileName: string; readonly content: string };
 
@@ -222,6 +233,34 @@ export abstract class ApiGateway implements AnalyzerGateway {
     return () => undefined;
   }
 
+  public async listSessions(): Promise<readonly SessionStatusDto[]> {
+    return await this._request<readonly SessionStatusDto[]>(HTTP_METHODS.GET, API_PATHS.SESSIONS);
+  }
+
+  public async startSession(analysisId: string, publication: SessionPublicationDto): Promise<SessionStatusDto> {
+    return await this._request<SessionStatusDto>(HTTP_METHODS.POST, analysisResourcePath(analysisId, ANALYSIS_RESOURCES.SESSION), publication);
+  }
+
+  public async publishSession(analysisId: string, publication: SessionPublicationDto): Promise<SessionStatusDto> {
+    return await this._request<SessionStatusDto>(HTTP_METHODS.PUT, analysisResourcePath(analysisId, ANALYSIS_RESOURCES.SESSION), publication);
+  }
+
+  public async endSession(analysisId: string): Promise<void> {
+    await this._requestWithoutAnswer(HTTP_METHODS.DELETE, analysisResourcePath(analysisId, ANALYSIS_RESOURCES.SESSION));
+  }
+
+  public async joinSession(sessionId: string, key: string): Promise<JoinedSessionDto> {
+    return await this._request<JoinedSessionDto>(HTTP_METHODS.POST, API_PATHS.SHARED_SESSIONS, { sessionId, key });
+  }
+
+  public async refreshSession(sessionId: string): Promise<JoinedSessionDto> {
+    return await this._request<JoinedSessionDto>(HTTP_METHODS.POST, `${sharedSessionPath(sessionId)}/${SHARED_SESSION_REFRESH_RESOURCE}`);
+  }
+
+  public async forgetSession(sessionId: string): Promise<void> {
+    await this._requestWithoutAnswer(HTTP_METHODS.DELETE, sharedSessionPath(sessionId));
+  }
+
   private async _request<TResponse>(method: string, path: string, body?: unknown): Promise<TResponse> {
     return (await (await this._send(method, path, body)).json()) as TResponse;
   }
@@ -234,7 +273,7 @@ export abstract class ApiGateway implements AnalyzerGateway {
     const response = await this._transport.send({ method, path, body, cancellation });
 
     if (!response.ok) {
-      throw new Error(`${method} ${path} failed: ${response.status} ${await response.text()}`);
+      throw new GatewayRequestError(`${method} ${path} failed: ${response.status} ${await response.text()}`, response.status);
     }
 
     return response;

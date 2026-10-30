@@ -49,6 +49,7 @@ import {
   typeValidationOf,
   type ValidationTexts,
 } from '../../models/log-validation/log-validation';
+import type { LogView, OpenLog } from '../../models/log-view/log-view';
 import type { LoadedLogs, LogsSnapshot, Placement } from '../../models/logs-snapshot/logs-snapshot';
 import { LogsMemoryStore } from '../logs-memory-store/logs-memory.store';
 
@@ -127,6 +128,23 @@ export class LogsStore {
   });
 
   public readonly file = computed(() => this._sourceState().file);
+
+  public readonly openLog = computed<OpenLog | null>(() => {
+    const loaded = this._loaded();
+
+    return loaded === null
+      ? null
+      : {
+          file: loaded.source,
+          view: {
+            mapping: this._placementState()?.mapping ?? null,
+            chosenColors: this._chosenColorsState(),
+            hiddenTypes: this._hiddenTypesState(),
+            isShown: this._isShownState(),
+          },
+        };
+  });
+
   public readonly failure = computed(() => this._sourceState().failure);
   public readonly isReplacing = computed(() => this._incomingFileState() !== null && this._loaded() !== null);
   public readonly notes = computed(() => this._loaded()?.notes ?? []);
@@ -306,7 +324,7 @@ export class LogsStore {
     const detectedMapping = detectMapping(discovered);
 
     this._incomingFileState.set(null);
-    this._sourceState.set({ file: summary, isLoading: false, failure: null, loaded: { ...parsed, fields: discovered.fields, detectedMapping } });
+    this._sourceState.set({ file: summary, isLoading: false, failure: null, loaded: { ...parsed, source: file, fields: discovered.fields, detectedMapping } });
     this._draftMappingState.set(detectedMapping);
     this._hiddenTypesState.set(NO_TYPES);
 
@@ -322,6 +340,26 @@ export class LogsStore {
         fields: formatPlural(texts.logs.fieldCount, discovered.fields.length),
       }),
     );
+
+    return true;
+  }
+
+  public applyView(view: LogView): boolean {
+    if (this._loaded() === null) {
+      return false;
+    }
+
+    if (view.mapping !== null && !isSameMapping(view.mapping, this.appliedMapping())) {
+      this._draftMappingState.set(view.mapping);
+
+      if (!this._placeEntries()) {
+        return false;
+      }
+    }
+
+    this._chosenColorsState.set(view.chosenColors);
+    this._hiddenTypesState.set(view.hiddenTypes);
+    this._isShownState.set(view.isShown);
 
     return true;
   }
