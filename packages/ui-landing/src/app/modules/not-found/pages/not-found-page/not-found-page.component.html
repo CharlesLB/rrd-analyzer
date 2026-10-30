@@ -1,0 +1,11 @@
+@let notFound = texts().notFound;
+<main class="not-found-page">
+  <a class="not-found-page-brand" [href]="homeAddress"><app-brand /></a>
+  <p class="not-found-page-eyebrow">{{ notFound.eyebrow }}</p>
+  <h1 class="not-found-page-title">{{ notFound.heading }}</h1>
+  <p class="not-found-page-body">{{ notFound.body }}</p>
+  <div class="not-found-page-actions">
+    <a class="not-found-page-home" [href]="homeAddress">{{ notFound.home }}</a>
+    <a class="not-found-page-app" [href]="browserAppAddress">{{ notFound.openApp }}</a>
+  </div>
+</main>

@@ -1,6 +1,7 @@
 type MetaMessages = {
   readonly title: string;
   readonly description: string;
+  readonly openGraphLocale: string;
 };
 
 type CommonMessages = {
@@ -141,6 +142,16 @@ type DonateMessages = {
   readonly paymentsNote: string;
 };
 
+type NotFoundMessages = {
+  readonly title: string;
+  readonly description: string;
+  readonly eyebrow: string;
+  readonly heading: string;
+  readonly body: string;
+  readonly home: string;
+  readonly openApp: string;
+};
+
 type FooterMessages = {
   readonly license: string;
   readonly github: string;
@@ -160,4 +171,5 @@ export type Messages = {
   readonly download: DownloadMessages;
   readonly donate: DonateMessages;
   readonly footer: FooterMessages;
+  readonly notFound: NotFoundMessages;
 };

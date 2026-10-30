@@ -1,6 +1,7 @@
 import { afterNextRender, ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
-import { Meta } from '@angular/platform-browser';
 import { ThemeStore } from '@rrd-analyzer/ui-shared';
+import { LANDING_CONFIGURATION, PROJECT_LINKS } from '../../../../core/config/landing.config';
+import { DocumentHeadService } from '../../../../core/document-head/document-head.service';
 import { I18nStore } from '../../../../stores/i18n/store/i18n-store/i18n.store';
 import { ReleasesStore } from '../../../../stores/releases/store/releases-store/releases.store';
 import { DemoSectionComponent } from '../../components/demo-section/demo-section.component';
@@ -11,9 +12,8 @@ import { HeroComponent } from '../../components/hero/hero.component';
 import { SiteFooterComponent } from '../../components/site-footer/site-footer.component';
 import { SiteHeaderComponent } from '../../components/site-header/site-header.component';
 import { downloadCallOf } from '../../models/download-call/download-call.model';
+import { homeHeadOf } from '../../models/home-head/home-head.model';
 import { SECTION_IDS } from '../../models/page-sections/page-sections.model';
-
-const DESCRIPTION_META_NAME = 'description';
 
 @Component({
   selector: 'app-home-page',
@@ -25,7 +25,9 @@ const DESCRIPTION_META_NAME = 'description';
 export class HomePageComponent {
   private readonly _releases = inject(ReleasesStore);
   private readonly _themes = inject(ThemeStore);
-  private readonly _texts = inject(I18nStore).texts;
+  private readonly _i18n = inject(I18nStore);
+  private readonly _texts = this._i18n.texts;
+  private readonly _documentHead = inject(DocumentHeadService);
 
   protected readonly topId = SECTION_IDS.TOP;
   protected readonly version = this._releases.version;
@@ -33,11 +35,27 @@ export class HomePageComponent {
   protected readonly downloadCall = computed(() => downloadCallOf(this._releases.primaryDownload(), this.version, this._texts()));
 
   public constructor() {
-    inject(Meta).updateTag({ name: DESCRIPTION_META_NAME, content: this._texts().meta.description });
+    this._describeForSearchAndPreviews();
     afterNextRender(() => this._releases.detectVisitorPlatform());
   }
 
   protected toggleTheme(): void {
     this._themes.toggle();
+  }
+
+  private _describeForSearchAndPreviews(): void {
+    const head = homeHeadOf({
+      texts: this._texts(),
+      language: this._i18n.locale(),
+      siteUrl: LANDING_CONFIGURATION.siteUrl,
+      version: this.version,
+      repositoryUrl: PROJECT_LINKS.repository,
+      releasesUrl: PROJECT_LINKS.releases,
+      platforms: this.platforms(),
+    });
+
+    this._documentHead.writeMetaTags(head.metaTags);
+    this._documentHead.linkCanonical(head.canonicalUrl);
+    this._documentHead.embedStructuredData(head.structuredData);
   }
 }
