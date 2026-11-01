@@ -141,6 +141,9 @@ Failures: `404` the session or analysis is gone, `400` a malformed link, `422` a
 not open the session or a source that cannot be read or is not an RRD database or dump, `413` the
 session would be too large, `429` the share service is refusing new sessions for now, `502` the share
 service could not be reached or answered something unexpected, `503` sharing is not configured.
+The desktop bindings fail with the same statuses: the window's error formatter rejects a call with
+`{ status, message }` instead of the message alone, so the page tells these failures apart the same
+way in every edition.
 
 ```ts
 type SessionPublication = {

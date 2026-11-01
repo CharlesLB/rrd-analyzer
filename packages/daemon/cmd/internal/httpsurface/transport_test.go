@@ -89,21 +89,21 @@ func sourceFailure(err error) error {
 func TestStatusOfNamesWhatEachDomainErrorMeansInHTTP(t *testing.T) {
 	for _, tt := range domainErrorStatuses {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := statusOf(tt.give); got != tt.want {
-				t.Errorf("statusOf(%v) = %d, want %d", tt.give, got, tt.want)
+			if got := StatusOf(tt.give); got != tt.want {
+				t.Errorf("StatusOf(%v) = %d, want %d", tt.give, got, tt.want)
 			}
 		})
 	}
 }
 
 func TestStatusOfAnswersAnErrorNoDomainNamesAsTheServersFault(t *testing.T) {
-	if got := statusOf(errors.New("disk on fire")); got != http.StatusInternalServerError {
-		t.Errorf("statusOf(an unnamed error) = %d, want %d", got, http.StatusInternalServerError)
+	if got := StatusOf(errors.New("disk on fire")); got != http.StatusInternalServerError {
+		t.Errorf("StatusOf(an unnamed error) = %d, want %d", got, http.StatusInternalServerError)
 	}
 }
 
 // TestEveryDomainErrorHasAStatusCase reads the error every domain declares out of its source, so a
-// new one fails here until domainErrorStatuses, and with it statusOf, decides what it means.
+// new one fails here until domainErrorStatuses, and with it StatusOf, decides what it means.
 func TestEveryDomainErrorHasAStatusCase(t *testing.T) {
 	for _, declared := range declaredDomainErrors(t) {
 		covered := slices.ContainsFunc(domainErrorStatuses, func(status statusCase) bool {

@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { InsightsReportDto, InsightsRequestDto, PickedFileDto, SessionPublicationDto, WindowRequestDto } from '../analyzer.dto';
 import { insightsReportDtoFixture } from '../analyzer.gateway.fixture';
+import { GatewayRequestError, statusOfFailure } from '../gateway-request-error/gateway-request-error';
 import { DesktopGateway } from './desktop.gateway';
 
 type BoundMethods = Readonly<Record<string, (...parameters: never[]) => unknown>>;
@@ -148,6 +149,27 @@ describe('DesktopGateway', () => {
     cancellation.abort();
 
     expect(cancelInsights).not.toHaveBeenCalled();
+  });
+
+  it('DesktopGateway, when a bound method fails, rejects with the status the core gave the failure, as the browser edition does', async () => {
+    const unreachable = 'start a live session: sharing: the share service could not be reached, or answered something unexpected';
+    bindDesktop({ StartSession: vi.fn().mockRejectedValue({ status: 502, message: unreachable }) });
+
+    const failure = await new DesktopGateway().startSession('a1', PUBLICATION).catch((error: unknown) => error);
+
+    expect(failure).toBeInstanceOf(GatewayRequestError);
+    expect(statusOfFailure(failure)).toBe(502);
+    expect(failure).toHaveProperty('message', unreachable);
+  });
+
+  it('DesktopGateway, when the bridge itself fails with a bare message, rejects with that message and no status', async () => {
+    bindDesktop({ StartSession: vi.fn().mockRejectedValue('error parsing arguments: unexpected end of JSON input') });
+
+    const failure = await new DesktopGateway().startSession('a1', PUBLICATION).catch((error: unknown) => error);
+
+    expect(failure).toBeInstanceOf(GatewayRequestError);
+    expect(statusOfFailure(failure)).toBe(0);
+    expect(failure).toHaveProperty('message', 'error parsing arguments: unexpected end of JSON input');
   });
 
   it('DesktopGateway, when the desktop did not bind a method, fails naming the binding it looked for', async () => {

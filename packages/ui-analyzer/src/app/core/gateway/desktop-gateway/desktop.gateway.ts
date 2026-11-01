@@ -25,6 +25,7 @@ import type {
 } from '../analyzer.dto';
 import type { AnalyzerGateway } from '../analyzer.gateway';
 import { desktopBinding, desktopBindingName, desktopRuntimeApi } from '../desktop-runtime/desktop-runtime';
+import { GatewayRequestError, UNKNOWN_STATUS } from '../gateway-request-error/gateway-request-error';
 
 const DESKTOP_METHODS = {
   BUILD: 'Build',
@@ -61,6 +62,22 @@ const JOINING_IS_FOR_THE_BROWSER = 'a live session is opened from its link in th
 
 const ABORT_EVENT = 'abort';
 const NO_PATH_FROM_A_PAGE_DROP = '';
+
+type DesktopCallFailure = {
+  readonly status: number;
+  readonly message: string;
+};
+
+const isDesktopCallFailure = (failure: unknown): failure is DesktopCallFailure =>
+  typeof failure === 'object' &&
+  failure !== null &&
+  'status' in failure &&
+  typeof failure.status === 'number' &&
+  'message' in failure &&
+  typeof failure.message === 'string';
+
+const requestErrorOf = (failure: unknown): GatewayRequestError =>
+  isDesktopCallFailure(failure) ? new GatewayRequestError(failure.message, failure.status) : new GatewayRequestError(String(failure), UNKNOWN_STATUS);
 
 @Service()
 export class DesktopGateway implements AnalyzerGateway {
@@ -220,6 +237,10 @@ export class DesktopGateway implements AnalyzerGateway {
       throw new Error(`desktop binding ${desktopBindingName(method)} is not available`);
     }
 
-    return (await bound(...parameters)) as TResponse;
+    try {
+      return (await bound(...parameters)) as TResponse;
+    } catch (failure) {
+      throw requestErrorOf(failure);
+    }
   }
 }

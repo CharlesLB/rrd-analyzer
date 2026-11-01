@@ -108,6 +108,7 @@ func run(frontendAssets fs.FS, native nativeRuntime) error {
 		BackgroundColour: &options.RGBA{R: lightBackgroundRed, G: lightBackgroundGreen, B: lightBackgroundBlue, A: 1},
 		OnStartup:        binding.start,
 		Bind:             []any{binding},
+		ErrorFormatter:   callFailureOf,
 		DragAndDrop:      &options.DragAndDrop{EnableFileDrop: true},
 		Linux:            &linux.Options{Icon: windowIcon, ProgramName: programName, WindowIsTranslucent: false},
 		Mac:              &mac.Options{TitleBar: mac.TitleBarHiddenInset()},

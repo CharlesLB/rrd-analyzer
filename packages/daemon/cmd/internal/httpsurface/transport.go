@@ -144,10 +144,12 @@ func respondEmpty(writer http.ResponseWriter, err error) {
 
 func fail(writer http.ResponseWriter, err error) {
 	log.Println("request failed:", err)
-	http.Error(writer, err.Error(), statusOf(err))
+	http.Error(writer, err.Error(), StatusOf(err))
 }
 
-// statusOf is what a domain error means in HTTP.
+// StatusOf is what a domain error means in HTTP, and the page reads it in every edition: the desktop
+// window, which calls the core with no HTTP in between, reports a failed call with the same status
+// (desktop.callFailureOf), so a share service that cannot be reached reads the same there as here.
 //
 // A request that names something that does not exist is a 404, and one the caller built wrong is a
 // 400. A well-formed request over a source that cannot become series, or cannot be copied, is a 422:
@@ -165,7 +167,7 @@ func fail(writer http.ResponseWriter, err error) {
 // is decided here rather than left to the fallback: embedded insights defaults that do not parse
 // ship in the binary, and a missing rrdtool is missing from the machine the server runs on, so no
 // request could have avoided either.
-func statusOf(err error) int {
+func StatusOf(err error) int {
 	switch {
 	case errors.Is(err, analysisDomain.ErrAnalysisNotFound), errors.Is(err, analysisDomain.ErrSeriesNotFound),
 		errors.Is(err, insightsDomain.ErrUnknownSeries),
