@@ -17,7 +17,7 @@
 #
 # The image serves on 8080 as an unprivileged user and holds nothing but the built site.
 
-FROM golang:1.25-alpine AS go
+FROM golang:1.26-alpine AS go
 
 FROM node:24-alpine AS build
 

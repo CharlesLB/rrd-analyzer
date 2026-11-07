@@ -26,12 +26,30 @@ if [ "${1:-}" = "--print-version" ]; then
 fi
 
 # `golangci-lint --version` prints a sentence, not a bare number:
-#   golangci-lint has version 2.12.2 built with go1.25.5 from ...
+#   golangci-lint has version 2.12.2 built with go1.26.10 from ...
 # Missing binaries make this fail under `set -e`, hence the guard rather than a bare call.
 installed_version() {
   if [ -x "$1" ]; then
     "$1" --version 2>/dev/null | sed -n 's/.*has version \([^ ]*\).*/\1/p'
   fi
+}
+
+installed_toolchain() {
+  if [ -x "$1" ]; then
+    "$1" --version 2>/dev/null | sed -n 's/.* built with \(go[^ ]*\).*/\1/p'
+  fi
+}
+
+# is_at_least A B: whether toolchain A is B or newer.
+is_at_least() {
+  [ -n "$1" ] && [ "$(printf '%s\n%s\n' "$1" "$2" | sort -V | head -n 1)" = "$2" ]
+}
+
+# A binary at the pinned version is still the wrong one when it was built by an older Go than the
+# module asks for: golangci-lint refuses to analyse code written for a newer language version than
+# its own, so a copy built before go.mod moved stops `pnpm lint` with nothing pointing at the cause.
+is_usable() {
+  [ "$(installed_version "$1")" = "$VERSION" ] && is_at_least "$(installed_toolchain "$1")" "$toolchain"
 }
 
 # Everything below shells out to the Go toolchain, and its absence is the one failure worth
@@ -49,17 +67,21 @@ if [ -z "$gobin" ]; then gobin="$(go env GOPATH)/bin"; fi
 
 binary="$gobin/golangci-lint"
 
+# The toolchain the module in the working directory builds with: `go env` there has already
+# switched to the one go.mod names.
+toolchain="$(go env GOVERSION)"
+
 # A copy already on PATH at the pinned version is used as-is: someone who installed it through a
 # package manager should not have a second one written into their GOPATH behind their back.
-if [ "$(installed_version "$binary")" != "$VERSION" ]; then
-  if on_path="$(command -v golangci-lint 2>/dev/null)" &&
-    [ "$(installed_version "$on_path")" = "$VERSION" ]; then
+if ! is_usable "$binary"; then
+  if on_path="$(command -v golangci-lint 2>/dev/null)" && is_usable "$on_path"; then
     binary="$on_path"
   else
-    echo "==> installing golangci-lint v$VERSION into $gobin" >&2
+    echo "==> installing golangci-lint v$VERSION into $gobin, built with $toolchain" >&2
     # `go install pkg@version` builds in module-aware mode outside the current module, so this
-    # neither reads nor writes app/daemon's go.mod even when invoked from inside it.
-    GOFLAGS= go install "$MODULE@v$VERSION"
+    # neither reads nor writes app/daemon's go.mod even when invoked from inside it. It would pick
+    # the machine's own Go for the build, hence the toolchain named outright.
+    GOFLAGS= GOTOOLCHAIN="$toolchain" go install "$MODULE@v$VERSION"
     binary="$gobin/golangci-lint"
   fi
 fi
