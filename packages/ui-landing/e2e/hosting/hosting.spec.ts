@@ -4,6 +4,9 @@ const NO_REDIRECT = { maxRedirects: 0 };
 const MOVED_PERMANENTLY = 301;
 const NOT_FOUND = 404;
 const SEARCH_ROBOTS_HEADER = 'x-robots-tag';
+const CONTENT_SECURITY_POLICY_HEADER = 'content-security-policy';
+const POLICY_START = "default-src 'self'";
+const COMPILING_WEB_ASSEMBLY = "'wasm-unsafe-eval'";
 
 test.describe('site served by the Worker', () => {
   test('a copy of a page answers with a permanent redirect to its one address, keeping the query', async ({ request }) => {
@@ -37,5 +40,23 @@ test.describe('site served by the Worker', () => {
 
     expect(landing.headers()[SEARCH_ROBOTS_HEADER]).toBeUndefined();
     expect(application.headers()[SEARCH_ROBOTS_HEADER]).toBe('noindex');
+  });
+
+  test('every address carries a content security policy, the application its own alone, the not-found page at any depth included', async ({ request }) => {
+    const landingAddresses = ['/', '/robots.txt', '/nowhere', '/nowhere/at/all'];
+    const applicationAddresses = ['/app/', '/app/nowhere', '/app/browser-runtime/analyzer.worker.js'];
+
+    const policiesAt = async (addresses: readonly string[]): Promise<readonly string[]> =>
+      await Promise.all(addresses.map(async (address) => (await request.get(address, NO_REDIRECT)).headers()[CONTENT_SECURITY_POLICY_HEADER] ?? ''));
+
+    const [landingPolicies, applicationPolicies] = await Promise.all([policiesAt(landingAddresses), policiesAt(applicationAddresses)]);
+    const policyCountOf = (policy: string): number => policy.split(POLICY_START).length - 1;
+
+    expect(new Set(landingPolicies).size).toBe(1);
+    expect(landingPolicies[0]).toContain(POLICY_START);
+    expect(landingPolicies[0]).not.toContain(COMPILING_WEB_ASSEMBLY);
+    expect(new Set(applicationPolicies).size).toBe(1);
+    expect(applicationPolicies[0]).toContain(COMPILING_WEB_ASSEMBLY);
+    expect(applicationPolicies.map(policyCountOf)).toEqual(applicationAddresses.map(() => 1));
   });
 });

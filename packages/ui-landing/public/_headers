@@ -1,9 +1,11 @@
 # The headers nginx/landing.conf sets, for the same site served as Cloudflare Workers static assets.
-# A header set by two matching rules is joined with a comma, so each header has rules that never
-# overlap: the content security policy is the landing's on files at the root and the app's under
-# /app/, and Cloudflare's own default cache policy, revalidate every time, stands wherever no
-# rule below names a longer one. The application at /app/ is kept out of search results: it is a tool
-# with nothing to read until it runs, and the landing page is what a search should lead to.
+# A header set by two matching rules is joined with a comma, which for a content security policy
+# means both are enforced. The landing's policy is therefore set on every address, so that the
+# not-found page answered at any depth carries it too, and the rule for /app/ detaches it (the "!"
+# line) before setting the app's own; rules apply in the order they are written. Cloudflare's own
+# default cache policy, revalidate every time, stands wherever no rule below names a longer one. The
+# application at /app/ is kept out of search results: it is a tool with nothing to read until it
+# runs, and the landing page is what a search should lead to.
 
 /*
   X-Frame-Options: DENY
@@ -12,14 +14,10 @@
   Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=(), usb=()
   Cross-Origin-Opener-Policy: same-origin
   Strict-Transport-Security: max-age=31536000
-
-/
-  Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self'; font-src 'self'; connect-src 'self'; frame-ancestors 'none'; object-src 'none'; base-uri 'self'; form-action 'none'
-
-/:file
   Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self'; font-src 'self'; connect-src 'self'; frame-ancestors 'none'; object-src 'none'; base-uri 'self'; form-action 'none'
 
 /app/*
+  ! Content-Security-Policy
   Content-Security-Policy: default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; worker-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self'; frame-ancestors 'none'; object-src 'none'; base-uri 'self'; form-action 'none'
   X-Robots-Tag: noindex
 
