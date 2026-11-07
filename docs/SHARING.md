@@ -106,8 +106,8 @@ Revisions count from `1`, the first state published. Uploading a chunk that alre
 replaces it. Limits, all refused with `413`: a chunk of more than `8 MiB + 28` bytes, a state of more
 than `4 MiB`, a session holding more than `256 MiB` across its chunks, more than `256` files, or more
 chunks than one per file plus the 32 full chunks its bytes can fill (`288`).
-Malformed identifiers or indexes are `400`. Creating sessions is rate limited per client address
-(`429`).
+Malformed identifiers or indexes are `400`. Creating sessions is rate limited per client address, an IPv6
+address counted by its /64 network (`429`).
 
 WebSocket messages, all JSON:
 

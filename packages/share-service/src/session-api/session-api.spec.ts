@@ -72,6 +72,18 @@ describe('session API, creating a session', () => {
     expect(await errorOf(response)).toBe('rate_limited');
   });
 
+  it('POST /api/sessions, past the limit from addresses that only differ inside one IPv6 /64, answers 429 there and still creates from another network', async () => {
+    const interfaces = Array.from({ length: 10 }, (_unused, index) => `2001:db8:5:0::${index + 1}`);
+
+    await Promise.all(interfaces.map(async (address) => await createSession(address)));
+    const sameNetwork = await SELF.fetch(urlOf(SESSIONS_PATH), { method: 'POST', headers: { 'CF-Connecting-IP': '2001:db8:5:0:dead:beef:0:1' } });
+    const otherNetwork = await SELF.fetch(urlOf(SESSIONS_PATH), { method: 'POST', headers: { 'CF-Connecting-IP': '2001:db8:5:1::1' } });
+
+    expect(sameNetwork.status).toBe(429);
+    expect(await errorOf(sameNetwork)).toBe('rate_limited');
+    expect(otherNetwork.status).toBe(201);
+  });
+
   it('GET /api/sessions/{id}, for a session just created, answers revision 0 and its expiry', async () => {
     const session = await createSession();
 
