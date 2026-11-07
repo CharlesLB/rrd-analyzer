@@ -15,6 +15,7 @@ const NONCE_BYTES = 12;
 const TAG_BYTES = 16;
 const ADDITIONAL_DATA_PREFIX = 'rrd-analyzer/1/';
 const STATE_SUFFIX = '/state';
+const AS_THE_APP_READS = { headers: { 'X-Session-Protocol': '1' } };
 
 export type SessionLink = {
   readonly sessionId: string;
@@ -54,7 +55,7 @@ export const sessionLinkOf = (link: string): SessionLink => {
 export const liveSessionsOfTheDaemon = async (page: Page): Promise<unknown> => await (await page.request.get(`${DAEMON_URL}/api/sessions`)).json();
 
 export const answersOfTheService = async (page: Page, paths: readonly string[]): Promise<readonly number[]> =>
-  await Promise.all(paths.map(async (path) => (await page.request.get(`${SHARE_SERVICE_URL}${path}`)).status()));
+  await Promise.all(paths.map(async (path) => (await page.request.get(`${SHARE_SERVICE_URL}${path}`, AS_THE_APP_READS)).status()));
 
 export const sessionPath = (sessionId: string): string => `/api/sessions/${sessionId}`;
 
@@ -64,7 +65,7 @@ export const chunkPaths = (sessionId: string, files: readonly SharedFile[]): rea
   files.flatMap((file) => Array.from({ length: file.chunkCount }, (_unused, index) => `${sessionPath(sessionId)}/files/${file.fileId}/chunks/${index}`));
 
 export const sealedStateOf = async (page: Page, sessionId: string): Promise<Buffer> =>
-  await (await page.request.get(`${SHARE_SERVICE_URL}${statePath(sessionId)}`)).body();
+  await (await page.request.get(`${SHARE_SERVICE_URL}${statePath(sessionId)}`, AS_THE_APP_READS)).body();
 
 export const openedState = (link: SessionLink, sealed: Buffer): SharedState => {
   const decipher = createDecipheriv(CIPHER, link.key, sealed.subarray(0, NONCE_BYTES));

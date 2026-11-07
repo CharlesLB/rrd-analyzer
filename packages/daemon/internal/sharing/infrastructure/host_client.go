@@ -37,6 +37,12 @@ const (
 	_revisionHeader      = "X-Session-Revision"
 	_expiresAtHeader     = "X-Session-Expires-At"
 
+	// _protocolHeader names the protocol on every request. The service only hands a sealed blob to
+	// a request that carries it, which a link opened in a browser never does: its blobs are the
+	// app's to read, never files anyone can be sent to download from the service's address.
+	_protocolHeader  = "X-Session-Protocol"
+	_protocolVersion = "1"
+
 	_decimal       = 10
 	_sixtyFourBits = 64
 
@@ -199,6 +205,8 @@ func (host *HostClient) exchange(callerContext context.Context, sent exchange) (
 	if err != nil {
 		return answer{}, fmt.Errorf("%w: %s %s cannot be sent: %w", domain.ErrServiceFailed, sent.method, sent.path, err)
 	}
+
+	request.Header.Set(_protocolHeader, _protocolVersion)
 
 	if sent.ownerToken != "" {
 		request.Header.Set(_authorizationHeader, _bearerPrefix+sent.ownerToken)

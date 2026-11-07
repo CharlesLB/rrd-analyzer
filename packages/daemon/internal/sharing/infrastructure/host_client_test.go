@@ -277,6 +277,29 @@ func TestHostClient_AWrite_CarriesTheOwnersTokenAndASealedBody(t *testing.T) {
 	}
 }
 
+func TestHostClient_EveryRequest_NamesTheProtocol(t *testing.T) {
+	var protocols []string
+
+	host := answering(t, func(writer http.ResponseWriter, request *http.Request) {
+		protocols = append(protocols, request.Header.Get("X-Session-Protocol"))
+		if request.Method == http.MethodPut {
+			writer.WriteHeader(http.StatusNoContent)
+		}
+	})
+
+	if _, err := host.Chunk(context.Background(), "session", fileID, firstChunk); err != nil {
+		t.Fatalf("read a chunk: %v", err)
+	}
+
+	if err := host.PutChunk(context.Background(), domain.Credentials{SessionID: "session", OwnerToken: "token"}, fileID, firstChunk, []byte("sealed")); err != nil {
+		t.Fatalf("put a chunk: %v", err)
+	}
+
+	if len(protocols) != 2 || protocols[0] != "1" || protocols[1] != "1" {
+		t.Errorf("sent X-Session-Protocol %q, want version 1 on the read and on the write", protocols)
+	}
+}
+
 func TestHostClient_LiveURL_IsTheSessionsSocketOnTheServicesHost(t *testing.T) {
 	tests := []struct {
 		name        string

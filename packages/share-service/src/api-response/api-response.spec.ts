@@ -32,6 +32,7 @@ describe('api response', () => {
     expect(finalized.headers.get('Content-Type')).toBe('text/plain');
     expect(finalized.headers.get('Cache-Control')).toBe('no-store');
     expect(finalized.headers.get('X-Content-Type-Options')).toBe('nosniff');
+    expect(finalized.headers.get('Cross-Origin-Resource-Policy')).toBe('same-origin');
     expect(finalized.headers.get('Vary')).toBe('Origin');
   });
 

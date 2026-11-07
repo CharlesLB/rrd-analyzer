@@ -19,6 +19,7 @@ export const OTHER_FILE_ID = 'BBBBBBBBBBBBBBBBBBBBBB';
 export const UNKNOWN_SESSION_ID = 'ZZZZZZZZZZZZZZZZZZZZZZ';
 export const UNKNOWN_SESSION: CreatedSession = { sessionId: UNKNOWN_SESSION_ID, ownerToken: 'token', expiresAtMilliseconds: 0 };
 export const SESSIONS_PATH = '/api/sessions';
+export const SESSION_PROTOCOL_HEADERS: Readonly<Record<string, string>> = { 'X-Session-Protocol': '1' };
 
 const addressSequence = { lastIssuedNumber: 0 };
 
@@ -56,13 +57,14 @@ export const createSession = async (clientAddress: string = nextClientAddress())
 export const putChunk = async (session: CreatedSession, fileId: string, index: number, content: BodyInit): Promise<Response> =>
   await SELF.fetch(urlOf(chunkPathOf(session.sessionId, fileId, index)), { method: 'PUT', headers: bearer(session.ownerToken), body: content });
 
-export const getChunk = async (sessionId: string, fileId: string, index: number): Promise<Response> =>
-  await SELF.fetch(urlOf(chunkPathOf(sessionId, fileId, index)));
+export const getChunk = async (sessionId: string, fileId: string, index: number, headers = SESSION_PROTOCOL_HEADERS): Promise<Response> =>
+  await SELF.fetch(urlOf(chunkPathOf(sessionId, fileId, index)), { headers });
 
 export const putState = async (session: CreatedSession, content: Uint8Array): Promise<Response> =>
   await SELF.fetch(urlOf(statePathOf(session.sessionId)), { method: 'PUT', headers: bearer(session.ownerToken), body: content });
 
-export const getState = async (sessionId: string): Promise<Response> => await SELF.fetch(urlOf(statePathOf(sessionId)));
+export const getState = async (sessionId: string, headers = SESSION_PROTOCOL_HEADERS): Promise<Response> =>
+  await SELF.fetch(urlOf(statePathOf(sessionId)), { headers });
 
 export const getStatus = async (sessionId: string): Promise<Response> => await SELF.fetch(urlOf(sessionPathOf(sessionId)));
 

@@ -84,13 +84,20 @@ Everything is under `/api/sessions`. Writes carry `Authorization: Bearer {ownerT
 or wrong token is `403`. A session that never existed, has ended, or was ended is `404`. Bodies of
 chunks and state are raw bytes (`application/octet-stream`).
 
+Every request the core sends carries `X-Session-Protocol: 1`, and reading the state or a chunk
+without it is `400` (`protocol_required`), before the session is looked at or renewed. The service
+cannot tell a sealed blob from any other bytes, so without the header anyone could upload a file and
+hand out its chunk's address as a download from the service's own domain; a link opened in a browser
+cannot send a custom header, and another page cannot send one across origins without a preflight the
+service refuses. Every answer is also `Cross-Origin-Resource-Policy: same-origin`.
+
 | Method and path | Who | Activity | Answer |
 |---|---|---|---|
 | `POST /api/sessions` | owner | starts the hour | `201 { sessionId, ownerToken, expiresAtMilliseconds }` |
 | `PUT /api/sessions/{id}/files/{fileId}/chunks/{index}` | owner | yes | `204` |
 | `PUT /api/sessions/{id}/state` | owner | yes | `200 { revision, expiresAtMilliseconds }`, and every viewer is told |
-| `GET /api/sessions/{id}/state` | viewer | yes | `200` the sealed state, headers `X-Session-Revision` and `X-Session-Expires-At` (milliseconds); `409` before the first state |
-| `GET /api/sessions/{id}/files/{fileId}/chunks/{index}` | viewer | no | `200` the sealed chunk; `404` when it is not there |
+| `GET /api/sessions/{id}/state` | viewer | yes | `200` the sealed state, headers `X-Session-Revision` and `X-Session-Expires-At` (milliseconds); `409` before the first state; `400` without `X-Session-Protocol: 1` |
+| `GET /api/sessions/{id}/files/{fileId}/chunks/{index}` | viewer | no | `200` the sealed chunk; `404` when it is not there; `400` without `X-Session-Protocol: 1` |
 | `GET /api/sessions/{id}` | anyone | no | `200 { revision, expiresAtMilliseconds }` |
 | `GET /api/sessions/{id}/live` (WebSocket upgrade) | viewer | no | messages below |
 | `DELETE /api/sessions/{id}` | owner | ends it | `204` |

@@ -7,6 +7,7 @@ export const FAILURES = {
   CHUNK_NOT_FOUND: 'chunk_not_found',
   METHOD_NOT_ALLOWED: 'method_not_allowed',
   MALFORMED_REQUEST: 'malformed_request',
+  PROTOCOL_REQUIRED: 'protocol_required',
   PAYLOAD_TOO_LARGE: 'payload_too_large',
   RATE_LIMITED: 'rate_limited',
   ORIGIN_FORBIDDEN: 'origin_forbidden',
@@ -24,6 +25,7 @@ const FAILURE_STATUSES: Readonly<Record<Failure, number>> = {
   [FAILURES.CHUNK_NOT_FOUND]: HTTP_STATUSES.NOT_FOUND,
   [FAILURES.METHOD_NOT_ALLOWED]: HTTP_STATUSES.METHOD_NOT_ALLOWED,
   [FAILURES.MALFORMED_REQUEST]: HTTP_STATUSES.BAD_REQUEST,
+  [FAILURES.PROTOCOL_REQUIRED]: HTTP_STATUSES.BAD_REQUEST,
   [FAILURES.PAYLOAD_TOO_LARGE]: HTTP_STATUSES.PAYLOAD_TOO_LARGE,
   [FAILURES.RATE_LIMITED]: HTTP_STATUSES.TOO_MANY_REQUESTS,
   [FAILURES.ORIGIN_FORBIDDEN]: HTTP_STATUSES.FORBIDDEN,
@@ -33,6 +35,7 @@ const FAILURE_STATUSES: Readonly<Record<Failure, number>> = {
 const API_HEADERS = {
   [HTTP_HEADERS.CACHE_CONTROL]: 'no-store',
   [HTTP_HEADERS.CONTENT_TYPE_OPTIONS]: 'nosniff',
+  [HTTP_HEADERS.CROSS_ORIGIN_RESOURCE_POLICY]: 'same-origin',
 } as const;
 
 export const failureResponse = (failure: Failure, headers: Readonly<Record<string, string>> = {}): Response =>

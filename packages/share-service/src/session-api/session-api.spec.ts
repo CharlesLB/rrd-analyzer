@@ -230,6 +230,28 @@ describe('session API, chunks', () => {
     expect(response.status).toBe(404);
     expect(await errorOf(response)).toBe('chunk_not_found');
   });
+
+  it('GET a chunk, without the session protocol header a link opened in a browser lacks, answers 400 and none of its bytes', async () => {
+    const session = await createSession();
+    const plaintext = new TextEncoder().encode('MZ any file at all');
+    await putChunk(session, FILE_ID, 0, plaintext);
+
+    const response = await getChunk(session.sessionId, FILE_ID, 0, {});
+
+    expect(response.status).toBe(400);
+    expect(response.headers.get('Content-Type')).not.toBe('application/octet-stream');
+    expect(await errorOf(response)).toBe('protocol_required');
+  });
+
+  it('GET a chunk, by the app, answers it as a resource no other origin may embed', async () => {
+    const session = await createSession();
+    await putChunk(session, FILE_ID, 0, bytesOf(4));
+
+    const response = await getChunk(session.sessionId, FILE_ID, 0);
+
+    expect(response.status).toBe(200);
+    expect(response.headers.get('Cross-Origin-Resource-Policy')).toBe('same-origin');
+  });
 });
 
 describe('session API, state', () => {
@@ -309,6 +331,20 @@ describe('session API, activity and expiry', () => {
     const record = await storedRecordOf(session.sessionId);
 
     expect(record?.expiresAtMilliseconds).toBeGreaterThan(soon + HOUR - 5000);
+  });
+
+  it('GET the state, without the session protocol header a link opened in a browser lacks, answers 400 and leaves the expiry where it was', async () => {
+    const session = await createSession();
+    await putState(session, bytesOf(4));
+    const soon = Date.now() + 1000;
+    await expireAt(session.sessionId, soon);
+
+    const response = await getState(session.sessionId, {});
+    const record = await storedRecordOf(session.sessionId);
+
+    expect(response.status).toBe(400);
+    expect(await errorOf(response)).toBe('protocol_required');
+    expect(record?.expiresAtMilliseconds).toBe(soon);
   });
 
   it('GET the state, by a viewer, renews the session', async () => {
@@ -476,7 +512,7 @@ describe('session API, cross-origin requests', () => {
     expect(response.status).toBe(204);
     expect(response.headers.get('Access-Control-Allow-Origin')).toBe(ALLOWED_ORIGIN);
     expect(response.headers.get('Access-Control-Allow-Methods')).toBe('GET, POST, PUT, DELETE');
-    expect(response.headers.get('Access-Control-Allow-Headers')).toBe('Authorization, Content-Type');
+    expect(response.headers.get('Access-Control-Allow-Headers')).toBe('Authorization, Content-Type, X-Session-Protocol');
     expect(response.headers.get('Access-Control-Expose-Headers')).toBe('X-Session-Revision, X-Session-Expires-At');
   });
 
