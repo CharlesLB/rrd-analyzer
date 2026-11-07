@@ -26,6 +26,9 @@ on:
         description: The existing tag to build and publish
         required: true
 
+# Every action is pinned to a commit, with the release it was taken from beside it. A tag can be
+# moved to other code at any time by whoever controls the action's repository, and the publish job
+# hands its action a token that can write releases.
 permissions:
   contents: read
 
@@ -41,14 +44,16 @@ jobs:
       RELEASE_VERSION: ${{ inputs.tag }}
       SITE_URL: https://rrd-analyzer.example.com
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
+          persist-credentials: false
           ref: ${{ inputs.tag || github.ref }}
       - uses: ./.github/actions/toolchain
       - run: pnpm install --frozen-lockfile
       - run: pnpm format:check
       - run: pnpm lint
       - run: pnpm typecheck
+      - run: pnpm audit:deps
       - run: pnpm test
       - run: pnpm build
 
@@ -56,15 +61,16 @@ jobs:
     name: End to end
     runs-on: ubuntu-22.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
+          persist-credentials: false
           ref: ${{ inputs.tag || github.ref }}
       - uses: ./.github/actions/toolchain
       - run: pnpm install --frozen-lockfile
       - run: pnpm e2e:install
       - run: pnpm test:e2e
       - if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: end-to-end-report
           path: packages/ui-analyzer/e2e/report
@@ -85,8 +91,9 @@ jobs:
             runner: ubuntu-22.04-arm
     runs-on: ${{ matrix.runner }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
+          persist-credentials: false
           ref: ${{ inputs.tag || github.ref }}
           fetch-depth: 0
       - uses: ./.github/actions/toolchain
@@ -94,11 +101,11 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install --yes libgtk-3-dev libwebkit2gtk-4.1-dev
-      - uses: goreleaser/goreleaser-action@v6
+      - uses: goreleaser/goreleaser-action@e435ccd777264be153ace6237001ef4d979d3a7a # v6.4.0
         with:
           version: "~> v2"
           args: release --clean --config .goreleaser.linux-${{ matrix.arch }}.yaml
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: artefacts-linux-${{ matrix.arch }}
           path: |
@@ -113,8 +120,9 @@ jobs:
     env:
       SIGNING_CERTIFICATE: ${{ secrets.WINDOWS_SIGN_PKCS12 }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
+          persist-credentials: false
           ref: ${{ inputs.tag || github.ref }}
           fetch-depth: 0
       - uses: ./.github/actions/toolchain
@@ -129,7 +137,7 @@ jobs:
         run: |
           printf '%s' "$SIGNING_CERTIFICATE" | base64 --decode > "$RUNNER_TEMP/signing.p12"
           echo "WINDOWS_SIGN_PKCS12=$RUNNER_TEMP/signing.p12" >> "$GITHUB_ENV"
-      - uses: goreleaser/goreleaser-action@v6
+      - uses: goreleaser/goreleaser-action@e435ccd777264be153ace6237001ef4d979d3a7a # v6.4.0
         env:
           WINDOWS_SIGN_PASSWORD: ${{ secrets.WINDOWS_SIGN_PASSWORD }}
         with:
@@ -143,7 +151,7 @@ jobs:
           version="$(jq -r .version dist/metadata.json)"
           ./tools/build-nsis.sh "$version"
           cp "$(find dist -type f -name rrd-analyzer.exe -print -quit)" "dist/rrd-analyzer_${version}_windows_amd64.exe"
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: artefacts-windows-amd64
           path: |
@@ -158,10 +166,11 @@ jobs:
     permissions:
       contents: write
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
+          persist-credentials: false
           ref: ${{ inputs.tag || github.ref }}
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
         with:
           path: staging
           pattern: artefacts-*
@@ -177,7 +186,7 @@ jobs:
           sha256sum * > "$RUNNER_TEMP/checksums.txt"
           mv "$RUNNER_TEMP/checksums.txt" checksums.txt
           ls -la
-      - uses: softprops/action-gh-release@v2
+      - uses: softprops/action-gh-release@3bb12739c298aeb8a4eeaf626c5b8d85266b0e65 # v2.6.2
         with:
           tag_name: ${{ inputs.tag || github.ref_name }}
           files: dist/*

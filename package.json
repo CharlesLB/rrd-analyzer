@@ -24,7 +24,7 @@
     "typecheck": "pnpm --filter @rrd-analyzer/shared typecheck && pnpm --filter @rrd-analyzer/ui-shared typecheck && pnpm --filter @rrd-analyzer/ui-analyzer typecheck && pnpm --filter @rrd-analyzer/ui-landing typecheck && pnpm --filter @rrd-analyzer/share-service typecheck",
     "design:check": "pnpm --filter @rrd-analyzer/ui-analyzer design:check",
     "audit:deps": "pnpm audit --audit-level=high --prod && pnpm --filter @rrd-analyzer/daemon audit:vulns",
-    "verify": "pnpm format:check && pnpm lint && pnpm typecheck && pnpm test && pnpm test:e2e && pnpm build",
+    "verify": "pnpm format:check && pnpm lint && pnpm typecheck && pnpm audit:deps && pnpm test && pnpm test:e2e && pnpm build",
     "test:e2e": "pnpm --filter @rrd-analyzer/ui-analyzer test:e2e && pnpm --filter @rrd-analyzer/ui-landing test:e2e",
     "test:e2e:report": "pnpm --filter @rrd-analyzer/ui-analyzer test:e2e:report",
     "e2e:install": "pnpm --filter @rrd-analyzer/ui-analyzer e2e:install"
