@@ -91,6 +91,28 @@ func answerTo(t *testing.T, method string, url string, origin string) answer {
 	return answer{status: response.StatusCode, allowedOrigin: response.Header.Get("Access-Control-Allow-Origin")}
 }
 
+// answerNaming reads url as a page on host does once host has been rebound to this machine: the
+// connection reaches the server, the Host header names the page's own host, and a same-origin read
+// carries no Origin.
+func answerNaming(t *testing.T, url string, host string) answer {
+	t.Helper()
+
+	request, err := http.NewRequestWithContext(context.Background(), http.MethodGet, url, http.NoBody)
+	if err != nil {
+		t.Fatalf("build the request: %v", err)
+	}
+
+	request.Host = host
+
+	response, err := http.DefaultClient.Do(request)
+	if err != nil {
+		t.Fatalf("GET %s as %s: %v", url, host, err)
+	}
+	defer func() { _ = response.Body.Close() }()
+
+	return answer{status: response.StatusCode, allowedOrigin: response.Header.Get("Access-Control-Allow-Origin")}
+}
+
 // waitUntilServing polls the build route until it answers, and fails the test when run returns
 // first or the server never comes up.
 func waitUntilServing(t *testing.T, address string, finished <-chan error) {
@@ -144,6 +166,7 @@ func TestRun_ServesTheDevelopmentSurfaceUntilItsContextEnds(t *testing.T) {
 	fromTheWebApp := answerTo(t, http.MethodGet, "http://"+address+"/api/analyses", webAppOrigin)
 	fromAnotherPage := answerTo(t, http.MethodGet, "http://"+address+"/api/analyses", "https://example.com")
 	reset := answerTo(t, http.MethodPost, "http://"+address+"/api/dev/reset", "")
+	rebound := answerNaming(t, "http://"+address+"/api/analyses", "rebound.example.com")
 	stop()
 
 	if fromTheWebApp.status != http.StatusOK || fromTheWebApp.allowedOrigin != webAppOrigin {
@@ -156,6 +179,10 @@ func TestRun_ServesTheDevelopmentSurfaceUntilItsContextEnds(t *testing.T) {
 
 	if reset.status != http.StatusNoContent {
 		t.Errorf("the development reset was answered %d, want %d", reset.status, http.StatusNoContent)
+	}
+
+	if rebound.status != http.StatusForbidden {
+		t.Errorf("a page on a name rebound to this machine was answered %d, want %d", rebound.status, http.StatusForbidden)
 	}
 
 	if err := returned(t, finished); err != nil {

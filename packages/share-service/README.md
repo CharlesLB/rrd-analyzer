@@ -21,10 +21,12 @@ The same Worker serves the public site, the landing page and the browser app bui
   that arrives after the expiry but before the alarm ran erases the session itself and answers
   `404`.
 
-Creating sessions is rate limited per client address (`SESSION_CREATION_LIMITER`, 10 a minute).
+Creating sessions is rate limited per client address (`SESSION_CREATION_LIMITER`, 10 a minute),
+an IPv6 address counted by its /64: a single host is handed a whole /64, and counting each of
+its addresses apart would leave it no limit at all.
 A session holds at most 256 files and 256 MiB, in chunks of at most 8 MiB (288 chunks in all, one
 per file plus the 32 its bytes can fill, so erasing a session stays a few R2 calls), and a state of
-at most 4 MiB. A viewer reading the state streams it from R2 through the Worker, not through the
+at most 4 MiB, followed live by at most 100 viewers at once (`MAXIMUM_SESSION_VIEWERS`). A viewer reading the state streams it from R2 through the Worker, not through the
 session's object, and renews the session only when that moves its expiry by a minute or more.
 
 ## Working on it

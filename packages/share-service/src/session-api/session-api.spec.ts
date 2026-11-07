@@ -72,6 +72,18 @@ describe('session API, creating a session', () => {
     expect(await errorOf(response)).toBe('rate_limited');
   });
 
+  it('POST /api/sessions, past the limit from addresses that only differ inside one IPv6 /64, answers 429 there and still creates from another network', async () => {
+    const interfaces = Array.from({ length: 10 }, (_unused, index) => `2001:db8:5:0::${index + 1}`);
+
+    await Promise.all(interfaces.map(async (address) => await createSession(address)));
+    const sameNetwork = await SELF.fetch(urlOf(SESSIONS_PATH), { method: 'POST', headers: { 'CF-Connecting-IP': '2001:db8:5:0:dead:beef:0:1' } });
+    const otherNetwork = await SELF.fetch(urlOf(SESSIONS_PATH), { method: 'POST', headers: { 'CF-Connecting-IP': '2001:db8:5:1::1' } });
+
+    expect(sameNetwork.status).toBe(429);
+    expect(await errorOf(sameNetwork)).toBe('rate_limited');
+    expect(otherNetwork.status).toBe(201);
+  });
+
   it('GET /api/sessions/{id}, for a session just created, answers revision 0 and its expiry', async () => {
     const session = await createSession();
 
@@ -230,6 +242,28 @@ describe('session API, chunks', () => {
     expect(response.status).toBe(404);
     expect(await errorOf(response)).toBe('chunk_not_found');
   });
+
+  it('GET a chunk, without the session protocol header a link opened in a browser lacks, answers 400 and none of its bytes', async () => {
+    const session = await createSession();
+    const plaintext = new TextEncoder().encode('MZ any file at all');
+    await putChunk(session, FILE_ID, 0, plaintext);
+
+    const response = await getChunk(session.sessionId, FILE_ID, 0, {});
+
+    expect(response.status).toBe(400);
+    expect(response.headers.get('Content-Type')).not.toBe('application/octet-stream');
+    expect(await errorOf(response)).toBe('protocol_required');
+  });
+
+  it('GET a chunk, by the app, answers it as a resource no other origin may embed', async () => {
+    const session = await createSession();
+    await putChunk(session, FILE_ID, 0, bytesOf(4));
+
+    const response = await getChunk(session.sessionId, FILE_ID, 0);
+
+    expect(response.status).toBe(200);
+    expect(response.headers.get('Cross-Origin-Resource-Policy')).toBe('same-origin');
+  });
 });
 
 describe('session API, state', () => {
@@ -309,6 +343,20 @@ describe('session API, activity and expiry', () => {
     const record = await storedRecordOf(session.sessionId);
 
     expect(record?.expiresAtMilliseconds).toBeGreaterThan(soon + HOUR - 5000);
+  });
+
+  it('GET the state, without the session protocol header a link opened in a browser lacks, answers 400 and leaves the expiry where it was', async () => {
+    const session = await createSession();
+    await putState(session, bytesOf(4));
+    const soon = Date.now() + 1000;
+    await expireAt(session.sessionId, soon);
+
+    const response = await getState(session.sessionId, {});
+    const record = await storedRecordOf(session.sessionId);
+
+    expect(response.status).toBe(400);
+    expect(await errorOf(response)).toBe('protocol_required');
+    expect(record?.expiresAtMilliseconds).toBe(soon);
   });
 
   it('GET the state, by a viewer, renews the session', async () => {
@@ -442,6 +490,20 @@ describe('session API, live channel', () => {
     expect(await channel.closed).toBe(1000);
   });
 
+  it('GET live, past the viewers a session may hold, answers 429 and opens nothing, while the viewers already there keep following', async () => {
+    const session = await createSession();
+    const viewers = [await openLiveChannel(session.sessionId), await openLiveChannel(session.sessionId)];
+
+    const refused = await SELF.fetch(urlOf(livePathOf(session.sessionId)), { headers: { Upgrade: 'websocket', Origin: ALLOWED_ORIGIN } });
+    const published = await (await putState(session, bytesOf(4))).json<SessionTiming>();
+    const told = await Promise.all(viewers.map(async (viewer) => await viewer.nextMessage()));
+
+    expect(refused.status).toBe(429);
+    expect(refused.webSocket).toBeNull();
+    expect(await errorOf(refused)).toBe('too_many_viewers');
+    expect(told).toEqual(viewers.map(() => ({ kind: 'revision', revision: 1, expiresAtMilliseconds: published.expiresAtMilliseconds })));
+  });
+
   it('GET live, without a WebSocket upgrade, answers 426', async () => {
     const session = await createSession();
 
@@ -476,7 +538,7 @@ describe('session API, cross-origin requests', () => {
     expect(response.status).toBe(204);
     expect(response.headers.get('Access-Control-Allow-Origin')).toBe(ALLOWED_ORIGIN);
     expect(response.headers.get('Access-Control-Allow-Methods')).toBe('GET, POST, PUT, DELETE');
-    expect(response.headers.get('Access-Control-Allow-Headers')).toBe('Authorization, Content-Type');
+    expect(response.headers.get('Access-Control-Allow-Headers')).toBe('Authorization, Content-Type, X-Session-Protocol');
     expect(response.headers.get('Access-Control-Expose-Headers')).toBe('X-Session-Revision, X-Session-Expires-At');
   });
 

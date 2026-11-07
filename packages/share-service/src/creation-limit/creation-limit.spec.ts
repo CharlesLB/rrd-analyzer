@@ -28,6 +28,18 @@ describe('isCreationAllowed', () => {
     expect(keys).toEqual(['192.0.2.1']);
   });
 
+  it('with a limiter, for two addresses of one IPv6 network, counts both under the network', async () => {
+    const keys: string[] = [];
+
+    const requests = ['2001:db8:7:9::1', '2001:db8:7:9:ffff:ffff:ffff:ffff'].map(
+      (address) => new Request('https://share.example/api/sessions', { method: 'POST', headers: { 'CF-Connecting-IP': address } }),
+    );
+
+    await Promise.all(requests.map(async (request) => await isCreationAllowed(limiterAnswering(true, keys), request)));
+
+    expect(keys).toEqual(['2001:db8:7:9::/64', '2001:db8:7:9::/64']);
+  });
+
   it('with a limiter, for a request with no client address, counts it under one shared key', async () => {
     const keys: string[] = [];
     const request = new Request('https://share.example/api/sessions', { method: 'POST' });

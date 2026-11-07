@@ -87,7 +87,7 @@ func run(callerContext context.Context, arguments []string) error {
 
 	server := &http.Server{
 		Addr:         chosen.address,
-		Handler:      allowWebOrigins(chosen.webOrigins, developmentRoutes(developmentSurface(stores, chosen))),
+		Handler:      allowLocalHosts(chosen.address, allowWebOrigins(chosen.webOrigins, developmentRoutes(developmentSurface(stores, chosen)))),
 		ReadTimeout:  readTimeout,
 		WriteTimeout: writeTimeout,
 		BaseContext:  func(net.Listener) context.Context { return lifetime },

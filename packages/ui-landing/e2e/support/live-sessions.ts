@@ -15,6 +15,7 @@ const SHARED_LINK_MARKER = '#/shared/';
 const LINK_SEPARATOR = '/';
 const CHUNK_PATH = /\/files\/[\w-]+\/chunks\/\d+$/;
 const CLIPBOARD_PERMISSIONS = ['clipboard-read', 'clipboard-write'];
+const AS_THE_APP_READS = { headers: { 'X-Session-Protocol': '1' } };
 
 const isServiceCall = (request: Request): boolean => new URL(request.url()).pathname.startsWith(API_PATH);
 
@@ -31,7 +32,7 @@ export const sessionIdOf = (link: string): string => link.slice(link.indexOf(SHA
 export const sessionPath = (sessionId: string): string => `/api/sessions/${sessionId}`;
 
 export const answersOf = async (page: Page, serviceUrl: string, paths: readonly string[]): Promise<readonly number[]> =>
-  await Promise.all(paths.map(async (path) => (await page.request.get(`${serviceUrl}${path}`)).status()));
+  await Promise.all(paths.map(async (path) => (await page.request.get(`${serviceUrl}${path}`, AS_THE_APP_READS)).status()));
 
 const atTheExpiringService = (url: string): string => url.replace(SHARE_SERVICE_ADDRESS, EXPIRING_SHARE_SERVICE_ADDRESS);
 

@@ -1,7 +1,9 @@
 // Package sharetest is the share service in memory, behind an httptest server, for the tests of
 // every package that publishes or follows a live session. It answers the routes of docs/SHARING.md
 // the way the Worker in packages/share-service does, without what only the Worker is responsible for:
-// rate limits per address, the WebSocket, and checking the shape of identifiers.
+// rate limits per address, the WebSocket, and checking the shape of identifiers. Like the Worker, it
+// hands a sealed blob only to a request that names the protocol, so every test reading through it
+// proves the client does.
 package sharetest
 
 import (
@@ -26,6 +28,8 @@ const (
 	_revisionHeader      = "X-Session-Revision"
 	_expiresAtHeader     = "X-Session-Expires-At"
 	_contentTypeHeader   = "Content-Type"
+	_protocolHeader      = "X-Session-Protocol"
+	_protocolVersion     = "1"
 	_jsonContentType     = "application/json"
 	_chunkSeparator      = "/"
 	_linkSeparator       = "/"
@@ -213,7 +217,7 @@ func (server *Server) state(writer http.ResponseWriter, request *http.Request) {
 	server.mutex.Lock()
 	defer server.mutex.Unlock()
 
-	held, isHeld := server.found(writer, request)
+	held, isHeld := server.readable(writer, request)
 	if !isHeld {
 		return
 	}
@@ -233,7 +237,7 @@ func (server *Server) chunk(writer http.ResponseWriter, request *http.Request) {
 	server.mutex.Lock()
 	defer server.mutex.Unlock()
 
-	held, isHeld := server.found(writer, request)
+	held, isHeld := server.readable(writer, request)
 	if !isHeld {
 		return
 	}
@@ -280,6 +284,18 @@ func (server *Server) found(writer http.ResponseWriter, request *http.Request) (
 	}
 
 	return held, isHeld
+}
+
+// readable is the session a blob read names when the read names the protocol, or a 400 or a 404
+// already written.
+func (server *Server) readable(writer http.ResponseWriter, request *http.Request) (*session, bool) {
+	if request.Header.Get(_protocolHeader) != _protocolVersion {
+		writer.WriteHeader(http.StatusBadRequest)
+
+		return nil, false
+	}
+
+	return server.found(writer, request)
 }
 
 // owned is the session a request names when it carries that session's owner token, or a 404 or a

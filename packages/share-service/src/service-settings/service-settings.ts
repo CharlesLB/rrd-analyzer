@@ -7,12 +7,19 @@ export type ServiceSettings = {
   readonly maximumSessionBytes: number;
   readonly maximumSessionFiles: number;
   readonly maximumSessionChunks: number;
+  readonly maximumSessionViewers: number;
   readonly inactivityMilliseconds: number;
   readonly renewalStepMilliseconds: number;
   readonly allowedOrigins: readonly string[];
 };
 
-type CountedSetting = 'MAXIMUM_CHUNK_BYTES' | 'MAXIMUM_STATE_BYTES' | 'MAXIMUM_SESSION_BYTES' | 'MAXIMUM_SESSION_FILES' | 'INACTIVITY_MILLISECONDS';
+type CountedSetting =
+  | 'MAXIMUM_CHUNK_BYTES'
+  | 'MAXIMUM_STATE_BYTES'
+  | 'MAXIMUM_SESSION_BYTES'
+  | 'MAXIMUM_SESSION_FILES'
+  | 'MAXIMUM_SESSION_VIEWERS'
+  | 'INACTIVITY_MILLISECONDS';
 
 const ORIGIN_SEPARATOR = ',';
 const RENEWALS_PER_INACTIVITY_WINDOW = 60;
@@ -55,6 +62,7 @@ export const settingsOf = (environment: ServiceEnvironment): ServiceSettings => 
     maximumSessionBytes,
     maximumSessionFiles,
     maximumSessionChunks: maximumSessionFiles + Math.ceil(maximumSessionBytes / maximumChunkBytes),
+    maximumSessionViewers: countIn(environment, 'MAXIMUM_SESSION_VIEWERS'),
     inactivityMilliseconds,
     renewalStepMilliseconds: inactivityMilliseconds / RENEWALS_PER_INACTIVITY_WINDOW,
     allowedOrigins: allowedOriginsIn(environment),

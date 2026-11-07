@@ -11,6 +11,7 @@ import type { LiveSession, StateUpload } from '../live-session/live-session';
 import { ownerTokenHashOf, presentedOwnerTokenOf } from '../owner-token/owner-token';
 import type { ServiceSettings } from '../service-settings/service-settings';
 import { settingsOf } from '../service-settings/service-settings';
+import { speaksSessionProtocol } from '../session-protocol/session-protocol';
 import type { SessionTiming } from '../session-record/session-record';
 
 type ApiCall = {
@@ -85,6 +86,10 @@ const sealedStateResponse = async (call: ApiCall, sessionId: string, timing: Ses
 };
 
 const readState = async (call: ApiCall, route: RouteOf<typeof API_ROUTE_KINDS.STATE>): Promise<Response> => {
+  if (!speaksSessionProtocol(call.request)) {
+    return failureResponse(FAILURES.PROTOCOL_REQUIRED);
+  }
+
   const opened = await liveSessionOf(call, route.sessionId).openState();
 
   return opened.refusal === null ? await sealedStateResponse(call, route.sessionId, opened.value) : failureResponse(opened.refusal);
@@ -113,6 +118,10 @@ const storeChunk = async (call: ApiCall, route: RouteOf<typeof API_ROUTE_KINDS.C
 };
 
 const readChunk = async (call: ApiCall, route: RouteOf<typeof API_ROUTE_KINDS.CHUNK>): Promise<Response> => {
+  if (!speaksSessionProtocol(call.request)) {
+    return failureResponse(FAILURES.PROTOCOL_REQUIRED);
+  }
+
   const sealedChunk = await call.environment.SESSION_BLOBS.get(chunkKeyOf(route));
 
   return sealedChunk === null ? failureResponse(FAILURES.CHUNK_NOT_FOUND) : sealedBlobResponse(sealedChunk);

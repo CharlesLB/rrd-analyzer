@@ -17,6 +17,7 @@ describe('settingsOf', () => {
       maximumSessionBytes: 160,
       maximumSessionFiles: 3,
       maximumSessionChunks: 6,
+      maximumSessionViewers: 2,
       inactivityMilliseconds: 3_600_000,
       renewalStepMilliseconds: 60_000,
       allowedOrigins: ['http://a.example', 'http://b.example'],

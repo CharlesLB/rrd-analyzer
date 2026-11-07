@@ -84,13 +84,20 @@ Everything is under `/api/sessions`. Writes carry `Authorization: Bearer {ownerT
 or wrong token is `403`. A session that never existed, has ended, or was ended is `404`. Bodies of
 chunks and state are raw bytes (`application/octet-stream`).
 
+Every request the core sends carries `X-Session-Protocol: 1`, and reading the state or a chunk
+without it is `400` (`protocol_required`), before the session is looked at or renewed. The service
+cannot tell a sealed blob from any other bytes, so without the header anyone could upload a file and
+hand out its chunk's address as a download from the service's own domain; a link opened in a browser
+cannot send a custom header, and another page cannot send one across origins without a preflight the
+service refuses. Every answer is also `Cross-Origin-Resource-Policy: same-origin`.
+
 | Method and path | Who | Activity | Answer |
 |---|---|---|---|
 | `POST /api/sessions` | owner | starts the hour | `201 { sessionId, ownerToken, expiresAtMilliseconds }` |
 | `PUT /api/sessions/{id}/files/{fileId}/chunks/{index}` | owner | yes | `204` |
 | `PUT /api/sessions/{id}/state` | owner | yes | `200 { revision, expiresAtMilliseconds }`, and every viewer is told |
-| `GET /api/sessions/{id}/state` | viewer | yes | `200` the sealed state, headers `X-Session-Revision` and `X-Session-Expires-At` (milliseconds); `409` before the first state |
-| `GET /api/sessions/{id}/files/{fileId}/chunks/{index}` | viewer | no | `200` the sealed chunk; `404` when it is not there |
+| `GET /api/sessions/{id}/state` | viewer | yes | `200` the sealed state, headers `X-Session-Revision` and `X-Session-Expires-At` (milliseconds); `409` before the first state; `400` without `X-Session-Protocol: 1` |
+| `GET /api/sessions/{id}/files/{fileId}/chunks/{index}` | viewer | no | `200` the sealed chunk; `404` when it is not there; `400` without `X-Session-Protocol: 1` |
 | `GET /api/sessions/{id}` | anyone | no | `200 { revision, expiresAtMilliseconds }` |
 | `GET /api/sessions/{id}/live` (WebSocket upgrade) | viewer | no | messages below |
 | `DELETE /api/sessions/{id}` | owner | ends it | `204` |
@@ -99,8 +106,8 @@ Revisions count from `1`, the first state published. Uploading a chunk that alre
 replaces it. Limits, all refused with `413`: a chunk of more than `8 MiB + 28` bytes, a state of more
 than `4 MiB`, a session holding more than `256 MiB` across its chunks, more than `256` files, or more
 chunks than one per file plus the 32 full chunks its bytes can fill (`288`).
-Malformed identifiers or indexes are `400`. Creating sessions is rate limited per client address
-(`429`).
+Malformed identifiers or indexes are `400`. Creating sessions is rate limited per client address, an IPv6
+address counted by its /64 network (`429`).
 
 WebSocket messages, all JSON:
 
@@ -114,7 +121,10 @@ WebSocket messages, all JSON:
 inactivity window (a minute, for the hour): reads right after the owner's last change leave it where
 that change put it. `expired` is sent just before the socket is closed
 with code `1000` because the session ended. Joining a socket for a session that does not exist
-answers `404` and opens nothing.
+answers `404` and opens nothing, and so does joining one that already has 100 viewers on its socket
+(`429`, `too_many_viewers`): every revision is sent to each of them, and a link is all it takes to
+open another. A tab turned away follows the session the way any tab does after its socket drops,
+asking for the state again every few seconds.
 
 ## Core surface
 

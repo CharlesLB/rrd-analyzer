@@ -10,6 +10,7 @@ export type ServiceEnvironment = {
   readonly MAXIMUM_STATE_BYTES: CountVariable;
   readonly MAXIMUM_SESSION_BYTES: CountVariable;
   readonly MAXIMUM_SESSION_FILES: CountVariable;
+  readonly MAXIMUM_SESSION_VIEWERS: CountVariable;
   readonly INACTIVITY_MILLISECONDS: CountVariable;
   readonly ALLOWED_ORIGINS: string;
 };
