@@ -135,6 +135,10 @@ export class LiveSession extends DurableObject<ServiceEnvironment> {
       return failureResponse(FAILURES.SESSION_NOT_FOUND);
     }
 
+    if (this.ctx.getWebSockets().length >= this._settings.maximumSessionViewers) {
+      return failureResponse(FAILURES.TOO_MANY_VIEWERS);
+    }
+
     const [viewerSocket, sessionSocket] = Object.values(new WebSocketPair());
 
     this.ctx.acceptWebSocket(sessionSocket);

@@ -121,7 +121,10 @@ WebSocket messages, all JSON:
 inactivity window (a minute, for the hour): reads right after the owner's last change leave it where
 that change put it. `expired` is sent just before the socket is closed
 with code `1000` because the session ended. Joining a socket for a session that does not exist
-answers `404` and opens nothing.
+answers `404` and opens nothing, and so does joining one that already has 100 viewers on its socket
+(`429`, `too_many_viewers`): every revision is sent to each of them, and a link is all it takes to
+open another. A tab turned away follows the session the way any tab does after its socket drops,
+asking for the state again every few seconds.
 
 ## Core surface
 

@@ -490,6 +490,20 @@ describe('session API, live channel', () => {
     expect(await channel.closed).toBe(1000);
   });
 
+  it('GET live, past the viewers a session may hold, answers 429 and opens nothing, while the viewers already there keep following', async () => {
+    const session = await createSession();
+    const viewers = [await openLiveChannel(session.sessionId), await openLiveChannel(session.sessionId)];
+
+    const refused = await SELF.fetch(urlOf(livePathOf(session.sessionId)), { headers: { Upgrade: 'websocket', Origin: ALLOWED_ORIGIN } });
+    const published = await (await putState(session, bytesOf(4))).json<SessionTiming>();
+    const told = await Promise.all(viewers.map(async (viewer) => await viewer.nextMessage()));
+
+    expect(refused.status).toBe(429);
+    expect(refused.webSocket).toBeNull();
+    expect(await errorOf(refused)).toBe('too_many_viewers');
+    expect(told).toEqual(viewers.map(() => ({ kind: 'revision', revision: 1, expiresAtMilliseconds: published.expiresAtMilliseconds })));
+  });
+
   it('GET live, without a WebSocket upgrade, answers 426', async () => {
     const session = await createSession();
 
