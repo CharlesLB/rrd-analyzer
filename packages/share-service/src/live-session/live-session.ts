@@ -71,8 +71,16 @@ export class LiveSession extends DurableObject<ServiceEnvironment> {
       return refused(REFUSALS.SESSION_TOO_LARGE);
     }
 
+    const chunkKey = chunkKeyOf({ sessionId: grown.sessionId, fileId: upload.fileId, index: upload.index });
+
     await this._keep(renewedUntil(grown, this._nextExpiry()), { [chunkSizeKey]: upload.content.byteLength });
-    await this.env.SESSION_BLOBS.put(chunkKeyOf({ sessionId: grown.sessionId, fileId: upload.fileId, index: upload.index }), upload.content);
+    await this.env.SESSION_BLOBS.put(chunkKey, upload.content);
+
+    if ((await this._liveRecord()) === null) {
+      await this.env.SESSION_BLOBS.delete(chunkKey);
+
+      return refused(REFUSALS.SESSION_NOT_FOUND);
+    }
 
     return done(null);
   }
